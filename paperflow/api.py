@@ -77,6 +77,35 @@ def health():
     return {"status": "ok", "remote_available": "FIREWORKS_API_KEY" in os.environ}
 
 
+@app.get("/api/status")
+def status():
+    """Live reachability probe for the header badge. Truthful failure modes:
+    local_reachable=false means the MI300X endpoint isn't answering (so
+    PDF extraction will fail); remote_configured=false means no
+    FIREWORKS_API_KEY (so hybrid asks degrade to full-local)."""
+    import httpx
+    vllm_url = os.environ.get("VLLM_URL", "")
+    local_reachable = False
+    vllm_model = None
+    if vllm_url:
+        try:
+            r = httpx.get(f"{vllm_url.rstrip('/')}/models", timeout=2)
+            if r.status_code == 200:
+                data = r.json().get("data", [])
+                local_reachable = bool(data)
+                vllm_model = data[0]["id"] if data else None
+        except Exception:  # noqa: BLE001
+            pass
+    return {
+        "local_reachable": local_reachable,
+        "local_model": vllm_model,
+        "local_url": vllm_url,
+        "remote_configured": "FIREWORKS_API_KEY" in os.environ,
+        "remote_model": os.environ.get("FIREWORKS_MODEL",
+            "accounts/fireworks/models/deepseek-v4-pro"),
+    }
+
+
 @app.get("/favicon.ico", include_in_schema=False)
 def favicon():
     # tiny inline PNG (no external asset needed)

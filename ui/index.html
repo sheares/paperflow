@@ -2677,10 +2677,7 @@ function toggleFullLocal(){
   fullLocal = !fullLocal;
   document.getElementById('mode-toggle').classList.toggle('on', fullLocal);
   clearTimeout(amdTimer);
-  document.getElementById('amd-badge-text').innerHTML = fullLocal
-    ? '<b>Local:</b> AMD MI300X <span class="sep">·</span> <b>zero egress</b>'
-    : '<b>Local:</b> AMD MI300X <span class="sep">·</span> <b>Remote:</b> Fireworks AI';
-  document.getElementById('amd-pulse').style.background = 'var(--conf-good)';
+  renderStatusBadge();   // honest badge, reflects actual endpoint state
   document.getElementById('chat').insertAdjacentHTML('beforeend', `<div class="sysnote">${fullLocal
     ? 'Full-local mode on · remote reasoning disabled · re-running reconciliation entirely on the MI300X'
     : 'Full-local mode off · heavy cross-document reasoning may use one redacted cloud call per exchange'}</div>`);
@@ -2967,6 +2964,49 @@ async function hydrateLive(){
   }
 }
 hydrateLive();
+
+// ============================================================
+// LIVE STATUS BADGE — the header dot + text reflect actual endpoint
+// reachability, not a decorative animation. Polls /api/status every
+// ~15s and immediately after route-changing UI actions.
+// ============================================================
+let LIVE_STATUS = null;
+async function refreshStatus(){
+  try{
+    const r = await fetch('/api/status');
+    if(!r.ok) return;
+    LIVE_STATUS = await r.json();
+  } catch(_){ LIVE_STATUS = null; }
+  renderStatusBadge();
+}
+function renderStatusBadge(){
+  const t = document.getElementById('amd-badge-text');
+  const pulse = document.getElementById('amd-pulse');
+  if(!t || !pulse) return;
+  const s = LIVE_STATUS || {};
+  const localOK = !!s.local_reachable;
+  const remoteOK = !!s.remote_configured;
+  if(fullLocal){
+    t.innerHTML = '<b>Local:</b> AMD MI300X ' + (localOK
+      ? '<span class="sep">·</span> <b>zero egress</b>'
+      : '<span class="sep">·</span> <span style="color:var(--conf-block);">offline</span>');
+    pulse.style.background = localOK ? 'var(--conf-good)' : 'var(--conf-block)';
+    return;
+  }
+  const localStr = localOK
+    ? '<b>Local:</b> AMD MI300X'
+    : '<b>Local:</b> <span style="color:var(--conf-block);">MI300X offline</span>';
+  const remoteStr = remoteOK
+    ? '<b>Remote:</b> Fireworks AI'
+    : '<b>Remote:</b> <span style="color:var(--conf-block);">not configured</span>';
+  t.innerHTML = localStr + ' <span class="sep">·</span> ' + remoteStr;
+  const bothOK = localOK && remoteOK;
+  const anyOK = localOK || remoteOK;
+  pulse.style.background = bothOK ? 'var(--conf-good)'
+    : anyOK ? 'var(--conf-review)' : 'var(--conf-block)';
+}
+refreshStatus();
+setInterval(refreshStatus, 15000);
 
 async function liveAsk(text){
   const pileArg = (currentPile === 'real' && REAL_SESSION)
