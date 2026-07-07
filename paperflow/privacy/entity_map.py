@@ -43,6 +43,14 @@ FAMILIES = {
 
 _ORG_SUFFIX_RE = re.compile(r"\s+(?:pte\.?\s+ltd\.?|llp|ltd\.?|inc\.?|limited|llc)$", re.I)
 
+# subwords we never register as their own token: too common, too many false
+# positives. Applies to PERSON/ORG subword expansion only.
+_ORG_STOPWORDS = {"pte", "ltd", "llp", "inc", "corp", "corporation",
+                  "limited", "llc", "group", "co", "company"}
+_NAME_STOPWORDS = {"bin", "binte", "binti", "bint", "abd", "ibn", "van",
+                   "von", "der", "den", "del", "della", "di", "da", "the",
+                   "mister", "missus", "mr", "mrs", "ms", "dr", "prof"}
+
 
 def _words(value: str) -> list[str]:
     """Split a name into words. Hyphenated compound given names
@@ -95,10 +103,12 @@ class EntityMap:
     token_to_value: dict[str, str] = field(default_factory=dict)   # token -> canonical value
     _lookup: dict[str, str] = field(default_factory=dict)          # lower(value) -> token
     _display: dict[str, str] = field(default_factory=dict)         # lower(value) -> as first seen
+    _sub: dict[str, str] = field(default_factory=dict)             # subword -> token (consulted only during redact)
     _counters: dict[str, int] = field(default_factory=dict)
 
     def token_of(self, value: str) -> str | None:
-        return self._lookup.get(value.strip().lower())
+        key = value.strip().lower()
+        return self._lookup.get(key) or self._sub.get(key)
 
     def values(self) -> list[str]:
         return list(self._display.values())
@@ -170,6 +180,19 @@ class EntityMap:
             core = _ORG_SUFFIX_RE.sub("", value).strip()
             if core.lower() != key and len(core) >= 4:
                 self._register(core.lower(), core, token)
+
+        # PERSON/ORG: also register content sub-words (>= 4 chars, not
+        # stopwords) into a SEPARATE subword map, so a partial mention
+        # like "farid bin hassan" still redacts to the token of the full
+        # name. Kept off _lookup so it never influences alias resolution
+        # ("Rajesh Kumar" and "Ramesh Kumar" must not merge via a shared
+        # 'kumar' subword).
+        if family in {"PERSON", "ORG"}:
+            for w in _words(value):
+                core = w.rstrip(".").replace("'", "").replace("-", "").lower()
+                if len(core) >= 4 and core not in _ORG_STOPWORDS \
+                        and core not in _NAME_STOPWORDS:
+                    self._sub.setdefault(core, token)
         return token
 
     def _register(self, key: str, display: str, token: str) -> None:
@@ -184,14 +207,22 @@ class EntityMap:
 
     def redact(self, text: str) -> str:
         """Replace every mapped value in ONE pass (longest-first alternation,
-        case-insensitive). A single pass means a later value can never match
-        inside an already-inserted token."""
-        if not self._lookup:
-            return text
-        pattern = re.compile("|".join(
-            re.escape(self._display[k])
-            for k in sorted(self._lookup, key=len, reverse=True)), re.IGNORECASE)
-        return pattern.sub(lambda m: self._lookup[m.group(0).lower()], text)
+        case-insensitive). Runs full-string entries first, then subwords, so
+        the primary form always wins when both would match."""
+        # pass 1: full registered values
+        if self._lookup:
+            pattern = re.compile("|".join(
+                re.escape(self._display[k])
+                for k in sorted(self._lookup, key=len, reverse=True)), re.IGNORECASE)
+            text = pattern.sub(lambda m: self._lookup[m.group(0).lower()], text)
+        # pass 2: subwords, word-boundary to avoid clobbering token internals
+        if self._sub:
+            sub_pat = re.compile(
+                r"\b(" + "|".join(re.escape(w) for w in
+                                  sorted(self._sub, key=len, reverse=True))
+                + r")\b", re.IGNORECASE)
+            text = sub_pat.sub(lambda m: self._sub[m.group(0).lower()], text)
+        return text
 
     def rehydrate(self, text: str) -> str:
         # longest token first: plain replace of [PHONE_1] must never eat

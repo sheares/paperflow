@@ -1129,7 +1129,7 @@ main{ display: contents; }
       <div class="pile-stats" id="pile-stats"></div>
       <div class="pile-grid" id="pile-grid"></div>
 
-      <div class="drop-row">
+      <div class="drop-row" id="demo-drop-row">
         <div class="drop-zone" style="cursor:pointer;" onclick="loadPile('real')" data-tooltip="This demo pile is locked so the eval numbers in the README stay reproducible. To add your own docs and run them through the same pipeline live, use Your pile.">
           <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -1819,6 +1819,10 @@ function loadPile(key){
     document.getElementById('record-meta').textContent = '';
   }
 
+  // The demo-redirect tile only makes sense on the demo piles.
+  const demoDrop = document.getElementById('demo-drop-row');
+  if(demoDrop) demoDrop.style.display = (key === 'real') ? 'none' : '';
+
   // Real pile in empty state: replace the pane content with an upload screen.
   if(p.real && p.empty){
     document.getElementById('pile-grid').innerHTML = REAL_EMPTY_HTML;
@@ -2181,7 +2185,7 @@ const REAL_EMPTY_HTML = `
       <line x1="12" y1="3" x2="12" y2="15"/>
     </svg>
     <div class="drop-title">Drag files here, or click to browse</div>
-    <div class="drop-hint">1&thinsp;-&thinsp;12 documents · PDF, TXT, MD, XLSX · 8&thinsp;MB each</div>
+    <div class="drop-hint">1&thinsp;-&thinsp;12 documents · PDF, TXT, MD, XLSX · 25&thinsp;MB each</div>
   </div>
   <div id="real-upload-status" style="max-width:560px; margin:12px auto 0; font-size:11.5px; color:var(--muted); line-height:1.5; min-height:16px; text-align:center;"></div>`;
 
@@ -2209,7 +2213,12 @@ async function uploadRealFiles(evt){
   for(const f of files) fd.append('files', f);
   try{
     const r = await fetch('/api/real/upload', {method:'POST', body:fd});
-    if(!r.ok){ status.innerHTML = 'Upload failed: ' + (await r.text()).slice(0, 200); return; }
+    if(!r.ok){
+      let msg = await r.text();
+      try{ msg = JSON.parse(msg).detail || msg; } catch(_){}
+      status.innerHTML = 'Upload failed: ' + msg.slice(0, 300);
+      return;
+    }
     const d = await r.json();
     REAL_SESSION = d.session_id;
     status.innerHTML = `Uploaded. Running the pipeline (extraction ~5s per PDF page, one redacted reconciliation call)…`;

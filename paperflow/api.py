@@ -39,7 +39,7 @@ REAL = Path(tempfile.gettempdir()) / "paperflow_real"
 REAL.mkdir(exist_ok=True)
 _real_sessions: dict[str, dict] = {}
 ALLOWED_UPLOAD_SUFFIXES = {".pdf", ".txt", ".md", ".xlsx"}
-MAX_UPLOAD_BYTES = 8 * 1024 * 1024
+MAX_UPLOAD_BYTES = 25 * 1024 * 1024   # real KYC/legal PDFs can be sizeable
 MAX_UPLOAD_FILES = 12
 
 
@@ -233,7 +233,8 @@ async def real_upload(schema: str = Form("kyc"),
         content = await uf.read()
         if len(content) > MAX_UPLOAD_BYTES:
             shutil.rmtree(sess_dir, ignore_errors=True)
-            raise HTTPException(413, f"{name} > 8 MB")
+            raise HTTPException(413, f"{name} is {len(content) / 1024 / 1024:.1f} MB, over the "
+                                     f"{MAX_UPLOAD_BYTES // 1024 // 1024} MB per-file limit")
         (sess_dir / name).write_bytes(content)
     _real_sessions[session_id] = {"dir": sess_dir, "schema": schema}
     return {"session_id": session_id,
