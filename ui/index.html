@@ -2164,9 +2164,12 @@ const REAL_EMPTY_HTML = `
   <div style="max-width:640px; margin:32px auto; padding:32px; border:1.5px dashed var(--line); border-radius:16px; background:rgba(255,255,255,0.015); text-align:center;">
     <div style="font-size:28px; margin-bottom:6px;">📁</div>
     <div style="font-size:15px; font-weight:600; color:var(--ink); margin-bottom:6px;">Bring your own pile</div>
-    <div style="font-size:12px; color:var(--muted); line-height:1.55; margin-bottom:18px;">
-      Upload 1&thinsp;-&thinsp;12 documents (PDF, TXT, MD, XLSX). The same Extract → Redact → Reconcile pipeline that ran the demo piles will run on your files, live.<br>
-      Nothing is uploaded to any cloud; extraction runs on the AMD MI300X, reconciliation on redacted tokens via Fireworks (or fully local if you toggle it).<br>
+    <div style="font-size:12px; color:var(--muted); line-height:1.55; margin-bottom:18px; text-align:left;">
+      Upload 1&thinsp;-&thinsp;12 documents (PDF, TXT, MD, XLSX). The same Extract → Redact → Reconcile pipeline that ran the demo piles will run on your files, live.<br><br>
+      <b style="color:var(--ink);">What crosses the boundary, honestly:</b><br>
+      <span style="color:var(--conf-good);">•</span> Your files go to <b style="color:var(--ink);">your dedicated AMD MI300X</b> for extraction. That's one GPU running a Gemma model you control, not a shared LLM API endpoint you send prompts to.<br>
+      <span style="color:var(--c-name);">•</span> Only <b style="color:var(--ink);">redacted tokens</b> (like <code style="color:var(--c-name);">[PERSON_1]</code>) reach Fireworks for reconciliation. Real identifiers never do.<br>
+      <span style="color:var(--conf-good);">•</span> Toggle <b style="color:var(--ink);">Full-local mode</b> in the header and even the tokens stay on the MI300X.<br><br>
       Session is cleared when you refresh.
     </div>
     <div style="display:inline-flex; gap:10px; align-items:center; margin-bottom:8px;">
