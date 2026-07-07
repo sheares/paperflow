@@ -182,12 +182,23 @@ class Router:
             "temperature": 0,
         }
         try:  # ask for low reasoning effort where supported
-            r = httpx.post(FIREWORKS_URL, timeout=60, headers=_auth(),
-                           json={**body, "reasoning_effort": "low"})
-            r.raise_for_status()
-        except httpx.HTTPStatusError:
-            r = httpx.post(FIREWORKS_URL, timeout=60, headers=_auth(), json=body)
-            r.raise_for_status()
+            try:
+                r = httpx.post(FIREWORKS_URL, timeout=60, headers=_auth(),
+                               json={**body, "reasoning_effort": "low"})
+                r.raise_for_status()
+            except httpx.HTTPStatusError:
+                r = httpx.post(FIREWORKS_URL, timeout=60, headers=_auth(),
+                               json=body)
+                r.raise_for_status()
+        except Exception as e:  # noqa: BLE001 - remote unreachable: degrade
+            answer, reason = self._answer_local(question)
+            return answer, {
+                "stage": "chat", "route": "local",
+                "reason": (f"remote unavailable ({type(e).__name__}); "
+                           f"degraded to local artefacts · {reason}"),
+                "tokens_sent": [],
+                "question_redacted": q_red,
+            }
         data = r.json()
         content = data["choices"][0]["message"]["content"]
         answer = _parse_answer(content)

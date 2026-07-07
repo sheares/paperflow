@@ -70,14 +70,28 @@ Local models run on an AMD Instinct MI300X (ROCm) served by vLLM; point
 Scored against planted ground truth in three synthetic piles
 (`synthetic/*/ground_truth.json`):
 
-| Task | Precision | Recall |
-| --- | --- | --- |
-| Conflict detection | [x.xx] | [x.xx] |
-| Gap flagging | [x.xx] | [x.xx] |
-| Alias resolution | [x.xx] | [x.xx] |
-| Redaction recall | [x.xx] | [x.xx] |
+Scored across three synthetic piles (15 documents, 7 clients, 6 planted
+conflicts, 5 planted gaps, 3 alias groups, 38 sensitive spans):
 
-Reproduce: `python eval/scorer.py --pile synthetic/kyc_onboarding`.
+| Task                | Score  | Notes |
+| ------------------- | ------ | ----- |
+| Conflict detection  | 6 / 6  (100%) | every planted conflict flagged as a conflict; the reconciler also caught one unplanted-but-real RSVP divergence |
+| Conflict resolution | 5 / 6  (83%)  | one honest miss on a form-of-record vs email-signature judgement for a phone number |
+| Gap flagging        | 5 / 5  (100%) | including a substantively-missing unsigned consent (schema `gap_when: negative`) |
+| Alias resolution    | 3 / 3  (100%) | plus two unscored true alias merges the ground truth did not enumerate |
+| Redaction recall    | 38 / 38 (100%) | every planted sensitive span absent from the redacted corpus |
+
+Reproduce with a Fireworks key present: `python eval/scorer.py`.
+Reproduce fully offline (full-local, no cloud calls): the same scorer
+against `python -m paperflow.pipeline --full-local ...`.
+
+Additional harnesses in `eval/`:
+- `redaction_check.py`: pile-wide round-trip acceptance (spans absent,
+  alias groups share one token, rehydration lossless)
+- `stress_test.py`: 60-doc mixed-format pile with adversarial alias
+  chains, false-merge traps, and Latin/French/hyphenated names
+- `receipts_check.py`: receipts are pure projections of the router log
+- `injection_check.py`: document-borne prompt injection contained
 
 Extractor floor test (measured on an MI300X, 2026-07-07): 15/15 synthetic
 documents, effective planted-value recovery 50/50, ~5 s per vision page.

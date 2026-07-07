@@ -272,19 +272,29 @@ class Reconciler:
                              | {c.entity_token for c in conflicts})
         prompt = REMOTE_PROMPT.format(conflicts=json.dumps(payload, indent=1))
         t0 = time.time()
-        r = httpx.post(FIREWORKS_URL, timeout=120, headers={
-            "Authorization": f"Bearer {os.environ['FIREWORKS_API_KEY']}",
-            "Content-Type": "application/json",
-        }, json={
-            "model": FIREWORKS_MODEL,
-            "messages": [{"role": "user", "content": prompt}],
-            "max_tokens": 3000,
-            "temperature": 0,
-        })
-        r.raise_for_status()
-        data = r.json()
-        content = data["choices"][0]["message"]["content"]
-        parsed = _parse_remote_json(content)
+        try:
+            r = httpx.post(FIREWORKS_URL, timeout=120, headers={
+                "Authorization": f"Bearer {os.environ['FIREWORKS_API_KEY']}",
+                "Content-Type": "application/json",
+            }, json={
+                "model": FIREWORKS_MODEL,
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 3000,
+                "temperature": 0,
+            })
+            r.raise_for_status()
+            data = r.json()
+            content = data["choices"][0]["message"]["content"]
+            parsed = _parse_remote_json(content)
+        except Exception as e:  # noqa: BLE001 - remote unreachable = degrade to local
+            self.router_log.append({
+                "stage": "reconcile", "route": "local",
+                "reason": (f"remote reconciliation unavailable "
+                           f"({type(e).__name__}); degraded to local rules"),
+                "tokens_sent": [], "pile": pile,
+                "latency_s": round(time.time() - t0, 2),
+            })
+            return [self._local_rules(c) for c in conflicts]
         self.router_log.append({
             "stage": "reconcile", "route": "hybrid",
             "reason": "cross-document conflict resolution · redacted tokens and "
