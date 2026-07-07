@@ -729,8 +729,11 @@ main{ display: contents; }
 .field{
   display: grid; grid-template-columns: 130px 1fr auto;
   gap: 10px; align-items: start;
-  padding: 7px 0;
+  padding: 10px 0;
+  margin-bottom: 8px;
+  border-top: 1px solid rgba(255,255,255,0.04);
 }
+.field:first-child{ border-top: none; }
 .field .label{
   font-size: 11.5px; color: var(--muted); padding-top: 3px;
   display: flex; align-items: center; gap: 6px;
@@ -1015,10 +1018,25 @@ main{ display: contents; }
 .doc-overlay.open{ display: flex; }
 .doc-modal{
   background: var(--paper); border: 1px solid var(--line);
-  border-radius: 14px; max-width: 560px; width: 100%;
-  max-height: 80vh; overflow-y: auto;
+  border-radius: 14px; max-width: 900px; width: 100%;
+  max-height: 88vh; overflow-y: auto;
   padding: 20px 24px;
   animation: tip-in .12s ease-out;
+}
+.doc-preview{
+  margin: 12px 0 14px; border: 1px solid var(--line);
+  border-radius: 10px; overflow: hidden; background: rgba(255,255,255,0.02);
+}
+.doc-preview iframe{ display: block; width: 100%; height: 420px; border: 0; background: #fff; }
+.doc-preview pre{
+  margin: 0; padding: 14px 16px; font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 11.5px; color: var(--ink); line-height: 1.55; white-space: pre-wrap;
+  max-height: 420px; overflow-y: auto;
+}
+.doc-preview-head{
+  font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--muted); padding: 6px 14px; border-bottom: 1px solid var(--line);
+  background: rgba(255,255,255,0.02);
 }
 .doc-modal-head{ display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
 .doc-modal-title{ display: flex; align-items: center; gap: 10px; font-weight: 500; font-size: 14px; color: var(--ink); }
@@ -1100,14 +1118,14 @@ main{ display: contents; }
       <div class="pile-grid" id="pile-grid"></div>
 
       <div class="drop-row">
-        <div class="drop-zone">
+        <div class="drop-zone" data-tooltip="In the shipped product, dropped docs run through the same local Gemma 4 31B IT extractor pipeline. Disabled in this demo build so the eval numbers stay reproducible against the tracked synthetic pile.">
           <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
             <polyline points="17 8 12 3 7 8"/>
             <line x1="12" y1="3" x2="12" y2="15"/>
           </svg>
           <div class="drop-title">Drop more documents to add to the pile</div>
-          <div class="drop-hint">PDF · XLSX · TXT · parsed locally on MI300X</div>
+          <div class="drop-hint">Disabled in the demo · the tracked synthetic pile keeps the eval numbers reproducible</div>
         </div>
       </div>
 
@@ -1986,7 +2004,7 @@ function renderField(f){
 // every extracted field, its confidence, and why it was flagged.
 // ============================================================
 
-function openDoc(i){
+async function openDoc(i){
   const d = piles[currentPile].docs[i];
   if(!d) return;
   const rows = (d.fieldsList || []).map(f => `
@@ -2001,12 +2019,44 @@ function openDoc(i){
       <div class="doc-field-conf ${f.conf < 0.75 ? 'block' : f.conf < 0.9 ? 'review' : ''}">${Math.round(f.conf * 100)}%</div>
     </div>
   `).join('');
+
+  const pileName = LIVE_PILES[currentPile];
+  const fname = d.file || d.name;
+  const fmt = (d.format || 'txt').toLowerCase();
+  const url = pileName ? `/api/doc/${pileName}/${encodeURIComponent(fname)}` : null;
+  let preview = '';
+  if(url){
+    if(fmt === 'pdf'){
+      preview = `<div class="doc-preview">
+        <div class="doc-preview-head">Original document · ${escapeHtml(fname)}</div>
+        <iframe src="${url}#toolbar=0" title="${escapeHtml(fname)}"></iframe>
+      </div>`;
+    } else if(fmt === 'txt' || fmt === 'md'){
+      try{
+        const r = await fetch(url);
+        if(r.ok){
+          const text = await r.text();
+          preview = `<div class="doc-preview">
+            <div class="doc-preview-head">Original document · ${escapeHtml(fname)}</div>
+            <pre>${escapeHtml(text)}</pre>
+          </div>`;
+        }
+      } catch(_){}
+    } else if(fmt === 'xlsx'){
+      preview = `<div class="doc-preview">
+        <div class="doc-preview-head">Original spreadsheet · ${escapeHtml(fname)} <a href="${url}" download style="float:right; color:var(--c-name); text-decoration:none;">↓ Download</a></div>
+        <pre>Spreadsheet preview requires download. Every cell was parsed by the local text reader; the extracted fields above are the full readable content.</pre>
+      </div>`;
+    }
+  }
+
   document.getElementById('doc-modal').innerHTML = `
     <div class="doc-modal-head">
-      <div class="doc-modal-title">${formatBadge[d.format || 'txt']} ${escapeHtml(d.name || d.file)}</div>
+      <div class="doc-modal-title">${formatBadge[d.format || 'txt']} ${escapeHtml(fname)}</div>
       <button class="doc-modal-close" onclick="closeDoc()" aria-label="Close">✕</button>
     </div>
     <div class="doc-modal-meta">${escapeHtml(d.type)} · ${d.fields} fields · extractor: ${escapeHtml(d.parser || 'text')} · overall ${Math.round(d.conf * 100)}% extracted</div>
+    ${preview}
     ${rows}
     <div class="doc-modal-foot">Parsed locally by ${escapeHtml(d.parser || 'text')} on the AMD MI300X · nothing was uploaded to a cloud OCR service.<br>Field confidence: 90%+ auto-accepts · 75–90% queues for review · below 75% is blocked from any remote call until a human approves.</div>
   `;

@@ -147,10 +147,28 @@ class Router:
             return (f"This pile has {len(self.run['records'])} entities, "
                     f"{n_c} conflicts, and {n_g} gaps.",
                     "counts read from the record · no cross-doc reasoning")
-        return ("I could not match that to a stored artefact. Try naming the "
-                "entity or field, or ask a cross-document question (which "
-                "routes through one redacted call).",
-                "no artefact matched · answered locally without any call")
+        # helpful fallback: suggest concrete asks grounded in this pile
+        alias_hint = ""
+        for g in self.run.get("alias_groups", []):
+            if len(g) > 1:
+                alias_hint = f'"Why did you merge {g[0]} and {g[1]}?"; '
+                break
+        conflict_hint = ""
+        for rec in self.run["records"]:
+            for key, f in rec["fields"].items():
+                if f.get("decision"):
+                    conflict_hint = (f'"What is the {key.replace("_", " ")} '
+                                     f'conflict?"; ')
+                    break
+            if conflict_hint:
+                break
+        return (
+            "I answer questions grounded in this pile's actual reconciliation. "
+            "Try one of these: "
+            f'{alias_hint}{conflict_hint}"What is missing?"; '
+            f'"Which entities are in this pile?"; "How many conflicts?"; or '
+            f'a cross-document question (which routes through one redacted call).',
+            "no artefact matched · answered locally without any call")
 
     # ---------- hybrid path: one redacted, capped remote call ----------
     def _tokenised_record(self) -> str:

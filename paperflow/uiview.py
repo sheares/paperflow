@@ -98,12 +98,17 @@ def build_pile_view(run_dir: Path, extraction_path: Path,
                                "action": "Escalate"})
                 n_conflicts += 1
             elif f["status"] == "missing":
-                fields.append({**base, "missing": True,
-                               "missingNote": "⚠ REQUIRED · missing from all "
-                                              "documents for this entity",
-                               "missingDetail": "Request from client or upload "
-                                                "a supplementary document.",
-                               "action": "Request"})
+                extra = f.get("note")   # e.g. gap_when: negative note
+                note = "⚠ REQUIRED · not found in any document"
+                detail = ("This field is mandatory for "
+                          f"{spec['display_name'].lower()}; ask the "
+                          "client to supply it.")
+                if extra:
+                    note = f"⚠ REQUIRED · {extra}"
+                    detail = ("The required action is outstanding; follow up "
+                              "with the client before proceeding.")
+                fields.append({**base, "missing": True, "missingNote": note,
+                               "missingDetail": detail, "action": "Request"})
                 n_gaps += 1
                 open_g += 1
             else:

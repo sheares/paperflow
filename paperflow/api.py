@@ -80,6 +80,21 @@ def piles():
     return {"piles": list(PILES)}
 
 
+@app.get("/api/doc/{pile}/{filename}")
+def get_doc(pile: str, filename: str):
+    if pile not in PILES or "/" in filename or ".." in filename:
+        raise HTTPException(404, "not found")
+    path = ROOT / "synthetic" / pile / filename
+    if not path.exists():
+        raise HTTPException(404, "not found")
+    mime = {"pdf": "application/pdf", "txt": "text/plain",
+            "md": "text/markdown",
+            "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            }.get(path.suffix.lstrip("."), "application/octet-stream")
+    from fastapi.responses import FileResponse
+    return FileResponse(path, media_type=mime)
+
+
 @app.get("/api/pile/{pile}")
 def pile_view(pile: str):
     run_dir = _ensure_run(pile)
