@@ -1,0 +1,205 @@
+{
+ "pile": "patient_intake",
+ "docs": [
+  {
+   "doc": "insurance_ng.pdf",
+   "kind": "vision",
+   "latency_s": 3.94,
+   "fields": [
+    {
+     "label": "Doc ID",
+     "value": "doc_005",
+     "confidence": 1.0
+    },
+    {
+     "label": "patient_name",
+     "value": "Chloe Ng",
+     "confidence": 1.0
+    },
+    {
+     "label": "policy_number",
+     "value": "AIA-553120",
+     "confidence": 1.0
+    }
+   ],
+   "error": null
+  },
+  {
+   "doc": "intake_kumar.pdf",
+   "kind": "vision",
+   "latency_s": 6.96,
+   "fields": [
+    {
+     "label": "Doc ID",
+     "value": "doc_001",
+     "confidence": 1.0
+    },
+    {
+     "label": "patient_name",
+     "value": "Rajesh Kumar",
+     "confidence": 1.0
+    },
+    {
+     "label": "date_of_birth",
+     "value": "1986-03-14",
+     "confidence": 1.0
+    },
+    {
+     "label": "nric_fin",
+     "value": "S8612345Z",
+     "confidence": 1.0
+    },
+    {
+     "label": "policy_number",
+     "value": "PRU-009281",
+     "confidence": 1.0
+    },
+    {
+     "label": "allergies",
+     "value": "Penicillin",
+     "confidence": 1.0
+    },
+    {
+     "label": "consent_signed",
+     "value": "(pending)",
+     "confidence": 1.0
+    }
+   ],
+   "error": null
+  },
+  {
+   "doc": "intake_ng.pdf",
+   "kind": "vision",
+   "latency_s": 7.13,
+   "fields": [
+    {
+     "label": "Doc ID",
+     "value": "doc_004",
+     "confidence": 1.0
+    },
+    {
+     "label": "patient_name",
+     "value": "Chloe Ng",
+     "confidence": 1.0
+    },
+    {
+     "label": "date_of_birth",
+     "value": "1994-11-02",
+     "confidence": 1.0
+    },
+    {
+     "label": "nric_fin",
+     "value": "S9456781D",
+     "confidence": 1.0
+    },
+    {
+     "label": "policy_number",
+     "value": "AIA-553102",
+     "confidence": 1.0
+    },
+    {
+     "label": "allergies",
+     "value": "None",
+     "confidence": 1.0
+    },
+    {
+     "label": "consent_signed",
+     "value": "Yes (2026-06-10)",
+     "confidence": 1.0
+    }
+   ],
+   "error": null
+  },
+  {
+   "doc": "lab_kumar.pdf",
+   "kind": "vision",
+   "latency_s": 5.42,
+   "fields": [
+    {
+     "label": "Doc ID",
+     "value": "doc_003",
+     "confidence": 1.0
+    },
+    {
+     "label": "patient_name",
+     "value": "Rajesh Kumar",
+     "confidence": 1.0
+    },
+    {
+     "label": "nric_fin",
+     "value": "S8612345Z",
+     "confidence": 1.0
+    },
+    {
+     "label": "Lab Serial",
+     "value": "LABREQ-44120",
+     "confidence": 1.0
+    },
+    {
+     "label": "Tests Requested",
+     "value": "Lipid panel, CRP, HbA1c",
+     "confidence": 1.0
+    }
+   ],
+   "error": null
+  },
+  {
+   "doc": "referral_kumar.txt",
+   "kind": "text",
+   "latency_s": 7.78,
+   "fields": [
+    {
+     "label": "patient_name",
+     "value": "R. Kumar",
+     "confidence": 1.0
+    },
+    {
+     "label": "date_of_birth",
+     "value": "1986-04-14",
+     "confidence": 1.0
+    },
+    {
+     "label": "nric_fin",
+     "value": "S8612345Z",
+     "confidence": 1.0
+    },
+    {
+     "label": "from_email",
+     "value": "drlee@clinicabc.sg",
+     "confidence": 1.0
+    },
+    {
+     "label": "to_email",
+     "value": "cardiology@bighospital.sg",
+     "confidence": 1.0
+    },
+    {
+     "label": "sent_date",
+     "value": "2026-06-15",
+     "confidence": 1.0
+    },
+    {
+     "label": "subject",
+     "value": "Referral - R. Kumar",
+     "confidence": 1.0
+    },
+    {
+     "label": "doc_id",
+     "value": "doc_002",
+     "confidence": 1.0
+    },
+    {
+     "label": "referring_clinician",
+     "value": "Dr Lee Wai Meng",
+     "confidence": 1.0
+    },
+    {
+     "label": "reason",
+     "value": "Further cardiology assessment",
+     "confidence": 1.0
+    }
+   ],
+   "error": null
+  }
+ ]
+}

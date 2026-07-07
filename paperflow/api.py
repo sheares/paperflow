@@ -63,6 +63,13 @@ def health():
     return {"status": "ok", "remote_available": "FIREWORKS_API_KEY" in os.environ}
 
 
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon():
+    # tiny inline PNG (no external asset needed)
+    from fastapi.responses import Response
+    return Response(status_code=204)
+
+
 @app.get("/")
 def index():
     return FileResponse(ROOT / "ui" / "index.html")

@@ -88,18 +88,65 @@ class Router:
                     f"Override on the record.",
                     "entity-resolution answered from stored artefacts · no "
                     "cross-doc reasoning needed")
-        # decision questions: answer from persisted rationale artefacts
+        # decision questions: answer from persisted rationale artefacts.
+        # Match on any content word in the field key (so "the address
+        # conflict" hits residential_address), on common synonyms (ID ->
+        # national_id, DOB -> date_of_birth), or on the resolved value.
+        SYN = {"national_id": {"id", "nric", "fin", "ic"},
+               "residential_address": {"addr"},
+               "date_of_birth": {"dob"}, "policy_number": {"policy"},
+               "source_of_funds": {"funds"}}
+        stopwords = {"the", "a", "and", "or", "is", "of", "for", "in", "on",
+                     "an", "date", "number", "signed"}
+        q_words = set(re.findall(r"\b\w+\b", q))
         for rec in self.run["records"]:
             for key, f in rec["fields"].items():
                 dec = f.get("decision")
-                if dec and (key.replace("_", " ") in q
-                            or (f.get("value") or "").lower() in q if f.get("value") else False):
+                if not dec:
+                    continue
+                key_words = {w for w in key.split("_")
+                             if len(w) >= 4 and w not in stopwords}
+                syn_hit = bool(SYN.get(key, set()) & q_words)
+                key_hit = any(w in q for w in key_words) or syn_hit
+                val_hit = f.get("value") and str(f["value"]).lower() in q
+                if key_hit or val_hit:
                     return (
                         f"{rec['entity_display']} · {key}: chose "
                         f"{f.get('value')} ({dec['source']}, confidence "
-                        f"{dec['confidence']}). Rationale: {dec['rationale']}",
+                        f"{dec['confidence']:.2f}). Rationale: {dec['rationale']}",
                         "decision rationale read from persisted artefacts · "
                         "no cloud call")
+        # summary questions across the reconciled record
+        if re.search(r"\b(missing|gap|gaps|left|remaining|need|complete|aml|"
+                     r"outstanding|escalat)\b", q):
+            lines = []
+            for rec in self.run["records"]:
+                gaps = [k for k, f in rec["fields"].items()
+                        if f["status"] in {"missing", "escalated"}]
+                if gaps:
+                    lines.append(
+                        f"{rec['entity_display']}: {', '.join(gaps)}")
+            body = ("Outstanding across this pile:\n- " + "\n- ".join(lines)
+                    if lines else
+                    "Nothing outstanding: every required field resolved.")
+            return (body, "summary drawn from the stored record · no "
+                          "cross-doc reasoning needed")
+        if re.search(r"\b(who|which|entit|clients?|patients?|partners?)\b", q):
+            names = [r["entity_display"] for r in self.run["records"]]
+            return (f"This pile has {len(names)} entit"
+                    f"{'ies' if len(names) != 1 else 'y'}: "
+                    f"{', '.join(names)}.",
+                    "entity list read from the record · no cross-doc "
+                    "reasoning needed")
+        if re.search(r"\bhow many|count|number of\b", q):
+            n_c = sum(1 for r in self.run["records"] for f in r["fields"].values()
+                      if f["status"] in {"conflict", "resolved_conflict",
+                                         "escalated"})
+            n_g = sum(1 for r in self.run["records"] for f in r["fields"].values()
+                      if f["status"] == "missing")
+            return (f"This pile has {len(self.run['records'])} entities, "
+                    f"{n_c} conflicts, and {n_g} gaps.",
+                    "counts read from the record · no cross-doc reasoning")
         return ("I could not match that to a stored artefact. Try naming the "
                 "entity or field, or ask a cross-document question (which "
                 "routes through one redacted call).",

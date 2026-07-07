@@ -101,6 +101,13 @@ exist so you can audit and patch recall in real time. Absolute zero-egress
 claims apply only to full-local mode, where they are true by construction.
 Not certified against MAS, HIPAA or any other regime.
 
+**Language scope: English documents only.** Any Latin-script name is in
+scope (Singaporean, Anglo, European including accented forms); non-English
+documents and non-Latin scripts are roadmap, requiring per-language NER
+models (which Presidio supports) and translated field-label patterns.
+Structured identifiers (NRICs, UENs, phones, emails) are script-agnostic
+regexes and retain recall regardless of document language.
+
 ## Data
 
 Synthetic only. Every name, ID and address in this repo and the demo is

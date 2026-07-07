@@ -1,0 +1,238 @@
+{
+ "pile": "partner_collation",
+ "docs": [
+  {
+   "doc": "acme_business_card.pdf",
+   "kind": "vision",
+   "latency_s": 5.84,
+   "fields": [
+    {
+     "label": "Doc ID",
+     "value": "doc_002",
+     "confidence": 1.0
+    },
+    {
+     "label": "organisation",
+     "value": "ACME Robotics",
+     "confidence": 1.0
+    },
+    {
+     "label": "contact_name",
+     "value": "Lim Wei Jie",
+     "confidence": 1.0
+    },
+    {
+     "label": "email",
+     "value": "wjlim@acme.com.sg",
+     "confidence": 1.0
+    },
+    {
+     "label": "phone",
+     "value": "+65 6123 4567",
+     "confidence": 1.0
+    },
+    {
+     "label": "uen",
+     "value": "201912345A",
+     "confidence": 1.0
+    }
+   ],
+   "error": null
+  },
+  {
+   "doc": "brightpath_contacts.xlsx",
+   "kind": "text",
+   "latency_s": 4.91,
+   "fields": [
+    {
+     "label": "Doc ID",
+     "value": "doc_004",
+     "confidence": 1.0
+    },
+    {
+     "label": "organisation",
+     "value": "Brightpath Learning LLP",
+     "confidence": 1.0
+    },
+    {
+     "label": "contact_name",
+     "value": "Nurul Aisyah",
+     "confidence": 1.0
+    },
+    {
+     "label": "email",
+     "value": "aisyah@brightpath.edu.sg",
+     "confidence": 1.0
+    },
+    {
+     "label": "phone",
+     "value": "+65 9876 5432",
+     "confidence": 1.0
+    }
+   ],
+   "error": null
+  },
+  {
+   "doc": "brightpath_mou.pdf",
+   "kind": "vision",
+   "latency_s": 4.83,
+   "fields": [
+    {
+     "label": "Doc ID",
+     "value": "doc_003",
+     "confidence": 1.0
+    },
+    {
+     "label": "organisation",
+     "value": "Brightpath Learning LLP",
+     "confidence": 1.0
+    },
+    {
+     "label": "uen",
+     "value": "T18LL0042K",
+     "confidence": 1.0
+    },
+    {
+     "label": "contact_name",
+     "value": "Nurul Aisyah",
+     "confidence": 1.0
+    },
+    {
+     "label": "Executed",
+     "value": "2026-05-15",
+     "confidence": 1.0
+    }
+   ],
+   "error": null
+  },
+  {
+   "doc": "cobalt_email.txt",
+   "kind": "text",
+   "latency_s": 6.31,
+   "fields": [
+    {
+     "label": "organisation",
+     "value": "Cobalt Studio",
+     "confidence": 1.0
+    },
+    {
+     "label": "contact_name",
+     "value": "Tan Mei Ling",
+     "confidence": 1.0
+    },
+    {
+     "label": "email",
+     "value": "meiling@cobaltstudio.co",
+     "confidence": 1.0
+    },
+    {
+     "label": "phone",
+     "value": "+65 6555 2020",
+     "confidence": 1.0
+    },
+    {
+     "label": "rsvp_status",
+     "value": "Confirming",
+     "confidence": 0.9
+    },
+    {
+     "label": "doc_id",
+     "value": "doc_006",
+     "confidence": 1.0
+    },
+    {
+     "label": "sent_date",
+     "value": "2026-05-30",
+     "confidence": 1.0
+    }
+   ],
+   "error": null
+  },
+  {
+   "doc": "partner_registration_acme.xlsx",
+   "kind": "text",
+   "latency_s": 5.76,
+   "fields": [
+    {
+     "label": "Doc ID",
+     "value": "doc_001",
+     "confidence": 1.0
+    },
+    {
+     "label": "organisation",
+     "value": "Acme Robotics Pte Ltd",
+     "confidence": 1.0
+    },
+    {
+     "label": "contact_name",
+     "value": "Lim Wei Jie",
+     "confidence": 1.0
+    },
+    {
+     "label": "email",
+     "value": "weijie.lim@acmerobotics.sg",
+     "confidence": 1.0
+    },
+    {
+     "label": "phone",
+     "value": "+65 6123 4567",
+     "confidence": 1.0
+    },
+    {
+     "label": "uen",
+     "value": "201912345A",
+     "confidence": 1.0
+    },
+    {
+     "label": "rsvp_status",
+     "value": "Confirmed",
+     "confidence": 1.0
+    }
+   ],
+   "error": null
+  },
+  {
+   "doc": "partner_registration_cobalt.xlsx",
+   "kind": "text",
+   "latency_s": 5.54,
+   "fields": [
+    {
+     "label": "Doc ID",
+     "value": "doc_005",
+     "confidence": 1.0
+    },
+    {
+     "label": "organisation",
+     "value": "Cobalt Studio",
+     "confidence": 1.0
+    },
+    {
+     "label": "contact_name",
+     "value": "Tan Mei Ling",
+     "confidence": 1.0
+    },
+    {
+     "label": "email",
+     "value": "meiling@cobaltstudio.co",
+     "confidence": 1.0
+    },
+    {
+     "label": "phone",
+     "value": "+65 6555 2021",
+     "confidence": 1.0
+    },
+    {
+     "label": "uen",
+     "value": "53210987B",
+     "confidence": 1.0
+    },
+    {
+     "label": "rsvp_status",
+     "value": "Tentative",
+     "confidence": 1.0
+    }
+   ],
+   "error": null
+  }
+ ]
+}

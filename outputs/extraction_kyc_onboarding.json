@@ -1,0 +1,147 @@
+{
+ "pile": "kyc_onboarding",
+ "docs": [
+  {
+   "doc": "kyc_declaration_goh.txt",
+   "kind": "text",
+   "latency_s": 7.11,
+   "fields": [
+    {
+     "label": "Doc ID",
+     "value": "doc_003",
+     "confidence": 1.0
+    },
+    {
+     "label": "full_name",
+     "value": "Yvonne Goh",
+     "confidence": 1.0
+    },
+    {
+     "label": "national_id",
+     "value": "K3098551",
+     "confidence": 1.0
+    },
+    {
+     "label": "residential_address",
+     "value": "8 Marina Boulevard #30-01, Singapore 018981",
+     "confidence": 1.0
+    },
+    {
+     "label": "beneficial_owner",
+     "value": "Self",
+     "confidence": 1.0
+    },
+    {
+     "label": "source_of_funds",
+     "value": "Employment income",
+     "confidence": 1.0
+    }
+   ],
+   "error": null
+  },
+  {
+   "doc": "kyc_form_hassan.pdf",
+   "kind": "vision",
+   "latency_s": 8.08,
+   "fields": [
+    {
+     "label": "Doc ID",
+     "value": "doc_001",
+     "confidence": 1.0
+    },
+    {
+     "label": "full_name",
+     "value": "Mohammed Farid bin Hassan",
+     "confidence": 1.0
+    },
+    {
+     "label": "national_id",
+     "value": "K7741209",
+     "confidence": 1.0
+    },
+    {
+     "label": "residential_address",
+     "value": "Blk 210 Bishan St 23 #11-04 Singapore 570210",
+     "confidence": 1.0
+    },
+    {
+     "label": "beneficial_owner",
+     "value": "Self",
+     "confidence": 1.0
+    },
+    {
+     "label": "source_of_funds",
+     "value": "None",
+     "confidence": 1.0
+    },
+    {
+     "label": "declaration_date",
+     "value": "2026-05-22",
+     "confidence": 1.0
+    }
+   ],
+   "error": null
+  },
+  {
+   "doc": "nric_scan_goh.pdf",
+   "kind": "vision",
+   "latency_s": 4.72,
+   "fields": [
+    {
+     "label": "Doc ID",
+     "value": "doc_004",
+     "confidence": 1.0
+    },
+    {
+     "label": "full_name",
+     "value": "Yvonne Goh",
+     "confidence": 1.0
+    },
+    {
+     "label": "national_id",
+     "value": "K3098S51",
+     "confidence": 1.0
+    }
+   ],
+   "error": null
+  },
+  {
+   "doc": "utility_bill_hassan.pdf",
+   "kind": "vision",
+   "latency_s": 7.5,
+   "fields": [
+    {
+     "label": "Doc ID",
+     "value": "doc_002",
+     "confidence": 1.0
+    },
+    {
+     "label": "full_name",
+     "value": "Farid Hassan",
+     "confidence": 1.0
+    },
+    {
+     "label": "residential_address",
+     "value": "Blk 88 Tampines Ave 4 #05-12 Singapore 521088",
+     "confidence": 1.0
+    },
+    {
+     "label": "national_id",
+     "value": "K7741209",
+     "confidence": 1.0
+    },
+    {
+     "label": "Billing Period",
+     "value": "2026-04-01 to 2026-04-30",
+     "confidence": 1.0
+    },
+    {
+     "label": "Amount Due",
+     "value": "SGD 84.30",
+     "confidence": 1.0
+    }
+   ],
+   "error": null
+  }
+ ]
+}

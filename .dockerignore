@@ -1,0 +1,9 @@
+.venv/
+.git/
+outputs/run_*/
+outputs/_pages/
+.env
+*.log
+.DS_Store
+floor-test/outputs/
+__pycache__/

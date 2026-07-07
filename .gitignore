@@ -9,7 +9,8 @@ __pycache__/
 .venv/
 venv/
 
-# runtime artefacts
-outputs/
+# runtime artefacts (extraction JSONs are tracked as demo data below)
+outputs/run_*/
+outputs/_pages/
 *.log
 .DS_Store
