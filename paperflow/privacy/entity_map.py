@@ -57,7 +57,10 @@ def _person_alias(a: str, b: str) -> bool:
             if not any(lw.startswith(core) for lw in long_):
                 return False
         elif w in long_:
-            shared_full = shared_full or len(w) >= 4
+            # a 3+ letter shared word counts; so does a 2-letter SURNAME
+            # match in final position (Ng, Oh: common in Singapore)
+            shared_full = shared_full or len(w) >= 3 or \
+                (w == short[-1] == long_[-1] and len(w) >= 2)
         else:
             return False
     return shared_full
@@ -101,6 +104,10 @@ class EntityMap:
             if (family == "PERSON" and _person_alias(value, known)) or \
                (family == "ORG" and _org_alias(value, known)):
                 self._register(key, value, token)
+                # the fullest surface form is the canonical one (re-hydration
+                # restores "Tan Mei Ling", not a partial NER catch "Mei Ling")
+                if len(value) > len(self.token_to_value[token]):
+                    self.token_to_value[token] = value
                 return token
 
         self._counters[family] = self._counters.get(family, 0) + 1

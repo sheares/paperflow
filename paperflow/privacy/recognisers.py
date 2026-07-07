@@ -13,12 +13,20 @@ def get_recognisers() -> list[PatternRecognizer]:
             name="sg_nric",
             patterns=[Pattern("nric", r"\b[STFGM]\d{7}[A-Z]\b", 0.9)],
         ),
-        # Catches OCR-corrupted NRIC-like strings (e.g. K3098S51, 5 -> S).
-        # Lower score: flagged for review rather than silently trusted.
+        # Catches OCR-corrupted NRIC-like strings (e.g. K3098S51 or S7I22211Z,
+        # a digit misread as a look-alike letter). Lower score: flagged for
+        # review rather than silently trusted.
         PatternRecognizer(
             supported_entity="SG_NRIC_SUSPECT",
             name="sg_nric_suspect",
-            patterns=[Pattern("nric_loose", r"\b[A-Z]\d{4}[A-Z0-9]\d{2}\b", 0.4)],
+            patterns=[
+                # 8-char serial form: letter + 7-char body with one substitution
+                Pattern("nric_loose8", r"\b[A-Z]\d{4}[A-Z0-9]\d{2}\b", 0.4),
+                # 9-char NRIC form: body of 7 with a letter where a digit
+                # belongs (>=5 digits required so real words never match)
+                Pattern("nric_loose9",
+                        r"\b[STFGM](?=(?:[A-Z]?\d){5,})[0-9A-Z]{7}[A-Z]\b", 0.4),
+            ],
         ),
         PatternRecognizer(
             supported_entity="SG_UEN",
