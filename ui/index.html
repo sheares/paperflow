@@ -2169,15 +2169,7 @@ const REAL_EMPTY_HTML = `
        ondrop="handleRealDrop(event)">
     <div style="font-size:28px; margin-bottom:6px;">📁</div>
     <div style="font-size:15px; font-weight:600; color:var(--ink); margin-bottom:6px;">Drag files here, or click to browse</div>
-    <div style="font-size:11.5px; color:var(--muted); margin-bottom:18px;">1&thinsp;-&thinsp;12 documents · PDF, TXT, MD, XLSX · 8&thinsp;MB each</div>
-    <div style="display:inline-flex; gap:8px; align-items:center; padding:8px 14px; border-radius:8px; background:rgba(255,255,255,0.02); border:1px solid var(--line);" onclick="event.stopPropagation();">
-      <span style="font-size:11.5px; color:var(--muted);">Treat as</span>
-      <select id="real-schema" data-tooltip="The schema defines which fields are required and which entity the record is keyed on. Change it to match the kind of documents you're uploading." style="padding:5px 8px; background:rgba(255,255,255,0.03); color:var(--ink); border:1px solid var(--line); border-radius:6px; font-size:12px;">
-        <option value="kyc">KYC onboarding pile</option>
-        <option value="patient">Patient intake pile</option>
-        <option value="partner">Partner collation pile</option>
-      </select>
-    </div>
+    <div style="font-size:11.5px; color:var(--muted); margin-bottom:8px;">1&thinsp;-&thinsp;12 documents · PDF, TXT, MD, XLSX · 8&thinsp;MB each</div>
     <div style="font-size:11px; color:var(--muted); line-height:1.6; margin-top:20px; text-align:left; max-width:520px; margin-left:auto; margin-right:auto;">
       <b style="color:var(--ink);">What crosses the boundary, honestly:</b><br>
       <span style="color:var(--conf-good);">•</span> Your files stay inside <b style="color:var(--ink);">your PaperFlow service</b>, a dedicated environment running on an AMD MI300X you control. Never a shared LLM API endpoint.<br>
@@ -2204,7 +2196,7 @@ async function uploadRealFiles(evt){
   const files = evt.target.files;
   if(!files || !files.length) return;
   const status = document.getElementById('real-upload-status');
-  const schema = document.getElementById('real-schema').value;
+  const schema = 'kyc';   // default schema; can be surfaced as a setting later
   status.innerHTML = `Uploading ${files.length} file${files.length > 1 ? 's' : ''}…`;
   const fd = new FormData();
   fd.append('schema', schema);
