@@ -1,5 +1,6 @@
 services:
   paperflow:
+    platform: linux/amd64   # judging VM architecture
     build:
       context: .
       dockerfile: docker/Dockerfile
