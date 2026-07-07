@@ -86,7 +86,9 @@ def favicon():
 
 @app.get("/")
 def index():
-    return FileResponse(ROOT / "ui" / "index.html")
+    # no-store so UI changes take effect on refresh without a hard reload
+    return FileResponse(ROOT / "ui" / "index.html",
+                        headers={"Cache-Control": "no-store, must-revalidate"})
 
 
 @app.get("/api/piles")

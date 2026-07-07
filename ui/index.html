@@ -2729,14 +2729,15 @@ function sendMessage(){
       appendExchange(userText, match.receipt, match.ai, match.sources);
       // Keep the empty-input stepper in sync so it never replays this answer.
       exchangeIndex = Math.max(exchangeIndex, p.canned.indexOf(match) + 1);
-    } else if(p.live){
-      const q = userText;
-      liveAsk(q).catch(() => appendExchange(q,
-        "Local-only check. No cloud call for this exchange.",
-        "The live backend is unreachable right now; try again.",
-        "Mockup mode · no live model"));
     } else {
-      appendExchange(userText, "Local-only check. No cloud call for this exchange.", "This is a UI mockup. In the real build, the Reconciler agent would answer using the local entity map plus a redacted cloud call. To see another canned exchange, switch piles or click one of the suggested questions above.", "Mockup mode · no live model");
+      // Always try the live backend when hydrated; fall back to the mockup
+      // note only if the request itself fails. This avoids the race where
+      // a user sends before hydrateLive() has flipped p.live to true.
+      const q = userText;
+      liveAsk(q).catch(err => appendExchange(q,
+        "Local-only check. No cloud call for this exchange.",
+        "The live backend is unreachable right now (" + (err && err.message || 'network error') + "). Open this UI from the FastAPI backend (docker compose up) to run real questions.",
+        "Mockup mode · no live model"));
     }
   }
   input.value = "";
