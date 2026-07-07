@@ -2162,22 +2162,28 @@ piles.real = {
 
 const REAL_EMPTY_HTML = `
   <input type="file" id="real-file-input" multiple accept=".pdf,.txt,.md,.xlsx" style="display:none;" onchange="uploadRealFiles(event)">
-  <div id="real-dropzone" style="max-width:640px; margin:32px auto; padding:36px 32px; border:1.5px dashed var(--line); border-radius:16px; background:rgba(255,255,255,0.015); text-align:center; cursor:pointer; transition:border-color 0.18s, background 0.18s;"
+
+  <div style="max-width:560px; margin:20px auto 16px; padding:16px 20px; border:1px solid var(--line); border-radius:12px; background:rgba(255,255,255,0.015); font-size:12px; color:var(--muted); line-height:1.6; text-align:left;">
+    <b style="color:var(--ink); display:block; margin-bottom:6px; font-size:12.5px;">Bring your own pile · what crosses the boundary, honestly</b>
+    <span style="color:var(--conf-good);">•</span> Your files stay inside <b style="color:var(--ink);">your PaperFlow service</b>, a dedicated environment running on an AMD MI300X you control. Never a shared LLM API endpoint.<br>
+    <span style="color:var(--c-name);">•</span> Only <b style="color:var(--ink);">redacted tokens</b> (like <code style="color:var(--c-name);">[PERSON_1]</code>) reach the reasoning model. Real identifiers never do.<br>
+    <span style="color:var(--conf-good);">•</span> Toggle <b style="color:var(--ink);">Full-local mode</b> in the header and even the tokens stay inside your PaperFlow service. Session is cleared on refresh.
+  </div>
+
+  <div id="real-dropzone" class="drop-zone" style="max-width:560px; margin:0 auto; cursor:pointer; transition:border-color 0.18s, background 0.18s;"
        onclick="document.getElementById('real-file-input').click()"
        ondragover="event.preventDefault(); this.style.borderColor='var(--c-name)'; this.style.background='rgba(129,140,248,0.05)';"
-       ondragleave="this.style.borderColor='var(--line)'; this.style.background='rgba(255,255,255,0.015)';"
+       ondragleave="this.style.borderColor=''; this.style.background='';"
        ondrop="handleRealDrop(event)">
-    <div style="font-size:28px; margin-bottom:6px;">📁</div>
-    <div style="font-size:15px; font-weight:600; color:var(--ink); margin-bottom:6px;">Drag files here, or click to browse</div>
-    <div style="font-size:11.5px; color:var(--muted); margin-bottom:8px;">1&thinsp;-&thinsp;12 documents · PDF, TXT, MD, XLSX · 8&thinsp;MB each</div>
-    <div style="font-size:11px; color:var(--muted); line-height:1.6; margin-top:20px; text-align:left; max-width:520px; margin-left:auto; margin-right:auto;">
-      <b style="color:var(--ink);">What crosses the boundary, honestly:</b><br>
-      <span style="color:var(--conf-good);">•</span> Your files stay inside <b style="color:var(--ink);">your PaperFlow service</b>, a dedicated environment running on an AMD MI300X you control. Never a shared LLM API endpoint.<br>
-      <span style="color:var(--c-name);">•</span> Only <b style="color:var(--ink);">redacted tokens</b> (like <code style="color:var(--c-name);">[PERSON_1]</code>) reach the reasoning model. Real identifiers never do.<br>
-      <span style="color:var(--conf-good);">•</span> Toggle <b style="color:var(--ink);">Full-local mode</b> in the header and even the tokens stay inside your PaperFlow service. Session is cleared on refresh.
-    </div>
-    <div id="real-upload-status" style="margin-top:14px; font-size:11.5px; color:var(--muted); line-height:1.5; min-height:16px;"></div>
-  </div>`;
+    <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="17 8 12 3 7 8"/>
+      <line x1="12" y1="3" x2="12" y2="15"/>
+    </svg>
+    <div class="drop-title">Drag files here, or click to browse</div>
+    <div class="drop-hint">1&thinsp;-&thinsp;12 documents · PDF, TXT, MD, XLSX · 8&thinsp;MB each</div>
+  </div>
+  <div id="real-upload-status" style="max-width:560px; margin:12px auto 0; font-size:11.5px; color:var(--muted); line-height:1.5; min-height:16px; text-align:center;"></div>`;
 
 function handleRealDrop(evt){
   evt.preventDefault();
