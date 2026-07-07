@@ -1,0 +1,2651 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>paperflow · UI mockup V10</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Dark theme — NotebookLM-inspired */
+  --bg: #0a0a0a;
+  --paper: #1a1a1a;
+  --paper-2: #222;
+  --ink: #e8e8e8;
+  --ink-soft: #c4c4c4;
+  --muted: #8a8a8a;
+  --muted2: #5e5e5e;
+  --line: rgba(255,255,255,0.08);
+  --line2: rgba(255,255,255,0.04);
+
+  /* Type accents — saturated for dark mode legibility */
+  --c-name: #818cf8;       --c-name-bg: rgba(129,140,248,0.12);   --c-name-border: rgba(129,140,248,0.32);
+  --c-address: #fb923c;    --c-address-bg: rgba(251,146,60,0.12); --c-address-border: rgba(251,146,60,0.32);
+  --c-id: #c084fc;         --c-id-bg: rgba(192,132,252,0.13);     --c-id-border: rgba(192,132,252,0.32);
+  --c-date: #34d399;       --c-date-bg: rgba(52,211,153,0.12);    --c-date-border: rgba(52,211,153,0.32);
+  --c-funds: #f472b6;      --c-funds-bg: rgba(244,114,182,0.12);  --c-funds-border: rgba(244,114,182,0.32);
+  --c-org: #22d3ee;        --c-org-bg: rgba(34,211,238,0.12);     --c-org-border: rgba(34,211,238,0.32);
+  --c-email: #38bdf8;      --c-email-bg: rgba(56,189,248,0.12);   --c-email-border: rgba(56,189,248,0.32);
+  --c-phone: #a78bfa;      --c-phone-bg: rgba(167,139,250,0.12);  --c-phone-border: rgba(167,139,250,0.32);
+
+  --conf-good: #4ade80;    --conf-good-bg: rgba(74,222,128,0.10);  --conf-good-border: rgba(74,222,128,0.3);
+  --conf-review: #fbbf24;  --conf-review-bg: rgba(251,191,36,0.10);--conf-review-border: rgba(251,191,36,0.3);
+  --conf-block: #f87171;   --conf-block-bg: rgba(248,113,113,0.10);--conf-block-border: rgba(248,113,113,0.3);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink)}
+body{
+  font-family: 'Inter', -apple-system, system-ui, sans-serif;
+  line-height: 1.55;
+  letter-spacing: -0.005em;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+.header{
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(13,13,13,0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+.header-inner{
+  max-width: 100%; margin: 0 auto;
+  padding: 12px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.logo{ font-weight: 600; font-size: 15px; letter-spacing: -0.02em; color: var(--ink); }
+.logo .dot{ color: var(--c-name); }
+.amd-badge{
+  display: flex; align-items: center; gap: 9px;
+  font-size: 11.5px; color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--line);
+  padding: 5px 11px; border-radius: 999px;
+}
+.amd-badge b{ color: var(--ink); font-weight: 500; }
+.amd-badge .sep{ color: var(--muted2); padding: 0 2px; }
+.pulse{
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--conf-good);
+  box-shadow: 0 0 0 0 rgba(74,222,128,0.55);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse{
+  0%{box-shadow:0 0 0 0 rgba(74,222,128,0.5)}
+  70%{box-shadow:0 0 0 6px rgba(74,222,128,0)}
+  100%{box-shadow:0 0 0 0 rgba(74,222,128,0)}
+}
+
+/* ============================================================
+   TABS BAR
+   ============================================================ */
+.tabs-bar{
+  position: sticky; top: 50px; z-index: 49;
+  background: rgba(13,13,13,0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+.tabs-bar-inner{
+  max-width: 100%; margin: 0 auto;
+  padding: 0 24px;
+  display: flex; align-items: center; gap: 22px;
+}
+.tabs-label{
+  font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--muted2); font-weight: 600;
+}
+.tab{
+  padding: 13px 0; border: 0; background: transparent;
+  font-family: inherit; font-size: 13.5px; font-weight: 400; color: var(--muted);
+  cursor: pointer;
+  border-bottom: 1.5px solid transparent;
+  margin-bottom: -1px;
+  transition: all .15s;
+  display: flex; align-items: center; gap: 8px;
+}
+.tab:hover{ color: var(--ink); }
+.tab.active{ color: var(--c-name); border-bottom-color: var(--c-name); font-weight: 500; }
+.tab .tab-count{
+  font-size: 10.5px; font-weight: 500;
+  padding: 1px 7px; border-radius: 999px;
+  background: rgba(255,255,255,0.05); color: var(--muted2);
+}
+.tab.active .tab-count{ background: var(--c-name-bg); color: var(--c-name); }
+
+/* ============================================================
+   MAIN GRID — three columns, flush, separated by subtle dividers
+   ============================================================ */
+.wrap{
+  max-width: 100%; margin: 0 auto;
+  padding: 14px 16px 16px;
+  display: grid;
+  grid-template-columns: var(--col-1) var(--col-2) var(--col-3);
+  gap: 14px;
+  height: calc(100vh - 102px);
+  transition: grid-template-columns .22s ease;
+}
+@media (max-width: 1100px){
+  .wrap{ grid-template-columns: 1fr; height: auto; padding-bottom: 60px; }
+  .pane{ min-height: auto !important; }
+}
+main{ display: contents; }
+
+.pane{
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  display: flex; flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.pane-head{
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+.pane-head .title{
+  display: flex; align-items: center; gap: 8px;
+  font-weight: 500; font-size: 14px; color: var(--ink); letter-spacing: -0.005em;
+}
+.pane-head .meta{ font-size: 12px; color: var(--muted2); font-weight: 400; }
+.pane-body{ padding: 16px 22px; overflow-y: auto; flex: 1; min-height: 0; }
+
+/* Assistant: chat scrolls, input pinned */
+#assistant-pane .pane-body{ overflow: hidden; display: flex; flex-direction: column; padding: 0; }
+#assistant-pane .chat{ flex: 1; overflow-y: auto; min-height: 0; padding: 18px 22px 4px; }
+#assistant-pane .input-row{ margin: 12px 22px 6px; }
+#assistant-pane .suggested{ margin: 0 22px 18px; }
+
+/* Toggle — quiet */
+.toggle{
+  border: 1px solid var(--line);
+  background: transparent;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 10.5px; font-weight: 500; color: var(--muted);
+  cursor: pointer;
+  transition: all .15s;
+  min-width: 28px; text-align: center;
+}
+.toggle:hover{ border-color: var(--muted); color: var(--ink); background: rgba(255,255,255,0.03); }
+
+/* Pane-head controls (font size + collapse, sat together) */
+.pane-controls{ display: flex; align-items: center; gap: 8px; }
+.font-ctrl{
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.font-btn{
+  background: transparent; border: 0;
+  color: var(--muted);
+  padding: 3px 7px;
+  font-family: inherit; font-size: 11px; font-weight: 500;
+  cursor: pointer;
+  transition: all .15s;
+  line-height: 1;
+}
+.font-btn:hover{ color: var(--ink); background: rgba(255,255,255,0.05); }
+.font-btn + .font-btn{ border-left: 1px solid var(--line); }
+.font-btn:disabled{ opacity: 0.35; cursor: not-allowed; }
+
+/* Collapsed pane — becomes a slim vertical rail */
+.pane{ min-width: 0; }
+.pane.collapsed .pane-body{ display: none !important; }
+.pane.collapsed .pane-head{
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 14px;
+  padding: 12px 6px;
+  border-bottom: none;
+}
+.pane.collapsed .title{
+  writing-mode: vertical-rl;
+  white-space: nowrap;
+  order: 2;
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.pane.collapsed .title .meta{ display: none; }
+.pane.collapsed .pane-controls{
+  flex-direction: column;
+  gap: 6px;
+  order: 1;
+}
+.pane.collapsed .font-ctrl{ display: none; }
+.pane.collapsed .toggle{
+  padding: 6px 6px;
+  font-size: 14px;
+  min-width: 32px;
+}
+
+/* Grid columns respond to collapsed state via CSS custom properties.
+   Order in the grid stays the same; only the collapsed one shrinks. */
+.wrap{
+  --col-1: minmax(280px, 1fr);
+  --col-2: minmax(440px, 1.8fr);
+  --col-3: minmax(340px, 1.4fr);
+}
+.wrap.p-collapsed{ --col-1: 52px; }
+.wrap.a-collapsed{ --col-2: 52px; }
+.wrap.r-collapsed{ --col-3: 52px; }
+
+/* Routing chip — sits in the receipt head, tells you per-exchange
+   whether anything crossed to the cloud, or if it stayed on the MI300X. */
+.routing-chip{
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 10.5px; font-weight: 500;
+  padding: 2px 9px; border-radius: 999px;
+  border: 1px solid var(--conf-good-border);
+  color: var(--conf-good);
+  text-transform: none; letter-spacing: 0;
+  white-space: nowrap;
+  cursor: help;
+}
+.routing-chip.local{ background: var(--conf-good-bg); }
+.routing-chip.hybrid{ background: transparent; border-style: dashed; }
+.routing-chip .dot{
+  width: 5px; height: 5px; border-radius: 50%;
+  background: currentColor;
+}
+/* Routing-chip tooltip drops downward toward the input row instead of
+   upward, so it doesn't get clipped at the top of the chat. */
+.routing-chip[data-tooltip]:hover::after{
+  bottom: auto;
+  top: calc(100% + 6px);
+  right: 0;
+}
+.routing-chip.local .dot{ animation: pulse-good 2.4s infinite; }
+@keyframes pulse-good{
+  0%{ box-shadow: 0 0 0 0 rgba(74,222,128,0.5); }
+  70%{ box-shadow: 0 0 0 5px rgba(74,222,128,0); }
+  100%{ box-shadow: 0 0 0 0 rgba(74,222,128,0); }
+}
+
+/* Routing reason line — visible “routed X because…” inside every receipt.
+   Makes the local-vs-cloud decision a first-class citizen, not a footnote. */
+.routing-reason{
+  display: flex; align-items: center; gap: 10px;
+  margin: 10px 0 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.015);
+  border: 1px solid var(--line2);
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+.rr-label{
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  font-size: 9.5px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  white-space: nowrap;
+  border: 1px solid;
+}
+.routing-reason.local .rr-label{
+  color: var(--conf-good);
+  background: var(--conf-good-bg);
+  border-color: var(--conf-good-border);
+}
+.routing-reason.hybrid .rr-label{
+  color: var(--muted);
+  background: transparent;
+  border-color: var(--line);
+  border-style: dashed;
+}
+.rr-why{ color: var(--ink-soft); }
+
+/* Token ↔ sidebar entity linking. Hover any [XXX_N] to glow its match. */
+[data-token]{ cursor: help; }
+.token-linked{
+  box-shadow: 0 0 0 2px currentColor;
+  transition: box-shadow .12s ease, filter .12s ease;
+  filter: brightness(1.12);
+}
+
+/* State pill smooth transition when a client flips to reconciled. */
+.state{ transition: background .25s ease, color .25s ease, border-color .25s ease; }
+
+/* Conflict field — after user picks a value, dim the rejected options
+   and turn the ⚠ conflict note into a ✓ resolution note. */
+.field-conflict[data-resolved="true"] .opt:not(.selected){ opacity: 0.35; }
+.field-conflict[data-resolved="true"] .opt:not(.selected) .chip{ text-decoration: line-through; }
+.resolved-note{ color: var(--conf-good) !important; }
+
+/* Attention treatment — fields that need user action get a soft coloured
+   wash so they stand out from resolved rows. Fades to transparent when
+   the conflict is resolved, without shifting layout. */
+.field{
+  padding: 9px 14px;
+  margin: 1px -8px;
+  border-radius: 8px;
+  transition: background .4s ease, border-color .3s ease;
+  border-left: 2px solid rgba(74,222,128,0.35);
+}
+/* Confidence bands (left border): green auto-accept · amber review ·
+   red blocked from any remote call until a human approves. */
+.field-conflict:not([data-resolved="true"]){ border-left-color: var(--conf-review); }
+.field-conflict[data-resolved="true"]{ border-left-color: rgba(74,222,128,0.35); }
+.field-missing[data-required="true"]{ border-left-color: var(--conf-block); }
+.field-missing[data-required="false"]{ border-left-color: var(--conf-review); }
+.band-legend{
+  font-size: 10.5px; color: var(--muted2);
+  margin-top: 14px; line-height: 1.5;
+}
+.band-legend .bl{ font-weight: 600; }
+.band-legend .bl-green{ color: var(--conf-good); }
+.band-legend .bl-amber{ color: var(--conf-review); }
+.band-legend .bl-red{ color: var(--conf-block); }
+.field-conflict:not([data-resolved="true"]){
+  background: linear-gradient(90deg,
+    rgba(251,191,36,0.14) 0%,
+    rgba(251,191,36,0.05) 30%,
+    transparent 72%);
+}
+.field-missing[data-required="true"]{
+  background: linear-gradient(90deg,
+    rgba(248,113,113,0.16) 0%,
+    rgba(248,113,113,0.05) 30%,
+    transparent 72%);
+}
+.field-missing[data-required="false"]{
+  background: linear-gradient(90deg,
+    rgba(251,191,36,0.10) 0%,
+    rgba(251,191,36,0.04) 30%,
+    transparent 72%);
+}
+
+/* Gentle breathing on the ⚠ warning line — enough to catch the eye,
+   slow enough not to nag. Stops as soon as the field is resolved. */
+.field-conflict:not([data-resolved="true"]) .conflict-note,
+.field-missing .missing,
+.field-missing .missing-review{
+  animation: attention-breathe 2.6s ease-in-out infinite;
+}
+@keyframes attention-breathe{
+  0%, 100%{ opacity: 1; }
+  50%{ opacity: 0.68; }
+}
+
+/* ============================================================
+   THE PILE
+   ============================================================ */
+.pile-stats{
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin-bottom: 14px;
+}
+.stat{
+  background: transparent;
+  border: 1px solid var(--line);
+  padding: 2px 9px; border-radius: 999px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.stat b{ color: var(--ink); font-weight: 500; margin-right: 2px; }
+
+/* Docs as flat list rows (NotebookLM source style) */
+.pile-grid{
+  display: flex; flex-direction: column; gap: 2px;
+  margin-top: 4px;
+}
+.doc-card{
+  border: none; background: transparent;
+  border-radius: 6px;
+  padding: 9px 10px;
+  transition: background .12s;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: 20px 1fr auto;
+  gap: 12px; align-items: center;
+}
+.doc-card:hover{ background: rgba(255,255,255,0.03); }
+.doc-card .doc-icon{ font-size: 14px; line-height: 1; opacity: 0.85; display: flex; align-items: center; }
+
+/* File-format badges (PDF/XLSX) — small colour-coded pills that replace
+   the generic 📄, so the pile pane reads at a glance as "these are real files". */
+.fmt-badge{
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 9px; font-weight: 700; letter-spacing: 0.04em;
+  padding: 2px 5px; border-radius: 4px;
+  min-width: 32px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+/* Scoped to .fmt-badge so the outer .doc-icon container doesn't get
+   double-styled and render a ghost outline behind the pill. */
+.fmt-badge.fmt-pdf{  background: rgba(248,113,113,0.14); color: #f87171; border: 1px solid rgba(248,113,113,0.32); }
+.fmt-badge.fmt-xlsx{ background: rgba(74,222,128,0.14);  color: #4ade80; border: 1px solid rgba(74,222,128,0.32); }
+.fmt-badge.fmt-txt{  background: rgba(148,163,184,0.14); color: #94a3b8; border: 1px solid rgba(148,163,184,0.32); }
+
+/* Parser hint — inline monospace text after the fields count. No box, so
+   it wraps naturally with the rest of the meta line and stays quiet. */
+.parser-badge{
+  color: var(--muted2);
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 10.5px;
+  margin-left: 6px;
+  letter-spacing: -0.02em;
+  cursor: help;
+}
+.parser-badge::before{ content: '· '; color: var(--muted2); opacity: 0.6; }
+.doc-card .doc-info{ display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.doc-card .doc-name{ font-weight: 500; font-size: 13px; color: var(--ink); }
+.doc-card .doc-meta{ font-size: 11.5px; color: var(--muted); }
+.doc-card .conf{
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10.5px; font-weight: 500;
+  padding: 2px 7px; border-radius: 999px;
+  background: rgba(74,222,128,0.08); color: var(--conf-good); border: 1px solid rgba(74,222,128,0.22);
+  white-space: nowrap;
+}
+.doc-card .conf.review{ background: rgba(251,191,36,0.08); color: var(--conf-review); border-color: rgba(251,191,36,0.22); }
+
+/* Custom snappy tooltips (replaces native title delay) */
+[data-tooltip]{ position: relative; }
+[data-tooltip]:hover::after{
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: 0;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  padding: 8px 11px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 400;
+  white-space: normal;
+  width: 240px;
+  z-index: 100;
+  text-align: left;
+  line-height: 1.45;
+  letter-spacing: 0;
+  text-transform: none;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  pointer-events: none;
+  animation: tip-in .08s ease-out;
+}
+@keyframes tip-in{ from{opacity:0; transform:translateY(2px)} to{opacity:1; transform:translateY(0)} }
+
+/* Live input detection indicator (below chat input) */
+.input-detect{
+  font-size: 11px;
+  color: var(--muted2);
+  margin: 6px 22px 12px;
+  min-height: 18px;
+  line-height: 1.4;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px;
+}
+.input-detect .label{
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  font-size: 10px;
+  color: var(--muted2);
+}
+.input-detect .det{
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px;
+}
+.input-detect .det-val{ color: var(--muted); }
+
+.drop-row{ display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+.drop-zone{
+  flex: 1; min-width: 180px;
+  border: 1.5px dashed rgba(255,255,255,0.14);
+  border-radius: 10px;
+  padding: 18px 14px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .18s ease;
+  color: var(--muted);
+  background: rgba(255,255,255,0.012);
+}
+.drop-zone:hover{
+  border-color: var(--c-name);
+  background: rgba(129,140,248,0.05);
+  color: var(--ink);
+}
+.drop-icon{
+  width: 24px; height: 24px;
+  color: var(--muted);
+  margin: 0 auto 6px;
+  display: block;
+  transition: color .18s;
+}
+.drop-zone:hover .drop-icon{ color: var(--c-name); }
+.drop-title{ font-size: 13px; font-weight: 500; color: var(--ink-soft); margin-bottom: 3px; letter-spacing: -0.005em; }
+.drop-hint{ font-size: 10.5px; color: var(--muted2); font-family: 'JetBrains Mono', ui-monospace, monospace; letter-spacing: -0.02em; }
+
+/* Buttons */
+.btn{
+  border: 1px solid var(--line); background: rgba(255,255,255,0.04); color: var(--ink);
+  padding: 6px 12px; border-radius: 8px; font-size: 12.5px; font-weight: 500;
+  cursor: pointer; transition: all .15s;
+}
+.btn:hover{ background: rgba(255,255,255,0.08); border-color: var(--muted2); }
+.btn.ghost{ background: transparent; }
+
+/* ============================================================
+   THE ASSISTANT — bubbles + receipts
+   ============================================================ */
+.chat{ display: flex; flex-direction: column; gap: 14px; }
+.bubble{
+  border-radius: 12px; padding: 11px 15px;
+  font-size: 13.5px; line-height: 1.6;
+  max-width: 92%;
+}
+.bubble.user{
+  background: rgba(255,255,255,0.05);
+  color: var(--ink);
+  align-self: flex-end;
+  border: 1px solid var(--line);
+}
+/* Entity highlights in user input: real values get coloured underline */
+.hl{
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+.hl-name{ text-decoration-color: var(--c-name); }
+.hl-address{ text-decoration-color: var(--c-address); }
+.hl-id{ text-decoration-color: var(--c-id); }
+.hl-date{ text-decoration-color: var(--c-date); }
+.hl-funds{ text-decoration-color: var(--c-funds); }
+.hl-org{ text-decoration-color: var(--c-org); }
+.hl-email{ text-decoration-color: var(--c-email); }
+.hl-phone{ text-decoration-color: var(--c-phone); }
+
+/* Add-entity inline form (for custom redaction keywords) */
+.add-entity-form{
+  display: none;
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper-2);
+}
+.add-entity-form.open{ display: block; }
+.add-entity-form .row{ display: flex; gap: 6px; margin-bottom: 8px; }
+.add-entity-form input,
+.add-entity-form select{
+  flex: 1;
+  background: rgba(0,0,0,0.25);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 9px;
+  color: var(--ink);
+  font-family: inherit; font-size: 12.5px;
+  outline: none;
+}
+.add-entity-form input::placeholder{ color: var(--muted2); }
+.add-entity-form input:focus,
+.add-entity-form select:focus{ border-color: var(--muted2); }
+.add-entity-form .actions{ display: flex; gap: 6px; justify-content: flex-end; margin-top: 4px; }
+.add-entity-form .btn{ font-size: 11.5px; padding: 5px 11px; }
+.add-entity-form .hint{ font-size: 11px; color: var(--muted2); margin: 4px 0 8px; line-height: 1.4; }
+
+.custom-badge{
+  font-size: 9.5px; font-weight: 500;
+  padding: 1px 5px; border-radius: 4px;
+  background: rgba(255,255,255,0.04); color: var(--muted2);
+  border: 1px solid var(--line);
+  margin-left: 4px;
+  vertical-align: 1px;
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+.bubble.ai{
+  background: transparent;
+  color: var(--ink-soft);
+  align-self: flex-start;
+  padding: 4px 0;
+  max-width: 96%;
+}
+.bubble.ai b{ color: var(--ink); font-weight: 500; }
+.bubble .sources{
+  margin-top: 10px; font-size: 11.5px; color: var(--muted2);
+  border-top: 1px solid var(--line2);
+  padding-top: 9px;
+}
+.bubble .sources b{ color: var(--muted); font-weight: 500; }
+
+/* Privacy receipt */
+.receipt{
+  align-self: stretch;
+  background: rgba(74,222,128,0.035);
+  border: 1px dashed rgba(74,222,128,0.18);
+  border-radius: 10px;
+  padding: 11px 14px;
+  font-size: 12px;
+  color: var(--ink);
+  animation: fadein .3s ease-out;
+}
+@keyframes fadein{ from{opacity:0; transform: translateY(-4px)} to{opacity:1; transform: translateY(0)} }
+.receipt .receipt-head{
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 7px;
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600;
+  color: var(--muted2);
+}
+.receipt .receipt-head .verify{
+  color: var(--conf-good); font-size: 10.5px; text-transform: none; letter-spacing: 0;
+}
+.receipt .receipt-body{ color: var(--ink-soft); }
+.receipt code, .token{
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 10.5px; font-weight: 400;
+  padding: 1px 6px; border-radius: 4px;
+  border-bottom: 1px dashed transparent;
+  display: inline-block;
+  margin: 1px;
+}
+
+/* Type chip colours (same on solid + tokens) */
+.chip-name, .token-name{ background: var(--c-name-bg); color: var(--c-name); border: 1px solid var(--c-name-border); }
+.chip-address, .token-address{ background: var(--c-address-bg); color: var(--c-address); border: 1px solid var(--c-address-border); }
+.chip-id, .token-id{ background: var(--c-id-bg); color: var(--c-id); border: 1px solid var(--c-id-border); }
+.chip-date, .token-date{ background: var(--c-date-bg); color: var(--c-date); border: 1px solid var(--c-date-border); }
+.chip-funds, .token-funds{ background: var(--c-funds-bg); color: var(--c-funds); border: 1px solid var(--c-funds-border); }
+.chip-org, .token-org{ background: var(--c-org-bg); color: var(--c-org); border: 1px solid var(--c-org-border); }
+.chip-email, .token-email{ background: var(--c-email-bg); color: var(--c-email); border: 1px solid var(--c-email-border); }
+.chip-phone, .token-phone{ background: var(--c-phone-bg); color: var(--c-phone); border: 1px solid var(--c-phone-border); }
+/* Document references — neutral grey, deliberately outside the entity palette
+   so colour always means "entity type", never "document". */
+.chip-doc, .token-doc{ background: rgba(148,163,184,0.10); color: #94a3b8; border: 1px solid rgba(148,163,184,0.28); }
+
+.chip{
+  display: inline-block;
+  padding: 1px 6px; border-radius: 4px;
+  font-size: 12px; font-weight: 500;
+  margin: 1px;
+}
+.token{ border-bottom-style: dashed; }
+
+/* Chat input */
+.input-row{
+  display: flex; gap: 8px;
+  border: 1px solid var(--line); border-radius: 12px;
+  padding: 5px 5px 5px 14px;
+  background: rgba(255,255,255,0.03);
+}
+.input-row input{
+  flex: 1; border: 0; outline: 0; font-family: inherit; font-size: 13.5px;
+  background: transparent; color: var(--ink);
+}
+.input-row input::placeholder{ color: var(--muted2); }
+.input-row .btn{ flex-shrink: 0; }
+.suggested{ display: flex; flex-wrap: wrap; gap: 6px; }
+.suggested .chip-btn{
+  border: 1px solid var(--line); background: transparent;
+  padding: 5px 10px; border-radius: 999px;
+  font-size: 11.5px; color: var(--muted);
+  cursor: pointer;
+  transition: all .15s;
+}
+.suggested .chip-btn:hover{ border-color: var(--muted2); color: var(--ink); background: rgba(255,255,255,0.03); }
+
+/* ============================================================
+   THE RECONCILED RECORD
+   ============================================================ */
+.client-card{
+  border: none;
+  background: transparent;
+  border-radius: 0;
+  padding: 0 0 14px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+.client-card:last-child{ margin-bottom: 0; border-bottom: none; padding-bottom: 0; }
+.client-card .client-head{
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px;
+}
+.client-card .client-id{
+  font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--muted2);
+}
+.client-card .state{
+  font-size: 10.5px; font-weight: 500;
+  padding: 2px 8px; border-radius: 999px;
+  border: 1px solid;
+}
+.state.complete{ background: var(--conf-good-bg); color: var(--conf-good); border-color: var(--conf-good-border); }
+.state.conflict{ background: var(--conf-review-bg); color: var(--conf-review); border-color: var(--conf-review-border); }
+.state.blocked{ background: var(--conf-block-bg); color: var(--conf-block); border-color: var(--conf-block-border); }
+
+.field{
+  display: grid; grid-template-columns: 130px 1fr auto;
+  gap: 10px; align-items: start;
+  padding: 7px 0;
+}
+.field .label{
+  font-size: 11.5px; color: var(--muted); padding-top: 3px;
+  display: flex; align-items: center; gap: 6px;
+}
+.label-icon{ display: inline-flex; flex-shrink: 0; width: 13px; height: 13px; }
+.label-icon svg{ width: 100%; height: 100%; }
+.field .value{ font-size: 13px; color: var(--ink); }
+.field .citation{ font-size: 10.5px; color: var(--muted2); margin-top: 3px; line-height: 1.45; }
+.field .override{
+  border: 1px solid var(--line); background: transparent;
+  padding: 2px 8px; border-radius: 6px;
+  font-size: 10.5px; color: var(--muted); cursor: pointer;
+  transition: all .12s;
+}
+.field .override:hover{ border-color: var(--muted2); color: var(--ink); background: rgba(255,255,255,0.03); }
+
+.conflict-row{ margin-top: 5px; display: flex; gap: 6px; flex-wrap: wrap; }
+.conflict-row .opt{
+  border: 1px solid var(--line); border-radius: 6px;
+  padding: 5px 8px; font-size: 11.5px; cursor: pointer;
+  display: flex; gap: 6px; align-items: center;
+  background: transparent;
+  transition: all .12s;
+}
+.conflict-row .opt:hover{ border-color: var(--muted2); }
+.conflict-row .opt .doc{ font-size: 10.5px; color: var(--muted2); }
+.conflict-row .opt.selected{ border-color: var(--conf-good); background: var(--conf-good-bg); }
+
+.missing{ color: var(--conf-block); font-weight: 500; font-size: 12px; }
+.missing-review{ color: var(--conf-review); font-weight: 500; font-size: 12px; }
+
+/* Override / escalate / request controls in the record pane */
+.override.done{ border-color: var(--conf-good-border); color: var(--conf-good); }
+.override:disabled{ opacity: 0.55; cursor: default; }
+
+.override-form{
+  grid-column: 1 / -1;
+  margin-top: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  background: var(--paper-2);
+  display: flex; flex-direction: column; gap: 7px;
+}
+.override-form .ovr-opt{
+  display: flex; align-items: center; gap: 7px;
+  font-size: 12px; color: var(--ink-soft); cursor: pointer;
+}
+.override-form .ovr-opt input[type="radio"]{ accent-color: var(--c-name); margin: 0; flex-shrink: 0; }
+.override-form .ovr-opt .doc{ font-size: 10.5px; color: var(--muted2); }
+.override-form .ovr-custom-label{ color: var(--muted); font-size: 12px; }
+.override-form .ovr-custom,
+.override-form .ovr-reason{
+  background: rgba(0,0,0,0.25);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 9px;
+  color: var(--ink);
+  font-family: inherit; font-size: 12.5px;
+  outline: none;
+}
+.override-form .ovr-custom{ flex: 1; min-width: 0; }
+.override-form .ovr-reason{ width: 100%; }
+.override-form .ovr-custom::placeholder,
+.override-form .ovr-reason::placeholder{ color: var(--muted2); }
+.override-form .ovr-custom:focus,
+.override-form .ovr-reason:focus{ border-color: var(--muted2); }
+.override-form .ovr-err{ font-size: 11px; color: var(--conf-block); }
+.override-form .ovr-actions{ display: flex; gap: 6px; justify-content: flex-end; }
+.override-form .btn{ font-size: 11.5px; padding: 5px 11px; }
+
+.escalated-note{ color: var(--conf-review); font-weight: 500; font-size: 12px; }
+.requested-note{ color: var(--conf-review); font-weight: 500; font-size: 12px; margin-top: 5px; }
+
+.overrides-log{
+  margin-top: 16px; padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.overrides-log > summary{
+  cursor: pointer; color: var(--muted);
+  font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600;
+  list-style: none;
+}
+.overrides-log > summary::-webkit-details-marker{ display: none; }
+.overrides-log .ovr-count{ margin-left: 6px; color: var(--muted2); }
+.overrides-log-body{ margin-top: 10px; display: flex; flex-direction: column; gap: 7px; }
+.overrides-log-row{
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline;
+  font-size: 11.5px; color: var(--ink-soft);
+  padding: 6px 9px; border: 1px solid var(--line); border-radius: 6px;
+  background: rgba(255,255,255,0.02);
+}
+.overrides-log-row .ovr-log-field{ color: var(--muted); }
+.overrides-log-row .ovr-log-val{ color: var(--ink); font-weight: 500; }
+.overrides-log-row .ovr-log-reason{ color: var(--muted2); font-style: italic; }
+
+.export-bar{
+  display: flex; gap: 8px; margin-top: 16px;
+  padding-top: 14px; border-top: 1px solid var(--line);
+}
+.export-bar .btn.disabled{ opacity: 0.35; cursor: not-allowed; pointer-events: none; }
+
+/* ============================================================
+   ENTITIES + LEGEND inside The Pile
+   ============================================================ */
+.entities-section{
+  margin-top: 22px;
+  padding: 14px 14px 12px;
+  border-radius: 10px;
+  background: rgba(74,222,128,0.025);
+  border: 1px solid rgba(74,222,128,0.14);
+}
+.entities-section-head{
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 8px; flex-wrap: wrap;
+  margin: 0 0 8px;
+}
+.entities-title{
+  display: flex; align-items: center; gap: 7px;
+  font-size: 13px; font-weight: 500;
+  color: var(--ink);
+  margin: 0;
+  letter-spacing: -0.005em;
+}
+.entities-title-icon{
+  width: 15px; height: 15px;
+  color: var(--conf-good);
+  flex-shrink: 0;
+}
+.entities-status{
+  font-size: 10.5px; font-weight: 500;
+  color: var(--conf-good);
+  padding: 2px 8px; border-radius: 999px;
+  background: var(--conf-good-bg);
+  border: 1px solid var(--conf-good-border);
+  white-space: nowrap;
+}
+.entities-note{
+  font-size: 11.5px; color: var(--muted); margin: 0 0 10px;
+  line-height: 1.5;
+}
+.entity-row{
+  display: flex; align-items: start; gap: 8px;
+  padding: 5px 0;
+  font-size: 11.5px;
+}
+.entity-row .ent-val{ color: var(--muted); }
+
+/* Grouped-by-type entities — scales to 1000+ without drowning the pane.
+   Small groups (≤ 20) stay expanded; large ones auto-collapse with a
+   preview + "+N more" tail. */
+.entity-group{ margin-bottom: 2px; }
+.entity-group summary{
+  display: flex; align-items: center; gap: 8px;
+  font-size: 11px; font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 5px 2px;
+  list-style: none;
+  user-select: none;
+  border-radius: 6px;
+}
+.entity-group summary:hover{ background: rgba(255,255,255,0.02); color: var(--ink-soft); }
+.entity-group summary::-webkit-details-marker{ display: none; }
+.entity-group summary::before{
+  content: '▸';
+  font-size: 9px;
+  color: var(--muted2);
+  transition: transform .12s ease;
+  display: inline-block;
+  width: 8px;
+}
+.entity-group[open] summary::before{ transform: rotate(90deg); }
+.entity-group-swatch{
+  width: 8px; height: 8px; border-radius: 2px;
+  flex-shrink: 0;
+}
+.entity-group-label{ flex: 1; }
+.entity-group-count{
+  font-size: 10px; font-weight: 500;
+  color: var(--muted2);
+  background: rgba(255,255,255,0.05);
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+.entity-group-body{
+  padding-left: 16px;
+  padding-bottom: 4px;
+}
+.entity-row-more{
+  font-size: 11px; color: var(--muted2);
+  padding: 4px 0;
+  font-style: italic;
+  cursor: pointer;
+  transition: color .15s;
+}
+.entity-row-more:hover{ color: var(--c-name); }
+
+/* Stress-test toggle — subtle by default, faintly highlighted when active. */
+.stress-btn{ color: var(--muted2); border-style: dashed; }
+.stress-btn:hover{ color: var(--muted); }
+.stress-btn.on{ color: var(--c-name); border-color: var(--c-name); border-style: solid; }
+
+.legend-block{
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.legend-summary{
+  cursor: pointer;
+  font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--muted2); font-weight: 600;
+  list-style: none;
+}
+.legend-summary::-webkit-details-marker{ display: none; }
+.legend-summary::before{ content: '▸ '; display: inline-block; }
+.legend-block[open] .legend-summary::before{ content: '▾ '; }
+.legend-grid{ display: grid; grid-template-columns: repeat(2,1fr); gap: 6px; font-size: 11.5px; margin-top: 8px; color: var(--muted); }
+.legend-item{ display: flex; align-items: center; gap: 8px; }
+.legend-swatch{ width: 10px; height: 10px; border-radius: 2px; }
+.legend-note{ font-size: 11px; color: var(--muted2); margin: 10px 0 0; line-height: 1.5; }
+
+/* ============================================================
+   PIPELINE STRIP — per-stage progress, plays on pile load so the
+   local-vs-remote split is felt before the first answer lands.
+   ============================================================ */
+.pipeline-strip{
+  display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center;
+  padding: 8px 10px; margin-bottom: 4px;
+  border: 1px solid var(--line2); border-radius: 8px;
+  background: rgba(255,255,255,0.015);
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 10px; color: var(--muted2);
+}
+.pstage{
+  padding: 2px 7px; border-radius: 4px;
+  border: 1px solid transparent;
+  transition: all .25s ease; white-space: nowrap;
+}
+.pstage.active{ color: var(--conf-good); border-color: var(--conf-good-border); background: var(--conf-good-bg); }
+.pstage.active.remote{ color: var(--conf-review); border-color: var(--conf-review-border); background: var(--conf-review-bg); }
+.pstage.done{ color: var(--muted); }
+.parrow{ color: var(--muted2); opacity: .5; }
+
+/* Send-gate confirm state — human review before anything crosses. */
+.btn.confirm{
+  border-color: var(--conf-review-border);
+  color: var(--conf-review);
+  background: var(--conf-review-bg);
+}
+
+/* Full-local mode toggle (header) — the zero-egress switch. */
+.header-right{ display: flex; align-items: center; gap: 10px; }
+.mode-toggle{
+  display: flex; align-items: center; gap: 7px;
+  border: 1px solid var(--line); background: transparent;
+  border-radius: 999px; padding: 5px 12px;
+  font-family: inherit; font-size: 11.5px; color: var(--muted);
+  cursor: pointer; transition: all .15s;
+}
+.mode-toggle:hover{ border-color: var(--muted2); color: var(--ink); }
+.mode-toggle .mt-dot{ width: 6px; height: 6px; border-radius: 50%; background: var(--muted2); }
+.mode-toggle.on{ border-color: var(--conf-good-border); background: var(--conf-good-bg); color: var(--conf-good); }
+.mode-toggle.on .mt-dot{ background: var(--conf-good); animation: pulse 2s infinite; }
+
+/* System notes in chat (mode changes) */
+.sysnote{
+  align-self: center; text-align: center;
+  font-size: 11px; color: var(--muted);
+  border: 1px dashed var(--line); border-radius: 999px;
+  padding: 4px 14px; margin: 2px 0;
+}
+
+/* Per-doc detail overlay */
+.doc-overlay{
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.6); backdrop-filter: blur(3px);
+  display: none; align-items: center; justify-content: center;
+  padding: 24px;
+}
+.doc-overlay.open{ display: flex; }
+.doc-modal{
+  background: var(--paper); border: 1px solid var(--line);
+  border-radius: 14px; max-width: 560px; width: 100%;
+  max-height: 80vh; overflow-y: auto;
+  padding: 20px 24px;
+  animation: tip-in .12s ease-out;
+}
+.doc-modal-head{ display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
+.doc-modal-title{ display: flex; align-items: center; gap: 10px; font-weight: 500; font-size: 14px; color: var(--ink); }
+.doc-modal-close{
+  border: 1px solid var(--line); background: transparent; color: var(--muted);
+  border-radius: 6px; padding: 2px 9px; cursor: pointer; font-size: 13px;
+}
+.doc-modal-close:hover{ color: var(--ink); border-color: var(--muted2); }
+.doc-modal-meta{ font-size: 11.5px; color: var(--muted); margin-bottom: 14px; }
+.doc-field-row{
+  display: grid; grid-template-columns: 130px 1fr auto;
+  gap: 10px; padding: 7px 0; align-items: start;
+  border-top: 1px solid var(--line2);
+  font-size: 12.5px;
+}
+.doc-field-row .dl{ color: var(--muted); font-size: 11.5px; padding-top: 2px; display: flex; align-items: center; gap: 6px; }
+.doc-field-row .dnote{ font-size: 10.5px; color: var(--muted2); margin-top: 3px; line-height: 1.45; }
+.doc-field-conf{ font-size: 10.5px; font-weight: 500; white-space: nowrap; color: var(--conf-good); }
+.doc-field-conf.review{ color: var(--conf-review); }
+.doc-field-conf.block{ color: var(--conf-block); }
+.doc-modal-foot{
+  margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line);
+  font-size: 11px; color: var(--muted2); line-height: 1.5;
+}
+
+/* ============================================================
+   SCROLLBAR — dark-mode friendly
+   ============================================================ */
+::-webkit-scrollbar{ width: 10px; height: 10px; }
+::-webkit-scrollbar-track{ background: transparent; }
+::-webkit-scrollbar-thumb{ background: rgba(255,255,255,0.06); border-radius: 5px; }
+::-webkit-scrollbar-thumb:hover{ background: rgba(255,255,255,0.12); }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-inner">
+    <div class="logo">paper<span class="dot">·</span>flow</div>
+    <div class="header-right">
+      <button class="mode-toggle" id="mode-toggle" onclick="toggleFullLocal()" data-tooltip="Max-security mode: every agent runs on the MI300X and nothing leaves the machine, at some cost to reasoning depth. Zero-egress claims are true by construction in this mode.">
+        <span class="mt-dot"></span>Full-local mode
+      </button>
+      <div class="amd-badge">
+        <span class="pulse" id="amd-pulse"></span>
+        <span id="amd-badge-text"><b>Local:</b> AMD MI300X <span class="sep">·</span> <b>Remote:</b> Fireworks AI</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<nav class="tabs-bar">
+  <div class="tabs-bar-inner">
+    <span class="tabs-label">Demo pile</span>
+    <button class="tab pile-btn active" data-pile="kyc"     onclick="loadPile('kyc')">KYC onboarding <span class="tab-count">4 docs · 2 clients</span></button>
+    <button class="tab pile-btn"        data-pile="partner" onclick="loadPile('partner')">Partner collation <span class="tab-count">6 docs · 3 partners</span></button>
+    <button class="tab pile-btn"        data-pile="patient" onclick="loadPile('patient')">Patient intake <span class="tab-count">5 docs · 2 patients</span></button>
+  </div>
+</nav>
+
+<div class="wrap">
+
+<main>
+
+  <!-- THE PILE -->
+  <section class="pane" id="pile-pane">
+    <div class="pane-head">
+      <div class="title">The Pile <span class="meta" id="pile-meta"></span></div>
+      <div class="pane-controls">
+        <div class="font-ctrl" data-tooltip="Adjust text size in this pane">
+          <button class="font-btn" onclick="fontSize('pile-pane', -1)" aria-label="Decrease text">A−</button>
+          <button class="font-btn" onclick="fontSize('pile-pane', +1)" aria-label="Increase text">A+</button>
+        </div>
+        <button class="toggle" onclick="togglePane('pile-pane')">Collapse</button>
+      </div>
+    </div>
+    <div class="pane-body">
+      <div class="pile-stats" id="pile-stats"></div>
+      <div class="pile-grid" id="pile-grid"></div>
+
+      <div class="drop-row">
+        <div class="drop-zone">
+          <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          <div class="drop-title">Drop more documents to add to the pile</div>
+          <div class="drop-hint">PDF · XLSX · TXT · parsed locally on MI300X</div>
+        </div>
+      </div>
+
+      <div class="entities-section">
+        <div class="entities-section-head">
+          <h3 class="entities-title">
+            <svg class="entities-title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <polyline points="9 12 11 14 15 10"/>
+            </svg>
+            Detected entities
+          </h3>
+          <span class="entities-status">✓ redacted before any cloud call</span>
+        </div>
+        <p class="entities-note" id="sidebar-note"></p>
+
+        <button class="btn ghost" style="margin-top:8px; margin-bottom:6px; width:100%; font-size:11.5px;" onclick="toggleAddEntity()">+ Flag a missed entity</button>
+        <button class="btn ghost stress-btn" style="margin-bottom:10px; width:100%; font-size:10.5px;" onclick="toggleStressTest()" id="stress-btn">🧪 Simulate a larger pile (+22 sample persons)</button>
+
+        <div class="add-entity-form" id="add-entity-form">
+          <p class="hint">Add any term you want paperflow to redact before sending to the cloud. Useful for project codenames, internal IDs, or anything Presidio missed. Matches the exact term (case-insensitive), so add variants as separate entries if needed.</p>
+          <div class="row">
+            <input type="text" id="custom-entity-text" placeholder="e.g. Project Falcon, ACME-INT-9912" />
+          </div>
+          <div class="row">
+            <select id="custom-entity-type">
+              <option value="name">Person name</option>
+              <option value="org" selected>Organisation / project</option>
+              <option value="address">Address</option>
+              <option value="id">ID / serial</option>
+              <option value="date">Date</option>
+              <option value="funds">Financial</option>
+              <option value="email">Email</option>
+              <option value="phone">Phone</option>
+            </select>
+          </div>
+          <div class="actions">
+            <button class="btn ghost" onclick="toggleAddEntity(false)">Cancel</button>
+            <button class="btn" onclick="addCustomEntity()">Add to redaction list</button>
+          </div>
+        </div>
+
+        <div id="sidebar-entities"></div>
+      </div>
+
+      <details class="legend-block">
+        <summary class="legend-summary">Legend · data types</summary>
+        <div class="legend-grid">
+          <div class="legend-item"><span class="legend-swatch" style="background:var(--c-name)"></span>People</div>
+          <div class="legend-item"><span class="legend-swatch" style="background:var(--c-address)"></span>Address</div>
+          <div class="legend-item"><span class="legend-swatch" style="background:var(--c-id)"></span>IDs</div>
+          <div class="legend-item"><span class="legend-swatch" style="background:var(--c-date)"></span>Dates</div>
+          <div class="legend-item"><span class="legend-swatch" style="background:var(--c-funds)"></span>Funds</div>
+          <div class="legend-item"><span class="legend-swatch" style="background:var(--c-org)"></span>Org / role</div>
+          <div class="legend-item"><span class="legend-swatch" style="background:var(--c-email)"></span>Email</div>
+          <div class="legend-item"><span class="legend-swatch" style="background:var(--c-phone)"></span>Phone</div>
+        </div>
+        <p class="legend-note">
+          <b>Solid chips</b> are real values in the source and the record.<br>
+          <b>Dashed chips</b> in privacy receipts show cloud-seen tokens, not values.<br>
+          <b>Grey chips</b> are document references, not redacted values.
+        </p>
+      </details>
+    </div>
+  </section>
+
+
+  <!-- THE ASSISTANT -->
+  <section class="pane" id="assistant-pane">
+    <div class="pane-head">
+      <div class="title">The Assistant <span class="meta" id="assistant-meta"></span></div>
+      <div class="pane-controls">
+        <div class="font-ctrl" data-tooltip="Adjust text size in this pane">
+          <button class="font-btn" onclick="fontSize('assistant-pane', -1)" aria-label="Decrease text">A−</button>
+          <button class="font-btn" onclick="fontSize('assistant-pane', +1)" aria-label="Increase text">A+</button>
+        </div>
+        <button class="toggle" onclick="togglePane('assistant-pane')">Collapse</button>
+      </div>
+    </div>
+    <div class="pane-body">
+      <div class="chat" id="chat"></div>
+      <div class="input-row">
+        <input id="chat-input" type="text" placeholder="Ask anything about this pile..." />
+        <button class="btn" id="send-btn" onclick="sendMessage()">Send →</button>
+      </div>
+      <div class="input-detect" id="input-detect"></div>
+      <div class="suggested" id="suggested"></div>
+    </div>
+  </section>
+
+
+  <!-- THE RECONCILED RECORD -->
+  <section class="pane" id="record-pane">
+    <div class="pane-head">
+      <div class="title">The Reconciled Record <span class="meta" id="record-meta"></span></div>
+      <div class="pane-controls">
+        <div class="font-ctrl" data-tooltip="Adjust text size in this pane">
+          <button class="font-btn" onclick="fontSize('record-pane', -1)" aria-label="Decrease text">A−</button>
+          <button class="font-btn" onclick="fontSize('record-pane', +1)" aria-label="Increase text">A+</button>
+        </div>
+        <button class="toggle" onclick="togglePane('record-pane')">Collapse</button>
+      </div>
+    </div>
+    <div class="pane-body">
+      <div id="record-body"></div>
+      <details class="overrides-log" id="overrides-log" hidden>
+        <summary>Overrides <span class="ovr-count">0</span></summary>
+        <div class="overrides-log-body"></div>
+      </details>
+      <div class="band-legend">Field bands: <span class="bl bl-green">green</span> auto-accept · <span class="bl bl-amber">amber</span> review · <span class="bl bl-red">red</span> blocked from any cloud call until a human approves</div>
+      <div class="export-bar">
+        <button class="btn">Export CSV</button>
+        <button class="btn ghost">Export JSON</button>
+        <button class="btn ghost disabled" data-tooltip="Roadmap stretch goal, first to cut if time runs short. Also requires all conflicts resolved.">Filled PDF · roadmap</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+</div>
+
+<!-- Per-doc detail overlay -->
+<div class="doc-overlay" id="doc-overlay" onclick="if(event.target === this) closeDoc()">
+  <div class="doc-modal" id="doc-modal"></div>
+</div>
+
+<script>
+// ============================================================
+// PILE DATA
+// ============================================================
+
+const piles = {
+
+  kyc: {
+    domain: 'synthetic KYC onboarding',
+    assistantRole: 'compliance reconciler',
+    sidebarNote: '9 entities found by Presidio across the pile · every detected value redacted before any cloud call.',
+    stats: [
+      ['4', 'documents'], ['2', 'clients identified'], ['2', 'conflicts'], ['2', 'gaps'], ['1', 'alias variation']
+    ],
+    docs: [
+      {type:'KYC form',         file:'doc_001', name:'kyc_form_hassan.pdf',      format:'pdf',  parser:'pdfplumber', fields:5, conf:0.94, state:'good',
+        fieldsList:[
+          {label:'Full name', type:'name', value:'Mohammed Farid bin Hassan', conf:0.97},
+          {label:'NRIC', type:'id', value:'K7741209', conf:0.99, note:'✓ verified format'},
+          {label:'Residential address', type:'address', value:'Blk 210 Bishan St 23 #11-04 SG 570210', conf:0.93},
+          {label:'Declaration date', type:'date', value:'2026-05-22', conf:0.96},
+          {label:'Beneficial owner', type:'org', value:'Self', conf:0.88},
+        ]},
+      {type:'Proof of address', file:'doc_002', name:'utility_bill_hassan.pdf',  format:'pdf',  parser:'pdfplumber', fields:2, conf:0.89, state:'good',
+        fieldsList:[
+          {label:'Account name', type:'name', value:'Farid Hassan', conf:0.91, note:'Alias of doc_001 client · merged by the entity resolver'},
+          {label:'Service address', type:'address', value:'Blk 88 Tampines Ave 4 #05-12 SG 521088', conf:0.87, note:'Conflicts with the address on doc_001'},
+        ]},
+      {type:'KYC declaration',  file:'doc_003', name:'kyc_declaration_goh.txt', format:'txt',  parser:'text',       fields:5, conf:0.96, state:'good',
+        fieldsList:[
+          {label:'Full name', type:'name', value:'Yvonne Goh', conf:0.98},
+          {label:'NRIC', type:'id', value:'K3098551', conf:0.99, note:'✓ verified format'},
+          {label:'Residential address', type:'address', value:'8 Marina Boulevard #30-01 Singapore 018981', conf:0.95},
+          {label:'Source of funds', type:'funds', value:'Employment income', conf:0.94},
+          {label:'Beneficial owner', type:'org', value:'Self', conf:0.92},
+        ]},
+      {type:'ID copy',          file:'doc_004', name:'nric_scan_goh.pdf',        format:'pdf',  parser:'Gemma 4 31B IT',   fields:2, conf:0.71, state:'review',
+        fieldsList:[
+          {label:'Name', type:'name', value:'Yvonne Goh', conf:0.83},
+          {label:'NRIC', type:'id', value:'K3098S51', conf:0.58, note:'Suspected OCR substitution of 5 → S · invalid NRIC body · blocked from any remote call'},
+        ]},
+    ],
+    initial: {
+      user: 'Reconcile this pile for KYC onboarding.',
+      receipt: `<code class="token token-name">[PERSON_1]</code> appears in <code class="token token-doc">[DOC_001]</code> and <code class="token token-doc">[DOC_002]</code> · <code class="token token-address">[ADDR_1]</code> vs <code class="token token-address">[ADDR_2]</code> · <code class="token token-id">[ID_1]</code> · <code class="token token-date">[DATE_1]</code><br><code class="token token-name">[PERSON_2]</code> appears in <code class="token token-doc">[DOC_003]</code> and <code class="token token-doc">[DOC_004]</code> · <code class="token token-id">[ID_2]</code> vs <code class="token token-id">[ID_3]</code> · <code class="token token-funds">[FUNDS_1]</code>`,
+      ai: `I identified <b>two clients</b> across the 4 documents.<br><br><b>Client 1</b> appears as <code class="chip chip-name">Mohammed Farid bin Hassan</code> (doc_001) and as the alias <code class="chip chip-name">Farid Hassan</code> (doc_002). Same person: matching ID and overlapping address fragments. There is an <b>address conflict</b> between the two documents and <b>source of funds is missing</b>.<br><br><b>Client 2</b> appears as <code class="chip chip-name">Yvonne Goh</code> across doc_003 and doc_004. There is an <b>ID number conflict</b> (likely OCR), and <b>declaration date is missing</b>.<br><br>Both client records are in the panel below.`,
+      sources: 'doc_001, doc_002, doc_003, doc_004'
+    },
+    suggestedQs: [
+      ['Why did you merge those two names?', 'Why did you merge Mohammed Farid bin Hassan and Farid Hassan?'],
+      ['What is the address conflict?', 'What is the address conflict?'],
+      ["Why is Yvonne Goh's ID flagged?", "Why is the National ID flagged for Yvonne Goh?"]
+    ],
+    canned: [
+      {
+        user: "Why did you merge Mohammed Farid bin Hassan and Farid Hassan?",
+        receipt: `Local-only resolution. <b>Zero cloud calls for this answer</b> · entity resolution runs entirely on the AMD MI300X.`,
+        ai: `Both surface forms resolved to the same person (<code class="chip chip-name">[PERSON_1]</code> internally). The entity resolver used three signals, all <b>local</b>:<br><br>1. <b>Name overlap</b>: "Farid" and "Hassan" appear in both, in the same order.<br>2. <b>National ID match</b>: doc_002 references <code class="chip chip-id">K7741209</code> in the metadata, identical to doc_001.<br>3. <b>Document pairing</b>: a KYC form and a Proof of address arriving together typically belong to the same client.<br><br>The reconciler treats "Farid Hassan" as an alias of the canonical "Mohammed Farid bin Hassan".<br><br><b>Confidence: 0.96</b>. If you disagree, click Override on the Client 1 name field.`,
+        sources: "Local resolver · no remote call · doc_001, doc_002"
+      },
+      {
+        user: "What is the address conflict?",
+        receipt: `<code class="token token-name">[PERSON_1]</code> has two different <code class="token token-address">[ADDR_*]</code> values across <code class="token token-doc">[DOC_001]</code> and <code class="token token-doc">[DOC_002]</code>. Cloud compared the redacted address strings only.`,
+        ai: `<b>Client 1 has two different addresses across the submitted documents</b>:<br><br>• <code class="chip chip-address">Blk 210 Bishan St 23 #11-04 SG 570210</code> on doc_001 (KYC form, signed 2026-05-22)<br>• <code class="chip chip-address">Blk 88 Tampines Ave 4 #05-12 SG 521088</code> on doc_002 (Proof of address)<br><br>The KYC form is the authoritative document for residential address under MAS guidelines, so Bishan is the recommended canonical value. Defer to the compliance reviewer.<br><br>Suggested: check the date of doc_002, request a current utility bill or bank statement to settle.`,
+        sources: "Local + remote (redacted) · doc_001, doc_002"
+      },
+      {
+        user: "Why is the National ID flagged for Yvonne Goh?",
+        receipt: `<code class="token token-name">[PERSON_2]</code> has two different <code class="token token-id">[ID_*]</code> values. Pattern analysis ran locally; semantic comparison ran on tokens.`,
+        ai: `doc_003 records <code class="chip chip-id">K3098551</code> and doc_004 records <code class="chip chip-id">K3098<b style="color:var(--conf-block)">S</b>51</code>. Most likely: <b>OCR substitution error</b> ("5" misread as "S").<br><br>Singapore NRIC follows <code class="chip chip-id">[Letter][7 digits][Letter]</code>, so an "S" inside the 7-digit body would be invalid. K3098551 matches the format and is almost certainly correct.<br><br>Recommended: accept K3098551 as canonical, mark doc_004 for re-scan, add a one-line audit note for the OCR fix-up.`,
+        sources: "Local pattern check + remote (redacted) reasoning · doc_003, doc_004"
+      }
+    ],
+    clients: [
+      {
+        id: 'C1', label: 'Client 1', state: 'conflict', stateLabel: '⚠ Awaiting review',
+        fields: [
+          {label:'Full name', type:'name', value:'Mohammed Farid bin Hassan', citation:'Source: doc_001 · alias <code class="chip chip-name">Farid Hassan</code> in doc_002 merged automatically', action:'✏'},
+          {label:'Residential address', type:'address', conflict:true, conflictNote:'⚠ CONFLICT · select correct value',
+            opts:[
+              {value:'Blk 210 Bishan St 23 #11-04 SG 570210', doc:'doc_001 (KYC form)', selected:true},
+              {value:'Blk 88 Tampines Ave 4 #05-12 SG 521088', doc:'doc_002 (Proof of addr)', selected:false}
+            ], action:'Escalate'},
+          {label:'National ID', type:'id', value:'K7741209', citation:'Source: doc_001 · ✓ verified format', action:'✏'},
+          {label:'Beneficial owner', type:'org', value:'Self', citation:'Source: doc_001', action:'✏'},
+          {label:'Declaration date', type:'date', value:'2026-05-22', citation:'Source: doc_001', action:'✏'},
+          {label:'Source of funds', type:'funds', missing:true, missingNote:'⚠ REQUIRED · missing from all documents in this client', missingDetail:'Cannot complete AML check without this field. Request from client or upload supplementary document.', action:'Request'}
+        ]
+      },
+      {
+        id: 'C2', label: 'Client 2', state: 'conflict', stateLabel: '⚠ Awaiting review',
+        fields: [
+          {label:'Full name', type:'name', value:'Yvonne Goh', citation:'Source: doc_003, doc_004 · ✓ matched across documents', action:'✏'},
+          {label:'Residential address', type:'address', value:'8 Marina Boulevard #30-01 Singapore 018981', citation:'Source: doc_003', action:'✏'},
+          {label:'National ID', type:'id', conflict:true, conflictNote:'⚠ CONFLICT · likely OCR error',
+            opts:[
+              {value:'K3098551', doc:'doc_003 (KYC declaration)', selected:true},
+              {value:'K3098<b style="color:var(--conf-block)">S</b>51', doc:'doc_004 (ID copy) · suspected OCR substitution of 5 → S', selected:false}
+            ], action:'Escalate'},
+          {label:'Source of funds', type:'funds', value:'Employment income', citation:'Source: doc_003', action:'✏'},
+          {label:'Beneficial owner', type:'org', value:'Self', citation:'Source: doc_003', action:'✏'},
+          {label:'Declaration date', type:'date', missing:true, missingNote:'⚠ REQUIRED · missing from all documents in this client', missingDetail:'Cannot finalise onboarding without declaration date. Request signed declaration.', action:'Request'}
+        ]
+      }
+    ],
+    entities: [
+      {token:'[PERSON_1]', type:'name', value:'Mohammed Farid bin Hassan / Farid Hassan'},
+      {token:'[PERSON_2]', type:'name', value:'Yvonne Goh'},
+      {token:'[ADDR_1]',   type:'address', value:'Bishan'},
+      {token:'[ADDR_2]',   type:'address', value:'Tampines'},
+      {token:'[ADDR_3]',   type:'address', value:'Marina Boulevard'},
+      {token:'[ID_1]',     type:'id', value:'K7741209'},
+      {token:'[ID_2]',     type:'id', value:'K3098551'},
+      {token:'[ID_3]',     type:'id', value:'K3098S51'},
+      {token:'[DATE_1]',   type:'date', value:'2026-05-22'},
+      {token:'[FUNDS_1]',  type:'funds', value:'Employment income'},
+    ]
+  },
+
+
+  partner: {
+    domain: 'synthetic partner collation · event coordination',
+    assistantRole: 'partnerships reconciler',
+    sidebarNote: '8 entities across 6 documents · redacted via consistent map before any cloud call.',
+    stats: [
+      ['6', 'documents'], ['3', 'partners identified'], ['2', 'conflicts'], ['1', 'gap'], ['1', 'alias variation']
+    ],
+    docs: [
+      {type:'Registration form', file:'doc_001', name:'partner_registration_acme.xlsx',    format:'xlsx', parser:'openpyxl',   fields:6, conf:0.93, state:'good',
+        fieldsList:[
+          {label:'Organisation', type:'org', value:'Acme Robotics Pte Ltd', conf:0.97},
+          {label:'Contact name', type:'name', value:'Lim Wei Jie', conf:0.96},
+          {label:'Email', type:'email', value:'weijie.lim@acmerobotics.sg', conf:0.95, note:'Conflicts with the business card email (doc_002)'},
+          {label:'Phone', type:'phone', value:'+65 6123 4567', conf:0.94},
+          {label:'UEN', type:'id', value:'201912345A', conf:0.98, note:'✓ verified format'},
+          {label:'RSVP status', type:'date', value:'Confirmed', conf:0.90},
+        ]},
+      {type:'Business card',     file:'doc_002', name:'acme_business_card.pdf',            format:'pdf',  parser:'Gemma 4 31B IT',   fields:4, conf:0.88, state:'good',
+        fieldsList:[
+          {label:'Organisation', type:'org', value:'ACME Robotics', conf:0.90, note:'Casual short form · merged with doc_001 via matching UEN and contact'},
+          {label:'Contact name', type:'name', value:'Lim Wei Jie', conf:0.92},
+          {label:'Email', type:'email', value:'wjlim@acme.com.sg', conf:0.86, note:'Conflicts with the registration email (doc_001)'},
+          {label:'Phone', type:'phone', value:'+65 6123 4567', conf:0.85},
+        ]},
+      {type:'MOU header',        file:'doc_003', name:'brightpath_mou.pdf',                format:'pdf',  parser:'pdfplumber', fields:3, conf:0.90, state:'good',
+        fieldsList:[
+          {label:'Organisation', type:'org', value:'Brightpath Learning LLP', conf:0.95},
+          {label:'UEN', type:'id', value:'T18LL0042K', conf:0.93, note:'✓ verified format (LLP series)'},
+          {label:'Contact name', type:'name', value:'Nurul Aisyah', conf:0.88},
+        ]},
+      {type:'Contact sheet',     file:'doc_004', name:'brightpath_contacts.xlsx',          format:'xlsx', parser:'openpyxl',   fields:3, conf:0.85, state:'good',
+        fieldsList:[
+          {label:'Contact name', type:'name', value:'Nurul Aisyah', conf:0.90},
+          {label:'Email', type:'email', value:'aisyah@brightpath.edu.sg', conf:0.87},
+          {label:'Phone', type:'phone', value:'+65 9876 5432', conf:0.82},
+        ]},
+      {type:'Registration form', file:'doc_005', name:'partner_registration_cobalt.xlsx',  format:'xlsx', parser:'openpyxl',   fields:6, conf:0.91, state:'good',
+        fieldsList:[
+          {label:'Organisation', type:'org', value:'Cobalt Studio', conf:0.95},
+          {label:'Contact name', type:'name', value:'Tan Mei Ling', conf:0.94},
+          {label:'Email', type:'email', value:'meiling@cobaltstudio.co', conf:0.93},
+          {label:'Phone', type:'phone', value:'+65 6555 2021', conf:0.84, note:'Conflicts with the email signature (doc_006) · likely transcription typo'},
+          {label:'UEN', type:'id', value:'53210987B', conf:0.96, note:'✓ verified format'},
+          {label:'RSVP status', type:'date', value:'Tentative', conf:0.89},
+        ]},
+      {type:'Email signature',   file:'doc_006', name:'cobalt_email.txt',                  format:'txt',  parser:'text',       fields:3, conf:0.95, state:'good',
+        fieldsList:[
+          {label:'Contact name', type:'name', value:'Tan Mei Ling', conf:0.97},
+          {label:'Email', type:'email', value:'meiling@cobaltstudio.co', conf:0.98},
+          {label:'Phone', type:'phone', value:'+65 6555 2020', conf:0.95, note:'Conflicts with the registration form (doc_005)'},
+        ]},
+    ],
+    initial: {
+      user: 'Collate these partners for the appreciation event.',
+      receipt: `<code class="token token-org">[ORG_1]</code> (alias <code class="token token-org">[ORG_1B]</code>) in <code class="token token-doc">[DOC_001]</code>+<code class="token token-doc">[DOC_002]</code> · <code class="token token-email">[EMAIL_1]</code> vs <code class="token token-email">[EMAIL_2]</code><br><code class="token token-org">[ORG_2]</code> in <code class="token token-doc">[DOC_003]</code>+<code class="token token-doc">[DOC_004]</code> · RSVP field missing<br><code class="token token-org">[ORG_3]</code> in <code class="token token-doc">[DOC_005]</code>+<code class="token token-doc">[DOC_006]</code> · <code class="token token-phone">[PHONE_1]</code> vs <code class="token token-phone">[PHONE_2]</code>`,
+      ai: `I identified <b>three partners</b> across the 6 documents.<br><br><b>Acme Robotics Pte Ltd</b> (with alias <code class="chip chip-org">ACME Robotics</code> in doc_002) · contact <code class="chip chip-name">Lim Wei Jie</code>. Email conflict between the registration and business card.<br><br><b>Brightpath Learning LLP</b> · contact <code class="chip chip-name">Nurul Aisyah</code>. No RSVP captured in either document.<br><br><b>Cobalt Studio</b> · contact <code class="chip chip-name">Tan Mei Ling</code>. Phone number differs by one digit between docs (likely a transcription typo).<br><br>Records below.`,
+      sources: 'doc_001 through doc_006'
+    },
+    suggestedQs: [
+      ['Why did you merge ACME Robotics and Acme Robotics Pte Ltd?', 'Why did you merge ACME Robotics and Acme Robotics Pte Ltd?'],
+      ['Which email is correct for Lim Wei Jie?', 'Which email is correct for Lim Wei Jie?'],
+      ['What is the Cobalt Studio phone conflict?', 'What is the Cobalt Studio phone conflict?']
+    ],
+    canned: [
+      {
+        user: "Why did you merge ACME Robotics and Acme Robotics Pte Ltd?",
+        receipt: `Local-only resolution · entity resolution on AMD MI300X. Same UEN observed across both documents.`,
+        ai: `Both surface forms resolved to the same organisation. Three signals, all <b>local</b>:<br><br>1. <b>Token overlap</b>: "Acme" + "Robotics" present in both, just casing and suffix differ.<br>2. <b>Same UEN</b>: <code class="chip chip-id">201912345A</code> appears in doc_001's footer, matched by the business card's small print in doc_002.<br>3. <b>Same contact person</b>: <code class="chip chip-name">Lim Wei Jie</code> in both documents.<br><br>The reconciler treats "ACME Robotics" as a casual short form of the canonical legal name "Acme Robotics Pte Ltd".<br><br><b>Confidence: 0.97</b>.`,
+        sources: "Local resolver · no remote call · doc_001, doc_002"
+      },
+      {
+        user: "Which email is correct for Lim Wei Jie?",
+        receipt: `<code class="token token-name">[PERSON_1]</code> has two <code class="token token-email">[EMAIL_*]</code> values across <code class="token token-doc">[DOC_001]</code> and <code class="token token-doc">[DOC_002]</code>.`,
+        ai: `Two emails for <code class="chip chip-name">Lim Wei Jie</code>:<br><br>• <code class="chip chip-email">weijie.lim@acmerobotics.sg</code> on the registration form (doc_001)<br>• <code class="chip chip-email">wjlim@acme.com.sg</code> on the business card (doc_002)<br><br>The registration form is the more recent, event-specific submission so <code class="chip chip-email">weijie.lim@acmerobotics.sg</code> is the recommended canonical value. The business card domain (acme.com.sg) may be the public-facing alias, but RSVP confirmations should go to the registration email.<br><br>Suggested: confirm with the partner directly if both are valid (CC fallback).`,
+        sources: "Local + remote (redacted) · doc_001, doc_002"
+      },
+      {
+        user: "What is the Cobalt Studio phone conflict?",
+        receipt: `<code class="token token-org">[ORG_3]</code> has two <code class="token token-phone">[PHONE_*]</code> values, differing by the final digit. Local digit-distance check on tokens.`,
+        ai: `Two phone numbers for <code class="chip chip-org">Cobalt Studio</code>:<br><br>• <code class="chip chip-phone">+65 6555 2021</code> on the registration form (doc_005)<br>• <code class="chip chip-phone">+65 6555 2020</code> in the email signature (doc_006)<br><br>The email signature is the more recent direct-from-contact source, and 2020 is a more plausible round-number direct line. The 2021 value on the registration form is a likely transcription typo (off by one digit).<br><br>Suggested: accept <code class="chip chip-phone">+65 6555 2020</code> as canonical, but verify with the partner before the event.`,
+        sources: "Local + remote (redacted) · doc_005, doc_006"
+      }
+    ],
+    clients: [
+      {
+        id: 'E1', label: 'Partner 1 · Acme Robotics', state: 'conflict', stateLabel: '⚠ Email conflict',
+        fields: [
+          {label:'Organisation', type:'org', value:'Acme Robotics Pte Ltd', citation:'Source: doc_001 · alias <code class="chip chip-org">ACME Robotics</code> in doc_002 merged automatically', action:'✏'},
+          {label:'Contact name', type:'name', value:'Lim Wei Jie', citation:'Source: doc_001, doc_002 · matched', action:'✏'},
+          {label:'Email', type:'email', conflict:true, conflictNote:'⚠ CONFLICT · select correct value',
+            opts:[
+              {value:'weijie.lim@acmerobotics.sg', doc:'doc_001 (registration)', selected:true},
+              {value:'wjlim@acme.com.sg', doc:'doc_002 (business card)', selected:false}
+            ], action:'Escalate'},
+          {label:'Phone', type:'phone', value:'+65 6123 4567', citation:'Source: doc_001, doc_002 · matched', action:'✏'},
+          {label:'UEN', type:'id', value:'201912345A', citation:'Source: doc_001', action:'✏'},
+          {label:'RSVP status', type:'date', value:'Confirmed', citation:'Source: doc_001', action:'✏'},
+        ]
+      },
+      {
+        id: 'E2', label: 'Partner 2 · Brightpath Learning', state: 'conflict', stateLabel: '⚠ RSVP missing',
+        fields: [
+          {label:'Organisation', type:'org', value:'Brightpath Learning LLP', citation:'Source: doc_003', action:'✏'},
+          {label:'Contact name', type:'name', value:'Nurul Aisyah', citation:'Source: doc_003, doc_004 · matched', action:'✏'},
+          {label:'Email', type:'email', value:'aisyah@brightpath.edu.sg', citation:'Source: doc_004', action:'✏'},
+          {label:'Phone', type:'phone', value:'+65 9876 5432', citation:'Source: doc_004', action:'✏'},
+          {label:'UEN', type:'id', value:'T18LL0042K', citation:'Source: doc_003', action:'✏'},
+          {label:'RSVP status', type:'date', missing:true, missingNote:'⚠ MISSING · not captured in either document', missingDetail:'Required to plan headcount. Send a follow-up.', action:'Request'},
+        ]
+      },
+      {
+        id: 'E3', label: 'Partner 3 · Cobalt Studio', state: 'conflict', stateLabel: '⚠ Phone conflict',
+        fields: [
+          {label:'Organisation', type:'org', value:'Cobalt Studio', citation:'Source: doc_005', action:'✏'},
+          {label:'Contact name', type:'name', value:'Tan Mei Ling', citation:'Source: doc_005, doc_006 · matched', action:'✏'},
+          {label:'Email', type:'email', value:'meiling@cobaltstudio.co', citation:'Source: doc_005, doc_006 · matched', action:'✏'},
+          {label:'Phone', type:'phone', conflict:true, conflictNote:'⚠ CONFLICT · likely typo (off by one digit)',
+            opts:[
+              {value:'+65 6555 2020', doc:'doc_006 (email sig)', selected:true},
+              {value:'+65 6555 2021', doc:'doc_005 (registration) · likely transcription typo', selected:false}
+            ], action:'Escalate'},
+          {label:'UEN', type:'id', value:'53210987B', citation:'Source: doc_005', action:'✏'},
+          {label:'RSVP status', type:'date', value:'Tentative', citation:'Source: doc_005', action:'✏'},
+        ]
+      }
+    ],
+    entities: [
+      {token:'[ORG_1]',   type:'org',   value:'Acme Robotics Pte Ltd / ACME Robotics'},
+      {token:'[ORG_2]',   type:'org',   value:'Brightpath Learning LLP'},
+      {token:'[ORG_3]',   type:'org',   value:'Cobalt Studio'},
+      {token:'[PERSON_1]', type:'name', value:'Lim Wei Jie'},
+      {token:'[PERSON_2]', type:'name', value:'Nurul Aisyah'},
+      {token:'[PERSON_3]', type:'name', value:'Tan Mei Ling'},
+      {token:'[EMAIL_*]',  type:'email', value:'5 distinct emails across the pile'},
+      {token:'[PHONE_*]',  type:'phone', value:'5 distinct phone numbers (Cobalt conflict)'},
+    ]
+  },
+
+
+  patient: {
+    domain: 'synthetic patient intake · clinic records',
+    assistantRole: 'clinical reconciler',
+    sidebarNote: '6 entities across 5 documents · detected healthcare PII redacted before any cloud call.',
+    stats: [
+      ['5', 'documents'], ['2', 'patients identified'], ['2', 'conflicts'], ['2', 'gaps'], ['1', 'alias variation']
+    ],
+    docs: [
+      {type:'Intake form',     file:'doc_001', name:'intake_kumar.pdf',    format:'pdf', parser:'pdfplumber', fields:5, conf:0.93, state:'good',
+        fieldsList:[
+          {label:'Patient name', type:'name', value:'Rajesh Kumar', conf:0.96},
+          {label:'Date of birth', type:'date', value:'1986-03-14', conf:0.94, note:'Conflicts with the referral email (doc_002)'},
+          {label:'NRIC / FIN', type:'id', value:'S8612345Z', conf:0.99, note:'✓ verified format'},
+          {label:'Policy number', type:'id', value:'PRU-009281', conf:0.92},
+          {label:'Allergies', type:'funds', value:'Penicillin', conf:0.90},
+        ]},
+      {type:'Referral email',  file:'doc_002', name:'referral_kumar.txt',  format:'txt', parser:'text',       fields:3, conf:0.97, state:'good',
+        fieldsList:[
+          {label:'Patient name', type:'name', value:'R. Kumar', conf:0.95, note:'Referral-letter abbreviation · merged with doc_001 via NRIC match'},
+          {label:'Date of birth', type:'date', value:'1986-04-14', conf:0.93, note:'Conflicts with the intake form · likely month transposition'},
+          {label:'NRIC / FIN', type:'id', value:'S8612345Z', conf:0.99},
+        ]},
+      {type:'Lab requisition', file:'doc_003', name:'lab_kumar.pdf',       format:'pdf', parser:'pdfplumber', fields:3, conf:0.91, state:'good',
+        fieldsList:[
+          {label:'Patient name', type:'name', value:'Rajesh Kumar', conf:0.93},
+          {label:'NRIC / FIN', type:'id', value:'S8612345Z', conf:0.97},
+          {label:'Lab serial', type:'id', value:'LABREQ-44120', conf:0.95, note:'Cross-references the intake form'},
+        ]},
+      {type:'Intake form',     file:'doc_004', name:'intake_ng.pdf',       format:'pdf', parser:'pdfplumber', fields:6, conf:0.94, state:'good',
+        fieldsList:[
+          {label:'Patient name', type:'name', value:'Chloe Ng', conf:0.97},
+          {label:'Date of birth', type:'date', value:'1994-11-02', conf:0.95},
+          {label:'NRIC / FIN', type:'id', value:'S9456781D', conf:0.98, note:'✓ verified format'},
+          {label:'Policy number', type:'id', value:'AIA-553102', conf:0.91, note:'Conflicts with the insurance card (doc_005) · final digits transposed'},
+          {label:'Consent signed', type:'date', value:'Yes (2026-06-10)', conf:0.93},
+          {label:'Allergies', type:'funds', value:'', conf:0.90, note:'Field present on the form but left blank · raised as a required gap'},
+        ]},
+      {type:'Insurance card',  file:'doc_005', name:'insurance_ng.pdf',    format:'pdf', parser:'Gemma 4 31B IT',   fields:2, conf:0.72, state:'review',
+        fieldsList:[
+          {label:'Name', type:'name', value:'Chloe Ng', conf:0.85},
+          {label:'Policy number', type:'id', value:'AIA-553120', conf:0.60, note:'Digits transposed vs the signed intake form · small print, low OCR confidence'},
+        ]},
+    ],
+    initial: {
+      user: 'Reconcile these intake documents for the two patients.',
+      receipt: `<code class="token token-name">[PERSON_1]</code> (alias <code class="token token-name">[PERSON_1B]</code>) in <code class="token token-doc">[DOC_001-003]</code> · <code class="token token-date">[DOB_1]</code> vs <code class="token token-date">[DOB_2]</code> · <code class="token token-id">[NRIC_1]</code><br><code class="token token-name">[PERSON_2]</code> in <code class="token token-doc">[DOC_004]</code>+<code class="token token-doc">[DOC_005]</code> · <code class="token token-id">[POL_1]</code> vs <code class="token token-id">[POL_2]</code>`,
+      ai: `I identified <b>two patients</b> across the 5 documents.<br><br><b>Patient 1</b> appears as <code class="chip chip-name">Rajesh Kumar</code> in doc_001 and doc_003 and as the alias <code class="chip chip-name">R. Kumar</code> in doc_002. Same person: matching NRIC across all three. There is a <b>DOB conflict</b> between the intake form and the referral email (likely month transposition), and <b>consent is not yet signed</b>.<br><br><b>Patient 2</b> appears as <code class="chip chip-name">Chloe Ng</code> in doc_004 and doc_005. <b>Policy number conflict</b> (digits transposed in one), and <b>allergies are not recorded</b>.<br><br>Records below.`,
+      sources: 'doc_001 through doc_005'
+    },
+    suggestedQs: [
+      ['Why did you merge "R. Kumar" with "Rajesh Kumar"?', 'Why did you merge "R. Kumar" with "Rajesh Kumar"?'],
+      ['Which DOB is correct?', 'Which DOB is correct for Rajesh Kumar?'],
+      ["Why is Chloe Ng's policy number flagged?", "Why is the policy number flagged for Chloe Ng?"]
+    ],
+    canned: [
+      {
+        user: 'Why did you merge "R. Kumar" with "Rajesh Kumar"?',
+        receipt: `Local-only resolution · entity resolution on AMD MI300X. NRIC match across all three documents.`,
+        ai: `Both surface forms resolved to the same patient. Three signals, all <b>local</b>:<br><br>1. <b>NRIC match</b>: <code class="chip chip-id">S8612345Z</code> identical across doc_001, doc_002, doc_003.<br>2. <b>Initial pattern</b>: "R. Kumar" is a typical referral-letter abbreviation of "Rajesh Kumar".<br>3. <b>Same lab serial</b>: <code class="chip chip-id">LABREQ-44120</code> on doc_003 cross-references the intake form.<br><br><b>Confidence: 0.98</b>. The NRIC alone is sufficient under most clinical reconciliation policies.`,
+        sources: "Local resolver · no remote call · doc_001, doc_002, doc_003"
+      },
+      {
+        user: "Which DOB is correct for Rajesh Kumar?",
+        receipt: `<code class="token token-name">[PERSON_1]</code> has two <code class="token token-date">[DOB_*]</code> values · cloud compared the date strings only.`,
+        ai: `Two dates of birth:<br><br>• <code class="chip chip-date">1986-03-14</code> on the intake form (doc_001)<br>• <code class="chip chip-date">1986-04-14</code> in the referral email (doc_002)<br><br>The intake form is the patient's own self-submitted record, signed at registration; the referral email is third-party. Month transposition (03 vs 04) is the most common DOB error in referrals typed in a hurry.<br><br>Recommended: accept <code class="chip chip-date">1986-03-14</code> from the intake form, flag doc_002 for verification with the referring clinician.`,
+        sources: "Local + remote (redacted) · doc_001, doc_002"
+      },
+      {
+        user: "Why is the policy number flagged for Chloe Ng?",
+        receipt: `<code class="token token-name">[PERSON_2]</code> has two <code class="token token-id">[POL_*]</code> values, digits transposed.`,
+        ai: `doc_004 records <code class="chip chip-id">AIA-553102</code> and doc_005 records <code class="chip chip-id">AIA-5531<b style="color:var(--conf-block)">20</b></code>. The final two digits are transposed: "02" vs "20".<br><br>The intake form (doc_004) is the patient's self-completed record, signed at registration. The insurance card (doc_005) is the higher-confidence source for an insurance-specific value, but OCR errors on insurance cards are also common, especially with smaller print.<br><br>Recommended: verify against the patient's actual insurance card directly. If both are valid sub-policies, capture both. Otherwise accept <code class="chip chip-id">AIA-553102</code> from the signed intake.`,
+        sources: "Local + remote (redacted) · doc_004, doc_005"
+      }
+    ],
+    clients: [
+      {
+        id: 'P1', label: 'Patient 1 · Rajesh Kumar', state: 'conflict', stateLabel: '⚠ DOB conflict · consent missing',
+        fields: [
+          {label:'Patient name', type:'name', value:'Rajesh Kumar', citation:'Source: doc_001, doc_003 · alias <code class="chip chip-name">R. Kumar</code> in doc_002 merged automatically', action:'✏'},
+          {label:'Date of birth', type:'date', conflict:true, conflictNote:'⚠ CONFLICT · likely month transposition',
+            opts:[
+              {value:'1986-03-14', doc:'doc_001 (intake form, signed)', selected:true},
+              {value:'1986-04-14', doc:'doc_002 (referral email)', selected:false}
+            ], action:'Escalate'},
+          {label:'NRIC / FIN', type:'id', value:'S8612345Z', citation:'Source: doc_001, doc_002, doc_003 · matched', action:'✏'},
+          {label:'Policy number', type:'id', value:'PRU-009281', citation:'Source: doc_001', action:'✏'},
+          {label:'Allergies', type:'funds', value:'Penicillin', citation:'Source: doc_001', action:'✏'},
+          {label:'Consent signed', type:'date', missing:true, missingNote:'⚠ REQUIRED · consent not yet on file', missingDetail:'Patient must sign the data-use consent form before clinical work proceeds.', action:'Request'}
+        ]
+      },
+      {
+        id: 'P2', label: 'Patient 2 · Chloe Ng', state: 'conflict', stateLabel: '⚠ Policy conflict · allergies missing',
+        fields: [
+          {label:'Patient name', type:'name', value:'Chloe Ng', citation:'Source: doc_004, doc_005 · matched', action:'✏'},
+          {label:'Date of birth', type:'date', value:'1994-11-02', citation:'Source: doc_004', action:'✏'},
+          {label:'NRIC / FIN', type:'id', value:'S9456781D', citation:'Source: doc_004', action:'✏'},
+          {label:'Policy number', type:'id', conflict:true, conflictNote:'⚠ CONFLICT · digits transposed',
+            opts:[
+              {value:'AIA-553102', doc:'doc_004 (intake form, signed)', selected:true},
+              {value:'AIA-5531<b style="color:var(--conf-block)">20</b>', doc:'doc_005 (insurance card)', selected:false}
+            ], action:'Escalate'},
+          {label:'Allergies', type:'funds', missing:true, missingNote:'⚠ MISSING · not recorded on intake', missingDetail:'Clinical safety requires explicit allergy capture, including "none known".', action:'Capture'},
+          {label:'Consent signed', type:'date', value:'Yes (2026-06-10)', citation:'Source: doc_004', action:'✏'}
+        ]
+      }
+    ],
+    entities: [
+      {token:'[PERSON_1]', type:'name', value:'Rajesh Kumar / R. Kumar'},
+      {token:'[PERSON_2]', type:'name', value:'Chloe Ng'},
+      {token:'[DOB_*]',    type:'date', value:'1986-03-14 / 1986-04-14 / 1994-11-02'},
+      {token:'[NRIC_*]',   type:'id',   value:'S8612345Z, S9456781D'},
+      {token:'[POL_*]',    type:'id',   value:'PRU-009281, AIA-553102 / AIA-553120'},
+      {token:'[SERIAL_1]', type:'id',   value:'LABREQ-44120'},
+    ]
+  }
+
+};
+
+// ============================================================
+// TYPE ICONS — Lucide-style SVGs, take colour from currentColor
+// ============================================================
+
+const typeIcons = {
+  name:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+  address: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+  id:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="9" cy="12" r="2"/><line x1="14" y1="10" x2="20" y2="10"/><line x1="14" y1="14" x2="18" y2="14"/></svg>',
+  date:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+  funds:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8H6a2 2 0 0 1 0-4h12v4"/><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>',
+  org:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="9" y1="12" x2="9.01" y2="12"/><line x1="9" y1="15" x2="9.01" y2="15"/><line x1="9" y1="18" x2="9.01" y2="18"/></svg>',
+  email:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>',
+  phone:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>'
+};
+
+function iconFor(type){
+  return typeIcons[type] ? `<span class="label-icon" style="color: var(--c-${type})">${typeIcons[type]}</span>` : '';
+}
+
+// ============================================================
+// ENTITY HIGHLIGHTING — detect real values in user input and
+// underline them with their type-accent colour. Closes the trust
+// loop: the user sees paperflow caught it before any cloud call.
+// ============================================================
+
+// Smart-match config: for person/org entities, also catch individual
+// significant words so "Project Falcon" also redacts "Falcon", and
+// "Mohammed Farid bin Hassan" also redacts "Mohammed" or "Hassan".
+// Stopwords prevent over-redacting common business suffixes and articles.
+const REDACT_STOPWORDS = new Set([
+  'pte', 'ltd', 'inc', 'llc', 'llp', 'corp', 'corporation', 'company', 'co',
+  'limited', 'group', 'holdings', 'enterprises', 'gmbh', 'sdn', 'bhd',
+  'project', 'initiative', 'program', 'team', 'department', 'division',
+  'the', 'and', 'for', 'this', 'that', 'with', 'from', 'into', 'over',
+  'mister', 'missus', 'mr', 'mrs', 'ms', 'dr'
+]);
+
+function expandEntities(entities){
+  const out = [];
+  const seen = new Set();
+
+  for(const e of entities){
+    const variants = (e.value || '').split(' / ').map(v => v.trim()).filter(v => v.length >= 2);
+    for(const v of variants){
+      const key = v.toLowerCase();
+      if(!seen.has(key)){
+        seen.add(key);
+        out.push({ value: v, type: e.type, token: e.token, isFull: true });
+      }
+      // Sub-word expansion only for name/org types (avoids over-redacting addresses, IDs, etc.)
+      if(['name', 'org'].includes(e.type)){
+        const words = v.split(/\s+/);
+        if(words.length > 1){
+          for(const w of words){
+            const cleaned = w.replace(/[^\w]/g, '');
+            const subKey = cleaned.toLowerCase();
+            if(cleaned.length >= 4 && !REDACT_STOPWORDS.has(subKey) && !seen.has(subKey)){
+              seen.add(subKey);
+              out.push({ value: cleaned, type: e.type, token: e.token, isFull: false });
+            }
+          }
+        }
+      }
+    }
+  }
+  // Longest-first so we wrap longer matches before their substrings
+  out.sort((a, b) => b.value.length - a.value.length);
+  return out;
+}
+
+function highlightEntities(text, entities){
+  let result = escapeHtml(text);
+  const expanded = expandEntities(entities);
+
+  const replacements = [];
+  for(const e of expanded){
+    const escapedValue = escapeHtml(e.value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    if(!escapedValue) continue;
+    const re = new RegExp(`(${escapedValue})`, 'gi');
+    result = result.replace(re, (match) => {
+      const placeholder = `\u0000${replacements.length}\u0000`;
+      replacements.push(`<span class="hl hl-${e.type}" data-token="${e.token}">${match}</span>`);
+      return placeholder;
+    });
+  }
+  for(let i = 0; i < replacements.length; i++){
+    result = result.replace(`\u0000${i}\u0000`, replacements[i]);
+  }
+  return result;
+}
+
+// ============================================================
+// CUSTOM ENTITY (user-added redaction term)
+// ============================================================
+
+function toggleAddEntity(forceState){
+  const form = document.getElementById('add-entity-form');
+  if(forceState === false) form.classList.remove('open');
+  else form.classList.toggle('open');
+  if(form.classList.contains('open')){
+    setTimeout(() => document.getElementById('custom-entity-text').focus(), 50);
+  }
+}
+
+function addCustomEntity(){
+  const text = document.getElementById('custom-entity-text').value.trim();
+  const type = document.getElementById('custom-entity-type').value;
+  if(!text) return;
+
+  const p = piles[currentPile];
+  // Generate a token name based on type
+  const prefix = type === 'name' ? 'PERSON' : type === 'address' ? 'ADDR' : type.toUpperCase();
+  const existing = p.entities.filter(e => e.token.startsWith(`[${prefix}_`)).length;
+  const token = `[${prefix}_${existing + 1}]`;
+
+  p.entities.push({ token, type, value: text, custom: true });
+  renderSidebar(p);
+  // Re-render the chat so newly-added terms are highlighted retroactively
+  renderChat(p);
+
+  document.getElementById('custom-entity-text').value = '';
+  toggleAddEntity(false);
+}
+
+// ============================================================
+// RENDER FUNCTIONS
+// ============================================================
+
+let currentPile = 'kyc';
+let exchangeIndex = 0;
+
+function loadPile(key){
+  currentPile = key;
+  exchangeIndex = 0;
+  const p = piles[key];
+
+  document.querySelectorAll('.pile-btn').forEach(b => b.classList.toggle('active', b.dataset.pile === key));
+
+  document.getElementById('pile-meta').textContent = '· ' + p.domain;
+  document.getElementById('assistant-meta').textContent = '· ' + p.assistantRole;
+  document.getElementById('record-meta').textContent = '· ' + p.clients.length + ' entities · ' + p.stats[2][0] + ' conflicts · ' + p.stats[3][0] + ' gap' + (p.stats[3][0] === '1' ? '' : 's');
+
+  renderPile(p);
+  renderChat(p);
+  renderRecord(p);
+  renderSidebar(p);
+  playPipeline();
+
+  // Pile data changed: disarm the confirm gate and re-run detection so the
+  // strip never reflects the previous pile's entities.
+  resetSendGate();
+  updateInputDetection();
+
+  // Reset every scrollable region so switching piles starts at the top.
+  document.querySelectorAll('.pane-body').forEach(el => el.scrollTop = 0);
+  const chatEl = document.getElementById('chat');
+  if(chatEl) chatEl.scrollTop = 0;
+}
+
+const formatBadge = {
+  pdf:  '<span class="fmt-badge fmt-pdf">PDF</span>',
+  xlsx: '<span class="fmt-badge fmt-xlsx">XLSX</span>',
+  txt:  '<span class="fmt-badge fmt-txt">TXT</span>',
+};
+
+function renderPile(p){
+  // Format-mix stats derived from the docs list, appended to the pile-stats row.
+  const formatCounts = p.docs.reduce((acc, d) => { acc[d.format || 'txt'] = (acc[d.format || 'txt'] || 0) + 1; return acc; }, {});
+  const formatMix = Object.entries(formatCounts).map(([f, n]) => `${n} ${f.toUpperCase()}`).join(' · ');
+
+  const stats = document.getElementById('pile-stats');
+  stats.innerHTML = p.stats.map(([n, label]) => `<div class="stat"><b>${n}</b>${label}</div>`).join('')
+    + `<div class="stat" data-tooltip="File mix. All parsers run locally on the MI300X; nothing is uploaded to a cloud OCR service.">${formatMix} · parsed locally</div>`;
+
+  const grid = document.getElementById('pile-grid');
+  grid.innerHTML = p.docs.map((d, i) => `
+    <div class="doc-card" data-format="${d.format || 'txt'}" onclick="openDoc(${i})">
+      <div class="doc-icon fmt-${d.format || 'txt'}">${formatBadge[d.format || 'txt']}</div>
+      <div class="doc-info">
+        <div class="doc-name">${d.name || d.file}</div>
+        <div class="doc-meta">${d.type} · ${d.fields} fields <span class="parser-badge" data-tooltip="Extractor: ${d.parser || 'text reader'} · runs on the local MI300X.">${d.parser || 'text'}</span></div>
+      </div>
+      <div class="conf ${d.state === 'review' ? 'review' : ''}" data-tooltip="Extraction confidence · how cleanly ${d.parser || 'the parser'} lifted the fields on the AMD MI300X. 90%+ auto-accepts · 75–90% queues for human review · below 75% is blocked from any remote call until a human approves.">${Math.round(d.conf * 100)}% extracted</div>
+    </div>
+  `).join('');
+}
+
+// Detect routing from a canned exchange's `sources` string.
+// Only an explicit local marker classifies as local; anything ambiguous
+// defaults to hybrid, so the chip can never claim "local only" for an
+// exchange that actually touched the cloud.
+function detectRouting(sources){
+  const s = String(sources || '');
+  if(/no remote call|local resolver|mockup mode|full-local/i.test(s)) return 'local';
+  return 'hybrid';
+}
+
+function routingChipHTML(routing){
+  if(routing === 'local'){
+    return '<span class="routing-chip local" data-tooltip="Entity match decided by deterministic signals: NRIC, name overlap, doc pairing. A local Gemma 4 31B IT (BF16 on a single MI300X; the 192 GB card hosts the entire confidential stack on one device) narrated the result. No cloud call needed.">'
+      + '<span class="dot"></span>Local only · 0 cloud calls</span>';
+  }
+  return '<span class="routing-chip hybrid" data-tooltip="Query needed cross-document reasoning. Presidio replaced every detected value with a token, then Fireworks reasoned on redacted text. Bytes crossed; no detected identifier did.">'
+    + '<span class="dot"></span>Local + Cloud · 1 redacted call</span>';
+}
+
+function routingReason(sources){
+  const s = sources.toLowerCase();
+  if(s.includes('full-local')){
+    return 'full-local mode · remote reasoning disabled by the operator';
+  }
+  if(s.includes('no remote call') || s.startsWith('local resolver')){
+    return 'entity match by deterministic signals · no cross-doc reasoning needed';
+  }
+  if(s.includes('pattern check')){
+    return 'local pattern check confirmed the anomaly · Fireworks reasoned on redacted tokens';
+  }
+  if(s.includes('local + remote')){
+    return 'cross-document comparison · benefits from a larger remote model';
+  }
+  if(s.startsWith('mockup mode')){
+    return 'mockup fallback · no live model call · answered from local mockup state';
+  }
+  return 'full-pile reconciliation · redacted tokens sent to Fireworks';
+}
+
+function receiptBlockHTML(bodyHTML, sources){
+  const routing = detectRouting(sources);
+  const routeLabel = routing === 'local' ? 'Routed local' : 'Routed hybrid';
+  return `<div class="receipt">
+    <div class="receipt-head">
+      <span>Privacy receipt</span>
+      ${routingChipHTML(routing)}
+    </div>
+    <div class="routing-reason ${routing}">
+      <span class="rr-label">${routeLabel}</span>
+      <span class="rr-why">${routingReason(sources)}</span>
+    </div>
+    <div class="receipt-body">${bodyHTML}</div>
+  </div>`;
+}
+
+// After any chat/sidebar re-render, tag every [XXX_N] chip with a data-token
+// attribute so hover can link them across panes.
+function tagTokensForLinking(){
+  document.querySelectorAll('.token, #sidebar-entities .ent-type').forEach(el => {
+    const t = el.textContent.trim();
+    if(/^\[[A-Za-z]+_[\w*]+\]$/.test(t)) el.dataset.token = t;
+  });
+}
+
+// Build the querySelector that matches a hovered token plus its wildcard
+// sibling, so [EMAIL_1] also lights the sidebar's [EMAIL_*] row, and vice versa.
+// Prefix-matching on the numeric base also links alias suffixes both ways
+// ([ORG_1] <-> [ORG_1B]); safe here because ids are single-digit.
+function relatedTokenSelector(token){
+  const m = token.match(/^\[([A-Za-z]+)_([\w*]+)\]$/);
+  if(!m) return `[data-token="${token}"]`;
+  const family = m[1];
+  const isWild = m[2] === '*';
+  if(isWild) return `[data-token^="[${family}_"]`;
+  const idBase = m[2].replace(/[A-Za-z]+$/, '') || m[2];
+  return `[data-token^="[${family}_${idBase}"], [data-token="[${family}_*]"]`;
+}
+
+function renderChat(p){
+  // Respect full-local mode for the initial exchange too, so switching
+  // piles while the toggle is on never shows a cloud receipt.
+  let iReceipt = p.initial.receipt, iSources = p.initial.sources;
+  if(fullLocal){
+    const m = String(iSources).match(/doc_.*/);
+    iSources = 'Full-local · MI300X only' + (m ? ' · ' + m[0] : '');
+    iReceipt = 'Full-local mode · all reasoning ran on the MI300X · <b>nothing crossed the network</b>.';
+  }
+  const chat = document.getElementById('chat');
+  chat.innerHTML = `
+    <div class="bubble user">${highlightEntities(p.initial.user, p.entities)}</div>
+    ${receiptBlockHTML(iReceipt, iSources)}
+    <div class="bubble ai">${p.initial.ai}<div class="sources">↳ Sources: <b>${escapeHtml(iSources)}</b></div></div>
+  `;
+
+  const suggested = document.getElementById('suggested');
+  suggested.innerHTML = p.suggestedQs.map(([label, q]) =>
+    `<button class="chip-btn" onclick="quickAsk(${escapeHtml(JSON.stringify(q))})">${escapeHtml(label)}</button>`
+  ).join('');
+
+  tagTokensForLinking();
+}
+
+function renderRecord(p){
+  const body = document.getElementById('record-body');
+  body.innerHTML = p.clients.map(c => `
+    <div class="client-card">
+      <div class="client-head">
+        <div class="client-id">${escapeHtml(c.label)}</div>
+        <div class="state ${c.state}">${c.stateLabel}</div>
+      </div>
+      ${c.fields.map(f => renderField(f)).join('')}
+    </div>
+  `).join('');
+
+  // Overrides log is session-scoped to the loaded pile: clear it on re-render.
+  const log = document.getElementById('overrides-log');
+  if(log){
+    log.hidden = true;
+    log.open = false;
+    log.querySelector('.overrides-log-body').innerHTML = '';
+    log.querySelector('.ovr-count').textContent = '0';
+  }
+}
+
+// Which record-pane action a field's button triggers: a normal field opens the
+// inline override form; a conflict escalates to compliance; a gap requests from
+// the client. Driven by the action label the pile data already supplies.
+function overrideAction(action){
+  const a = (action || '').toLowerCase();
+  if(a.indexOf('escalate') !== -1) return 'escalateField(this)';
+  // "Capture" gaps (e.g. allergies) behave like requests so the state pill counts them.
+  if(a.indexOf('request') !== -1 || a.indexOf('capture') !== -1) return 'requestField(this)';
+  return 'openOverride(this)';
+}
+
+function renderField(f){
+  const dataAttrs = `data-type="${escapeHtml(f.type || '')}" data-label="${escapeHtml(f.label || '')}"`;
+  const actionBtn = `<button class="override" onclick="${overrideAction(f.action)}">${escapeHtml(f.action || '✏')}</button>`;
+  if(f.missing){
+    const required = f.missingNote.includes('REQUIRED');
+    return `
+      <div class="field field-missing" ${dataAttrs} data-required="${required}">
+        <div class="label">${iconFor(f.type)}${escapeHtml(f.label)}</div>
+        <div class="value">
+          <div class="${required ? 'missing' : 'missing-review'}">${f.missingNote}</div>
+          <div class="citation">${f.missingDetail || ''}</div>
+        </div>
+        ${actionBtn}
+      </div>
+    `;
+  }
+  if(f.conflict){
+    return `
+      <div class="field field-conflict" ${dataAttrs}>
+        <div class="label">${iconFor(f.type)}${escapeHtml(f.label)}</div>
+        <div class="value">
+          <div class="missing-review conflict-note" data-original="${escapeHtml(f.conflictNote)}">${f.conflictNote}</div>
+          <div class="conflict-row">
+            ${f.opts.map(o => `
+              <div class="opt ${o.selected ? 'selected' : ''}" onclick="resolveConflict(this)">
+                <code class="chip chip-${f.type}">${o.value}</code>
+                <span class="doc">${o.doc}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        ${actionBtn}
+      </div>
+    `;
+  }
+  return `
+    <div class="field" ${dataAttrs}>
+      <div class="label">${iconFor(f.type)}${escapeHtml(f.label)}</div>
+      <div class="value">
+        <code class="chip chip-${f.type}">${f.value}</code>
+        <div class="citation">${f.citation || ''}</div>
+      </div>
+      ${actionBtn}
+    </div>
+  `;
+}
+
+// ============================================================
+// PER-DOC DETAIL VIEW — click a pile card to audit that document:
+// every extracted field, its confidence, and why it was flagged.
+// ============================================================
+
+function openDoc(i){
+  const d = piles[currentPile].docs[i];
+  if(!d) return;
+  const rows = (d.fieldsList || []).map(f => `
+    <div class="doc-field-row">
+      <div class="dl">${iconFor(f.type)}${escapeHtml(f.label)}</div>
+      <div>
+        ${f.value
+          ? `<code class="chip chip-${f.type}">${escapeHtml(f.value)}</code>`
+          : `<span class="missing-review">not recorded</span>`}
+        ${f.note ? `<div class="dnote">${f.note}</div>` : ''}
+      </div>
+      <div class="doc-field-conf ${f.conf < 0.75 ? 'block' : f.conf < 0.9 ? 'review' : ''}">${Math.round(f.conf * 100)}%</div>
+    </div>
+  `).join('');
+  document.getElementById('doc-modal').innerHTML = `
+    <div class="doc-modal-head">
+      <div class="doc-modal-title">${formatBadge[d.format || 'txt']} ${escapeHtml(d.name || d.file)}</div>
+      <button class="doc-modal-close" onclick="closeDoc()" aria-label="Close">✕</button>
+    </div>
+    <div class="doc-modal-meta">${escapeHtml(d.type)} · ${d.fields} fields · extractor: ${escapeHtml(d.parser || 'text')} · overall ${Math.round(d.conf * 100)}% extracted</div>
+    ${rows}
+    <div class="doc-modal-foot">Parsed locally by ${escapeHtml(d.parser || 'text')} on the AMD MI300X · nothing was uploaded to a cloud OCR service.<br>Field confidence: 90%+ auto-accepts · 75–90% queues for review · below 75% is blocked from any remote call until a human approves.</div>
+  `;
+  document.getElementById('doc-overlay').classList.add('open');
+}
+
+function closeDoc(){
+  document.getElementById('doc-overlay').classList.remove('open');
+}
+document.addEventListener('keydown', e => { if(e.key === 'Escape') closeDoc(); });
+
+// Stress-test toggle — injects 22 additional persons into whichever pile
+// is loaded, so the auto-collapse behaviour on large groups is visible.
+let stressPersons = false;
+const STRESS_PERSON_NAMES = [
+  'John Tan', 'Sarah Lim', 'David Wong', 'Rachel Ho', 'Michael Ng',
+  'Emily Teo', 'Jonathan Chua', 'Amanda Yeo', 'Kenneth Lau', 'Priya Sharma',
+  'Aditya Menon', 'Marcus Lin', 'Vera Koh', 'Alan Ong', 'Beatrice Sim',
+  'Charles Poh', 'Denise Tay', 'Eric Fong', 'Fiona Chen', 'Grace Lee',
+  'Harry Zhou', 'Isabella Rui',
+];
+function toggleStressTest(){
+  stressPersons = !stressPersons;
+  const btn = document.getElementById('stress-btn');
+  if(btn){
+    btn.textContent = stressPersons
+      ? '🧪 Restore original entity list'
+      : '🧪 Simulate a larger pile (+22 sample persons)';
+    btn.classList.toggle('on', stressPersons);
+  }
+  renderSidebar(piles[currentPile]);
+}
+
+const ENTITY_TYPE_ORDER = ['name', 'org', 'address', 'id', 'date', 'funds', 'email', 'phone'];
+const ENTITY_TYPE_LABEL = {
+  name: 'People', org: 'Organisations', address: 'Addresses', id: 'IDs',
+  date: 'Dates', funds: 'Financial', email: 'Emails', phone: 'Phones',
+};
+const ENTITY_GROUP_COLLAPSE_THRESHOLD = 20;
+const ENTITY_GROUP_PREVIEW_COUNT = 3;
+
+function renderSidebar(p){
+  // Merge in stress-test persons if the toggle is on. Non-destructive to p.entities.
+  const entities = stressPersons
+    ? p.entities.concat(STRESS_PERSON_NAMES.map((name, i) => ({
+        token: `[PERSON_${100 + i}]`, value: name, type: 'name', stress: true,
+      })))
+    : p.entities;
+
+  document.getElementById('sidebar-note').textContent = stressPersons
+    ? `${entities.length} entities across a simulated large pile · all redacted before any cloud call.`
+    : p.sidebarNote;
+
+  // Group entities by type. Groups over the threshold collapse by default
+  // and show a preview (top N) + "+N more" tail — scales cleanly to 1000+.
+  const grouped = {};
+  for(const e of entities){
+    (grouped[e.type] = grouped[e.type] || []).push(e);
+  }
+
+  const rowHTML = (e) => `
+    <div class="entity-row">
+      <span class="chip chip-${e.type} ent-type">${e.token}</span>
+      <span class="ent-val">${e.value}${e.custom ? ' <span class="custom-badge">custom</span>' : ''}</span>
+    </div>`;
+
+  const html = ENTITY_TYPE_ORDER
+    .filter(t => grouped[t] && grouped[t].length > 0)
+    .map(type => {
+      const group = grouped[type];
+      const isLarge = group.length > ENTITY_GROUP_COLLAPSE_THRESHOLD;
+      const shown = isLarge ? group.slice(0, ENTITY_GROUP_PREVIEW_COUNT) : group;
+      const remaining = group.length - shown.length;
+      return `
+        <details class="entity-group" ${isLarge ? '' : 'open'}>
+          <summary>
+            <span class="entity-group-swatch" style="background: var(--c-${type})"></span>
+            <span class="entity-group-label">${ENTITY_TYPE_LABEL[type] || type}</span>
+            <span class="entity-group-count">${group.length}</span>
+          </summary>
+          <div class="entity-group-body">
+            ${shown.map(rowHTML).join('')}
+            ${remaining > 0 ? `<div class="entity-row-more" onclick="expandEntityGroup(this)" data-type="${type}">+${remaining} more · click to expand</div>` : ''}
+          </div>
+        </details>
+      `;
+    }).join('');
+
+  document.getElementById('sidebar-entities').innerHTML = html;
+  tagTokensForLinking();
+}
+
+// Expand a truncated group in place — swap the "+N more" hint for the full list.
+function expandEntityGroup(el){
+  const type = el.dataset.type;
+  const base = piles[currentPile].entities;
+  const extra = stressPersons && type === 'name'
+    ? STRESS_PERSON_NAMES.map((name, i) => ({ token: `[PERSON_${100 + i}]`, value: name, type: 'name', stress: true }))
+    : [];
+  const group = base.concat(extra).filter(e => e.type === type);
+  const body = el.parentNode;
+  body.innerHTML = group.map(e => `
+    <div class="entity-row">
+      <span class="chip chip-${e.type} ent-type">${e.token}</span>
+      <span class="ent-val">${e.value}${e.custom ? ' <span class="custom-badge">custom</span>' : ''}</span>
+    </div>
+  `).join('');
+  tagTokensForLinking();
+}
+
+// ============================================================
+// CONFLICT RESOLUTION — clicking an option in the record pane
+// marks the field resolved and updates the client's state pill live.
+// ============================================================
+
+function resolveConflict(el){
+  const row = el.closest('.conflict-row');
+  row.querySelectorAll('.opt').forEach(x => x.classList.remove('selected'));
+  el.classList.add('selected');
+
+  const field = el.closest('.field-conflict');
+  field.dataset.resolved = 'true';
+
+  // A later resolution supersedes an earlier escalation.
+  if(field.dataset.escalated === 'true'){
+    field.dataset.escalated = 'false';
+    const escBtn = field.querySelector('button.override');
+    if(escBtn){
+      escBtn.textContent = 'Escalate';
+      escBtn.classList.remove('done');
+      escBtn.disabled = false;
+    }
+  }
+
+  const note = field.querySelector('.conflict-note');
+  const chosen = el.querySelector('.chip').textContent.trim();
+  note.innerHTML = `✓ Resolved to <code class="chip chip-${field.querySelector('.chip').className.split('chip-')[1]}">${escapeHtml(chosen)}</code>`;
+  note.classList.remove('missing-review');
+  note.classList.remove('escalated-note');
+  note.classList.add('resolved-note');
+
+  updateClientState(field.closest('.client-card'));
+}
+
+function updateClientState(card){
+  if(!card) return;
+  const pill = card.querySelector('.state');
+  if(!pill) return;
+
+  const conflictFields = Array.from(card.querySelectorAll('.field-conflict'));
+  const missingFields = Array.from(card.querySelectorAll('.field-missing'));
+  const openConflicts = conflictFields.filter(f => f.dataset.resolved !== 'true' && f.dataset.escalated !== 'true').length;
+  const openGaps = missingFields.filter(f => f.dataset.requested !== 'true').length;
+  const escalated = conflictFields.filter(f => f.dataset.escalated === 'true').length;
+  const requested = missingFields.filter(f => f.dataset.requested === 'true').length;
+
+  if(openConflicts === 0 && openGaps === 0 && escalated === 0 && requested === 0){
+    pill.className = 'state complete';
+    pill.textContent = '✓ Reconciled';
+    return;
+  }
+
+  const openParts = [];
+  if(openConflicts > 0) openParts.push(`${openConflicts} conflict${openConflicts === 1 ? '' : 's'}`);
+  if(openGaps > 0) openParts.push(`${openGaps} gap${openGaps === 1 ? '' : 's'}`);
+  const pendParts = [];
+  if(escalated > 0) pendParts.push(`${escalated} escalated`);
+  if(requested > 0) pendParts.push(`${requested} requested`);
+
+  pill.className = 'state conflict';
+  if(openParts.length){
+    pill.textContent = '⚠ ' + openParts.join(' · ') + ' left' + (pendParts.length ? ' · ' + pendParts.join(' · ') : '');
+  } else {
+    pill.textContent = '⚠ ' + pendParts.join(' · ') + ' pending';
+  }
+}
+
+// ============================================================
+// OVERRIDE FLOW — the ✏ button opens an inline form on a field: pick a
+// source-document variant or type a free value, plus a required reason. On
+// save the field becomes a resolved value, the citation notes the override,
+// the client state pill recalculates and the change is appended to the log.
+// Escalate (conflicts) and Request (gaps) are lighter one-click state changes.
+// ============================================================
+
+function openOverride(btn){
+  const field = btn.closest('.field');
+  if(!field || field.querySelector('.override-form')) return;
+  const type = field.dataset.type || 'name';
+
+  // Gather selectable source-document variants from the rendered field:
+  // conflict options, the current value, and any merged-alias chips.
+  const variants = [];
+  const seen = new Set();
+  const add = (raw, src) => {
+    const v = (raw || '').trim();
+    if(v && !seen.has(v)){ seen.add(v); variants.push({ value: v, src: src }); }
+  };
+  const opts = field.querySelectorAll('.conflict-row .opt');
+  if(opts.length){
+    opts.forEach(o => add(o.querySelector('.chip').textContent, (o.querySelector('.doc') || {}).textContent || ''));
+  } else {
+    const main = field.querySelector('.value > .chip');
+    if(main) add(main.textContent, 'current value');
+    field.querySelectorAll('.value .citation .chip').forEach(c => add(c.textContent, 'alias in source'));
+  }
+
+  const radios = variants.map((v, i) => `
+      <label class="ovr-opt">
+        <input type="radio" name="ovr-src" value="${escapeHtml(v.value)}"${i === 0 ? ' checked' : ''}>
+        <code class="chip chip-${type}">${escapeHtml(v.value)}</code>
+        <span class="doc">${escapeHtml(v.src)}</span>
+      </label>`).join('');
+
+  const form = document.createElement('div');
+  form.className = 'override-form';
+  form.innerHTML = `${radios}
+      <label class="ovr-opt">
+        <input type="radio" name="ovr-src" value="__custom__"${variants.length ? '' : ' checked'}>
+        <span class="ovr-custom-label">Custom value</span>
+        <input type="text" class="ovr-custom" placeholder="type a value">
+      </label>
+      <input type="text" class="ovr-reason" placeholder="Reason for override (required)">
+      <div class="ovr-err" hidden></div>
+      <div class="ovr-actions">
+        <button class="btn ghost" onclick="cancelOverride(this)">Cancel</button>
+        <button class="btn" onclick="saveOverride(this)">Save override</button>
+      </div>`;
+  field.appendChild(form);
+  btn.disabled = true;
+  const focusEl = variants.length ? form.querySelector('.ovr-reason') : form.querySelector('.ovr-custom');
+  if(focusEl) focusEl.focus();
+}
+
+function cancelOverride(btn){
+  const field = btn.closest('.field');
+  const form = field.querySelector('.override-form');
+  if(form) form.remove();
+  const ob = field.querySelector('.override');
+  if(ob) ob.disabled = false;
+}
+
+function saveOverride(btn){
+  const form = btn.closest('.override-form');
+  const field = btn.closest('.field');
+  const type = field.dataset.type || 'name';
+  const err = form.querySelector('.ovr-err');
+  const reason = form.querySelector('.ovr-reason').value.trim();
+
+  const sel = form.querySelector('input[name="ovr-src"]:checked');
+  const value = (sel && sel.value === '__custom__')
+    ? form.querySelector('.ovr-custom').value.trim()
+    : (sel ? sel.value : '');
+
+  if(!value){
+    err.textContent = 'Enter a custom value or pick a source variant.';
+    err.hidden = false;
+    return;
+  }
+  if(!reason){
+    err.textContent = 'A one-line reason is required.';
+    err.hidden = false;
+    form.querySelector('.ovr-reason').focus();
+    return;
+  }
+
+  const valueBox = field.querySelector('.value');
+  valueBox.innerHTML = `<code class="chip chip-${type}">${escapeHtml(value)}</code>
+        <div class="citation">✓ Overridden · reason: "${escapeHtml(reason)}"</div>`;
+  form.remove();
+
+  if(field.classList.contains('field-conflict')){
+    field.dataset.resolved = 'true';
+    delete field.dataset.escalated;
+  }
+  if(field.classList.contains('field-missing')){
+    field.classList.remove('field-missing');
+    delete field.dataset.requested;
+  }
+
+  const ob = field.querySelector('.override');
+  if(ob){
+    ob.disabled = false;
+    ob.textContent = '✓ overridden';
+    ob.classList.add('done');
+    ob.removeAttribute('onclick');
+    ob.onclick = null;
+  }
+
+  const card = field.closest('.client-card');
+  const clientEl = card ? card.querySelector('.client-id') : null;
+  logOverride({
+    client: clientEl ? clientEl.textContent.trim() : '',
+    label: field.dataset.label || '',
+    value: value,
+    reason: reason,
+  });
+  updateClientState(card);
+}
+
+function escalateField(btn){
+  const field = btn.closest('.field');
+  if(!field || field.dataset.escalated === 'true') return;
+  field.dataset.escalated = 'true';
+  const note = field.querySelector('.conflict-note');
+  if(note){
+    note.classList.remove('missing-review');
+    note.classList.add('escalated-note');
+    note.innerHTML = '↑ Escalated to compliance';
+  }
+  btn.textContent = '↑ escalated';
+  btn.classList.add('done');
+  btn.disabled = true;
+  updateClientState(field.closest('.client-card'));
+}
+
+function requestField(btn){
+  const field = btn.closest('.field');
+  if(!field || field.dataset.requested === 'true') return;
+  field.dataset.requested = 'true';
+  const box = field.querySelector('.value');
+  if(box){
+    const marker = document.createElement('div');
+    marker.className = 'requested-note';
+    marker.innerHTML = '✉ Requested from client';
+    box.appendChild(marker);
+  }
+  btn.textContent = '✉ requested';
+  btn.classList.add('done');
+  btn.disabled = true;
+  updateClientState(field.closest('.client-card'));
+}
+
+function logOverride(entry){
+  const log = document.getElementById('overrides-log');
+  if(!log) return;
+  const body = log.querySelector('.overrides-log-body');
+  const row = document.createElement('div');
+  row.className = 'overrides-log-row';
+  row.innerHTML = `<span class="ovr-log-field">${escapeHtml(entry.client)} · ${escapeHtml(entry.label)}</span>
+        <span class="ovr-log-val">→ ${escapeHtml(entry.value)}</span>
+        <span class="ovr-log-reason">"${escapeHtml(entry.reason)}"</span>`;
+  body.appendChild(row);
+  log.hidden = false;
+  log.open = true;
+  log.querySelector('.ovr-count').textContent = String(body.querySelectorAll('.overrides-log-row').length);
+}
+
+// ============================================================
+// TOKEN LINKING — hover any [XXX_N] to glow its match in the sidebar,
+// and hover the sidebar entity to glow every mention in receipts.
+// ============================================================
+
+document.addEventListener('mouseover', e => {
+  const el = e.target.closest('[data-token]');
+  if(!el) return;
+  const token = el.dataset.token;
+  try {
+    document.querySelectorAll(relatedTokenSelector(token))
+      .forEach(x => x.classList.add('token-linked'));
+  } catch(_){}
+});
+document.addEventListener('mouseout', e => {
+  const el = e.target.closest('[data-token]');
+  if(!el) return;
+  document.querySelectorAll('.token-linked')
+    .forEach(x => x.classList.remove('token-linked'));
+});
+
+// ============================================================
+// CHAT INTERACTION
+// ============================================================
+
+// Full-local mode — the zero-egress switch. When on, every exchange is
+// answered on the MI300X, receipts say nothing crossed, the pipeline strip
+// reconciles locally, and the send gate is unnecessary.
+let fullLocal = false;
+function toggleFullLocal(){
+  fullLocal = !fullLocal;
+  document.getElementById('mode-toggle').classList.toggle('on', fullLocal);
+  clearTimeout(amdTimer);
+  document.getElementById('amd-badge-text').innerHTML = fullLocal
+    ? '<b>Local:</b> AMD MI300X <span class="sep">·</span> <b>zero egress</b>'
+    : '<b>Local:</b> AMD MI300X <span class="sep">·</span> <b>Remote:</b> Fireworks AI';
+  document.getElementById('amd-pulse').style.background = 'var(--conf-good)';
+  document.getElementById('chat').insertAdjacentHTML('beforeend', `<div class="sysnote">${fullLocal
+    ? 'Full-local mode on · remote reasoning disabled · re-running reconciliation entirely on the MI300X'
+    : 'Full-local mode off · heavy cross-document reasoning may use one redacted cloud call per exchange'}</div>`);
+  if(fullLocal) playPipeline(true);   // the zero-egress re-run, on screen
+  resetSendGate();
+  updateInputDetection();
+  scrollChat();
+}
+
+// Send gate — human review before anything crosses to the cloud.
+// If the message would route hybrid AND contains detected real values,
+// the first click arms a confirm state instead of sending. The input-detect
+// strip below already shows exactly what will be tokenised.
+let pendingConfirm = false;
+
+function resetSendGate(){
+  pendingConfirm = false;
+  const btn = document.getElementById('send-btn');
+  btn.textContent = 'Send →';
+  btn.classList.remove('confirm');
+}
+
+function hasDetectedEntities(text){
+  const expanded = expandEntities(piles[currentPile].entities);
+  return expanded.some(e => {
+    const esc = e.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(esc, 'i').test(text);
+  });
+}
+
+function sendMessage(){
+  const input = document.getElementById('chat-input');
+  const userText = input.value.trim();
+  const p = piles[currentPile];
+  const btn = document.getElementById('send-btn');
+
+  if(!fullLocal && userText && !pendingConfirm && predictRouting(userText) === 'hybrid' && hasDetectedEntities(userText)){
+    pendingConfirm = true;
+    btn.textContent = 'Confirm · send redacted →';
+    btn.classList.add('confirm');
+    return;
+  }
+  resetSendGate();
+
+  if(!userText && exchangeIndex < p.canned.length){
+    const ex = p.canned[exchangeIndex++];
+    appendExchange(ex.user, ex.receipt, ex.ai, ex.sources);
+  } else if(userText){
+    // Match canned answers by question text, so clicking suggested chips
+    // out of order still returns the right answer.
+    const match = p.canned.find(x => x.user.trim().toLowerCase() === userText.toLowerCase());
+    if(match){
+      appendExchange(userText, match.receipt, match.ai, match.sources);
+      // Keep the empty-input stepper in sync so it never replays this answer.
+      exchangeIndex = Math.max(exchangeIndex, p.canned.indexOf(match) + 1);
+    } else {
+      appendExchange(userText, "Local-only check. No cloud call for this exchange.", "This is a UI mockup. In the real build, the Reconciler agent would answer using the local entity map plus a redacted cloud call. To see another canned exchange, switch piles or click one of the suggested questions above.", "Mockup mode · no live model");
+    }
+  }
+  input.value = "";
+  updateInputDetection();
+  scrollChat();
+}
+
+function quickAsk(text){
+  const input = document.getElementById('chat-input');
+  // Re-arm only when the question changes; a repeat click on the same chip
+  // confirms the armed gate instead of re-arming forever.
+  if(!(pendingConfirm && input.value.trim() === text)) resetSendGate();
+  input.value = text;
+  updateInputDetection();
+  sendMessage();
+}
+
+function appendExchange(user, receipt, ai, sources){
+  // Full-local mode overrides the route: nothing crosses, and the receipt
+  // says so. Doc references are kept from the original sources string.
+  if(fullLocal){
+    const m = String(sources).match(/doc_.*/);
+    sources = 'Full-local · MI300X only' + (m ? ' · ' + m[0] : '');
+    receipt = 'Full-local mode · all reasoning ran on the MI300X · <b>nothing crossed the network</b>.';
+  }
+  const chat = document.getElementById('chat');
+  chat.insertAdjacentHTML('beforeend', `
+    <div class="bubble user">${highlightEntities(user, piles[currentPile].entities)}</div>
+    ${receiptBlockHTML(receipt, sources)}
+    <div class="bubble ai">${ai}<div class="sources">↳ Sources: <b>${escapeHtml(sources)}</b></div></div>
+  `);
+  if(detectRouting(sources) === 'hybrid') flashRemote();
+  tagTokensForLinking();
+}
+
+// AMD badge flicks to the remote-call state whenever a hybrid exchange
+// fires, then settles back — the brief's "briefly switches" behaviour.
+let amdTimer = null;
+function flashRemote(){
+  if(fullLocal) return;   // nothing ever crosses in full-local mode
+  const t = document.getElementById('amd-badge-text');
+  const pulse = document.getElementById('amd-pulse');
+  if(!t || !pulse) return;
+  clearTimeout(amdTimer);
+  t.innerHTML = 'Sending tokenised payload to <b>Fireworks</b>…';
+  pulse.style.background = 'var(--conf-review)';
+  amdTimer = setTimeout(() => {
+    t.innerHTML = '<b>Local:</b> AMD MI300X <span class="sep">·</span> <b>Remote:</b> Fireworks AI';
+    pulse.style.background = 'var(--conf-good)';
+  }, 1600);
+}
+
+// Pipeline progress strip — plays at the top of the chat when a pile
+// loads, so the local-vs-remote split is felt before the answer lands.
+let pipelineTimers = [];
+function playPipeline(atEnd){
+  pipelineTimers.forEach(clearTimeout);
+  pipelineTimers = [];
+  const stages = [
+    ['Extract', 'MI300X', false],
+    ['Resolve entities', 'MI300X', false],
+    ['Redact', 'Presidio · local', false],
+    ['Reconcile', fullLocal ? 'MI300X · full-local' : 'Fireworks · redacted', !fullLocal],
+    ['Audit', 'MI300X', false],
+    ['Emit', 'MI300X', false],
+  ];
+  const strip = document.createElement('div');
+  strip.className = 'pipeline-strip';
+  strip.innerHTML = stages.map((s, i) =>
+    `${i ? '<span class="parrow">→</span>' : ''}<span class="pstage${s[2] ? ' remote' : ''}">${s[0]} · ${s[1]}</span>`
+  ).join('');
+  const chat = document.getElementById('chat');
+  if(atEnd) chat.appendChild(strip);
+  else chat.insertBefore(strip, chat.firstChild);
+  const els = strip.querySelectorAll('.pstage');
+  stages.forEach((s, i) => {
+    pipelineTimers.push(setTimeout(() => {
+      els.forEach((el, j) => {
+        el.classList.toggle('active', j === i);
+        el.classList.toggle('done', j < i);
+      });
+      if(s[2]) flashRemote();
+    }, 350 + i * 420));
+  });
+  pipelineTimers.push(setTimeout(() => {
+    els.forEach(el => { el.classList.remove('active'); el.classList.add('done'); });
+  }, 350 + stages.length * 420));
+}
+
+function scrollChat(){
+  setTimeout(() => {
+    const chat = document.getElementById('chat');
+    chat.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }, 50);
+}
+
+// ============================================================
+// UTILITIES
+// ============================================================
+
+const COLLAPSE_CLASS = { 'pile-pane': 'p-collapsed', 'assistant-pane': 'a-collapsed', 'record-pane': 'r-collapsed' };
+
+function togglePane(id){
+  const pane = document.getElementById(id);
+  const collapsed = pane.classList.toggle('collapsed');
+  document.querySelector('.wrap').classList.toggle(COLLAPSE_CLASS[id], collapsed);
+  const btn = pane.querySelector('.toggle');
+  btn.textContent = collapsed ? '▸' : 'Collapse';
+  btn.setAttribute(collapsed ? 'aria-label' : 'data-x-noop', collapsed ? 'Expand pane' : '');
+  if(!collapsed) btn.removeAttribute('aria-label');
+}
+
+// Per-pane text-size modifier. Uses CSS zoom on the pane body so every
+// child scales together (chips, citations, chat, receipts).
+const FONT_STEPS = [0.85, 0.925, 1.0, 1.075, 1.15, 1.25];
+function fontSize(id, delta){
+  const pane = document.getElementById(id);
+  const body = pane.querySelector('.pane-body');
+  let idx = parseInt(pane.dataset.fontIdx || '2', 10);
+  idx = Math.max(0, Math.min(FONT_STEPS.length - 1, idx + delta));
+  pane.dataset.fontIdx = idx;
+  body.style.zoom = FONT_STEPS[idx];
+  const [minus, plus] = pane.querySelectorAll('.font-btn');
+  minus.disabled = idx === 0;
+  plus.disabled = idx === FONT_STEPS.length - 1;
+}
+
+function escapeHtml(text){
+  const map = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'};
+  return String(text).replace(/[&<>"']/g, m => map[m]);
+}
+
+document.getElementById('chat-input').addEventListener('keypress', e => {
+  if(e.key === 'Enter'){ sendMessage(); }
+});
+
+// Predict routing from the message text alone. In production this would be
+// a small local intent classifier; here it's a keyword heuristic that catches
+// the entity-resolution questions the local pipeline can answer without cloud.
+function predictRouting(text){
+  const localTriggers = /\b(merge|merged|alias|dedup|resolve|resolved|same\s+(person|org|patient|client|entity|company)|why\s+did\s+you\s+(merge|link|match|combine|group))\b/i;
+  return localTriggers.test(text) ? 'local' : 'hybrid';
+}
+
+// Live entity detection + routing prediction as the user types.
+function updateInputDetection(){
+  const text = document.getElementById('chat-input').value;
+  const indicator = document.getElementById('input-detect');
+  if(!text.trim()){ indicator.innerHTML = ''; return; }
+
+  if(fullLocal){
+    indicator.innerHTML = '<span class="routing-chip local" data-tooltip="Full-local mode: every agent runs on the MI300X. No cloud calls in this mode, so no redaction round-trip is needed."><span class="dot"></span>Full-local · 0 cloud calls</span>'
+      + '<span class="label" style="color:var(--muted2)">Nothing leaves the machine in this mode</span>';
+    return;
+  }
+
+  const p = piles[currentPile];
+  const expanded = expandEntities(p.entities);
+
+  const seen = new Set();
+  const detected = [];
+  for(const e of expanded){
+    const escapedValue = e.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp(escapedValue, 'i');
+    if(re.test(text) && !seen.has(e.token)){
+      detected.push(e);
+      seen.add(e.token);
+    }
+  }
+
+  const isLocal = predictRouting(text) === 'local';
+  const routeChip = isLocal
+    ? '<span class="routing-chip local" data-tooltip="Local trigger detected (merge/alias/same-entity). Query will run on MI300X: no cloud call, no redaction needed."><span class="dot"></span>Will run locally · MI300X</span>'
+    : '<span class="routing-chip hybrid" data-tooltip="Query needs cross-document reasoning. Presidio will replace every detected value with a token before Fireworks sees it. Sending needs a second click to confirm."><span class="dot"></span>Will make 1 redacted cloud call</span>';
+
+  let detail;
+  if(isLocal){
+    detail = detected.length
+      ? '<span class="label" style="color:var(--muted2)">Detected · but nothing crosses the network:</span>' +
+        detected.map(e => `<span class="det"><span class="chip chip-${e.type}">${e.token}</span><span class="det-val">${escapeHtml(e.value)}</span></span>`).join('')
+      : '<span class="label" style="color:var(--muted2)">No cloud call · no redaction needed</span>';
+  } else {
+    detail = detected.length
+      ? '<span class="label" style="color:var(--conf-good)">✓ Will redact before cloud:</span>' +
+        detected.map(e => `<span class="det"><span class="chip chip-${e.type}">${e.token}</span><span class="det-val">${escapeHtml(e.value)}</span></span>`).join('')
+      : '<span class="label" style="color:var(--muted2)">No real values in your message · doc context already tokenised</span>';
+  }
+
+  indicator.innerHTML = routeChip + detail;
+}
+document.getElementById('chat-input').addEventListener('input', () => {
+  resetSendGate();          // editing the message disarms the confirm state
+  updateInputDetection();
+});
+
+loadPile('kyc');
+</script>
+
+</body>
+</html>

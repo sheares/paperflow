@@ -1,0 +1,96 @@
+{
+  "planted_conflicts": [
+    {
+      "field": "Email",
+      "entity": "Lim Wei Jie",
+      "per_doc": {
+        "doc_001": "weijie.lim@acmerobotics.sg",
+        "doc_002": "wjlim@acme.com.sg"
+      },
+      "correct": "weijie.lim@acmerobotics.sg"
+    },
+    {
+      "field": "Phone",
+      "entity": "Cobalt Studio",
+      "per_doc": {
+        "doc_005": "+65 6555 2021",
+        "doc_006": "+65 6555 2020"
+      },
+      "correct": "+65 6555 2020",
+      "note": "doc_005 transcription typo"
+    }
+  ],
+  "planted_gaps": [
+    {
+      "field": "RSVP status",
+      "entity": "Brightpath Learning LLP",
+      "reason": "not captured in either doc"
+    }
+  ],
+  "alias_variations": [
+    {
+      "canonical": "Acme Robotics Pte Ltd",
+      "aliases": [
+        "ACME Robotics"
+      ]
+    }
+  ],
+  "sensitive_spans": [
+    {
+      "value": "Lim Wei Jie",
+      "type": "PERSON"
+    },
+    {
+      "value": "Nurul Aisyah",
+      "type": "PERSON"
+    },
+    {
+      "value": "Tan Mei Ling",
+      "type": "PERSON"
+    },
+    {
+      "value": "weijie.lim@acmerobotics.sg",
+      "type": "EMAIL"
+    },
+    {
+      "value": "wjlim@acme.com.sg",
+      "type": "EMAIL"
+    },
+    {
+      "value": "aisyah@brightpath.edu.sg",
+      "type": "EMAIL"
+    },
+    {
+      "value": "meiling@cobaltstudio.co",
+      "type": "EMAIL"
+    },
+    {
+      "value": "+65 6123 4567",
+      "type": "PHONE"
+    },
+    {
+      "value": "+65 9876 5432",
+      "type": "PHONE"
+    },
+    {
+      "value": "+65 6555 2020",
+      "type": "PHONE"
+    },
+    {
+      "value": "+65 6555 2021",
+      "type": "PHONE"
+    },
+    {
+      "value": "201912345A",
+      "type": "UEN"
+    },
+    {
+      "value": "T18LL0042K",
+      "type": "UEN"
+    },
+    {
+      "value": "53210987B",
+      "type": "UEN"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+pile_type: kyc_onboarding
+display_name: KYC onboarding
+entity_noun: client
+required_fields:
+  - key: full_name
+    label: Full name
+  - key: national_id
+    label: National ID
+  - key: residential_address
+    label: Residential address
+  - key: declaration_date
+    label: Declaration date
+  - key: source_of_funds
+    label: Source of funds
+  - key: beneficial_owner
+    label: Beneficial owner

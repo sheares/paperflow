@@ -1,0 +1,10 @@
+services:
+  paperflow:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8080:8080"
+    env_file:
+      - path: .env
+        required: false

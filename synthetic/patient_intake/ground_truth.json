@@ -1,0 +1,94 @@
+{
+  "planted_conflicts": [
+    {
+      "field": "Date of birth",
+      "entity": "Rajesh Kumar",
+      "per_doc": {
+        "doc_001": "1986-03-14",
+        "doc_002": "1986-04-14"
+      },
+      "correct": "1986-03-14",
+      "note": "doc_002 month transposition"
+    },
+    {
+      "field": "Policy number",
+      "entity": "Chloe Ng",
+      "per_doc": {
+        "doc_004": "AIA-553102",
+        "doc_005": "AIA-553120"
+      },
+      "correct": "AIA-553102",
+      "note": "doc_005 final digits transposed"
+    }
+  ],
+  "planted_gaps": [
+    {
+      "field": "Consent signed",
+      "entity": "Rajesh Kumar",
+      "reason": "intake unsigned"
+    },
+    {
+      "field": "Allergies",
+      "entity": "Chloe Ng",
+      "reason": "field left blank on intake"
+    }
+  ],
+  "alias_variations": [
+    {
+      "canonical": "Rajesh Kumar",
+      "aliases": [
+        "R. Kumar"
+      ]
+    }
+  ],
+  "sensitive_spans": [
+    {
+      "value": "Rajesh Kumar",
+      "type": "PERSON"
+    },
+    {
+      "value": "R. Kumar",
+      "type": "PERSON"
+    },
+    {
+      "value": "Chloe Ng",
+      "type": "PERSON"
+    },
+    {
+      "value": "S8612345Z",
+      "type": "NRIC"
+    },
+    {
+      "value": "S9456781D",
+      "type": "NRIC"
+    },
+    {
+      "value": "PRU-009281",
+      "type": "POLICY"
+    },
+    {
+      "value": "AIA-553102",
+      "type": "POLICY"
+    },
+    {
+      "value": "AIA-553120",
+      "type": "POLICY"
+    },
+    {
+      "value": "LABREQ-44120",
+      "type": "SERIAL"
+    },
+    {
+      "value": "1986-03-14",
+      "type": "DATE"
+    },
+    {
+      "value": "1986-04-14",
+      "type": "DATE"
+    },
+    {
+      "value": "1994-11-02",
+      "type": "DATE"
+    }
+  ]
+}

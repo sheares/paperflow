@@ -1,0 +1,16 @@
+pile_type: partner_collation
+display_name: Partner collation
+entity_noun: partner
+required_fields:
+  - key: organisation
+    label: Organisation
+  - key: uen
+    label: UEN
+  - key: contact_name
+    label: Contact name
+  - key: email
+    label: Email
+  - key: phone
+    label: Phone
+  - key: rsvp_status
+    label: RSVP status

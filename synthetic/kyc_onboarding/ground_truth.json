@@ -1,0 +1,93 @@
+{
+  "planted_conflicts": [
+    {
+      "field": "Residential address",
+      "entity": "Mohammed Farid bin Hassan",
+      "per_doc": {
+        "doc_001": "Blk 210 Bishan St 23 #11-04 SG 570210",
+        "doc_002": "Blk 88 Tampines Ave 4 #05-12 SG 521088"
+      },
+      "correct": "Blk 210 Bishan St 23 #11-04 SG 570210"
+    },
+    {
+      "field": "National ID",
+      "entity": "Yvonne Goh",
+      "per_doc": {
+        "doc_003": "K3098551",
+        "doc_004": "K3098S51"
+      },
+      "correct": "K3098551",
+      "note": "doc_004 OCR substituted 5 -> S"
+    }
+  ],
+  "planted_gaps": [
+    {
+      "field": "Source of funds",
+      "entity": "Mohammed Farid bin Hassan",
+      "reason": "not captured on any document"
+    },
+    {
+      "field": "Declaration date",
+      "entity": "Yvonne Goh",
+      "reason": "intake unsigned"
+    }
+  ],
+  "alias_variations": [
+    {
+      "canonical": "Mohammed Farid bin Hassan",
+      "aliases": [
+        "Farid Hassan"
+      ]
+    }
+  ],
+  "sensitive_spans": [
+    {
+      "value": "Mohammed Farid bin Hassan",
+      "type": "PERSON"
+    },
+    {
+      "value": "Farid Hassan",
+      "type": "PERSON"
+    },
+    {
+      "value": "Yvonne Goh",
+      "type": "PERSON"
+    },
+    {
+      "value": "K7741209",
+      "type": "NRIC"
+    },
+    {
+      "value": "K3098551",
+      "type": "NRIC"
+    },
+    {
+      "value": "K3098S51",
+      "type": "NRIC"
+    },
+    {
+      "value": "Blk 210 Bishan St 23 #11-04",
+      "type": "ADDRESS"
+    },
+    {
+      "value": "Blk 88 Tampines Ave 4 #05-12",
+      "type": "ADDRESS"
+    },
+    {
+      "value": "8 Marina Boulevard #30-01",
+      "type": "ADDRESS"
+    },
+    {
+      "value": "Singapore 570210",
+      "type": "POSTCODE"
+    },
+    {
+      "value": "Singapore 521088",
+      "type": "POSTCODE"
+    },
+    {
+      "value": "Singapore 018981",
+      "type": "POSTCODE"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+From: yvonne.goh@example.com
+To: kyc@bank.sg
+Subject: KYC Declaration
+
+Doc ID: doc_003
+
+Hi team,
+
+Please find my KYC declaration below.
+
+Full Name: Yvonne Goh
+National ID (NRIC): K3098551
+Residential Address: 8 Marina Boulevard #30-01, Singapore 018981
+Beneficial Owner: Self
+Source of Funds: Employment income
+
+Note: I'll pop by the branch on Monday to sign the paper form.
+
+Regards,
+Yvonne
