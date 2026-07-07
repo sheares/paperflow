@@ -2447,6 +2447,12 @@ function sendMessage(){
       appendExchange(userText, match.receipt, match.ai, match.sources);
       // Keep the empty-input stepper in sync so it never replays this answer.
       exchangeIndex = Math.max(exchangeIndex, p.canned.indexOf(match) + 1);
+    } else if(p.live){
+      const q = userText;
+      liveAsk(q).catch(() => appendExchange(q,
+        "Local-only check. No cloud call for this exchange.",
+        "The live backend is unreachable right now; try again.",
+        "Mockup mode · no live model"));
     } else {
       appendExchange(userText, "Local-only check. No cloud call for this exchange.", "This is a UI mockup. In the real build, the Reconciler agent would answer using the local entity map plus a redacted cloud call. To see another canned exchange, switch piles or click one of the suggested questions above.", "Mockup mode · no live model");
     }
@@ -2645,6 +2651,49 @@ document.getElementById('chat-input').addEventListener('input', () => {
 });
 
 loadPile('kyc');
+
+// ============================================================
+// LIVE BACKEND BRIDGE. When served by the FastAPI backend, pile
+// data and chat answers come from the real pipeline; opened as a
+// file, the canned demo remains fully functional.
+// ============================================================
+const LIVE_PILES = { kyc: 'kyc_onboarding', patient: 'patient_intake', partner: 'partner_collation' };
+const TOKEN_TYPES = { PERSON: 'name', ORG: 'org', ID: 'id', UEN: 'id', POLICY: 'id', SERIAL: 'id', ADDR: 'address', POSTCODE: 'address', DATE: 'date', EMAIL: 'email', PHONE: 'phone' };
+
+function tokenChip(t){
+  const fam = (t.match(/^\[([A-Z]+)_/) || [])[1];
+  return `<code class="token token-${TOKEN_TYPES[fam] || 'doc'}">${t}</code>`;
+}
+
+async function hydrateLive(){
+  for(const [key, name] of Object.entries(LIVE_PILES)){
+    try{
+      const r = await fetch(`/api/pile/${name}`);
+      if(!r.ok) continue;
+      piles[key] = Object.assign({}, piles[key], await r.json());
+      if(key === currentPile) loadPile(key);
+    }catch(e){ /* no backend: canned demo mode */ }
+  }
+}
+hydrateLive();
+
+async function liveAsk(text){
+  const r = await fetch('/api/ask', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pile: LIVE_PILES[currentPile], question: text, full_local: fullLocal })
+  });
+  if(!r.ok) throw new Error('ask failed');
+  const d = await r.json();
+  const rc = d.receipt;
+  const receiptHtml = (rc.route === 'hybrid'
+    ? rc.tokens_shown.slice(0, 10).map(tokenChip).join(' ') + ' · ' : '')
+    + `<b>${rc.crossed}</b>`;
+  const sources = (rc.route === 'hybrid'
+    ? 'Local + remote (redacted)' : 'Local resolver · no remote call')
+    + ` · live · ${rc.latency_s}s`;
+  appendExchange(text, receiptHtml, escapeHtml(d.answer), sources);
+  scrollChat();
+}
 </script>
 
 </body>
