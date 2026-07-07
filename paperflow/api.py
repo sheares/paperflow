@@ -6,13 +6,19 @@ the UI's receipts reflect whichever route actually executed.
 """
 from __future__ import annotations
 
+import asyncio
+import json
 import os
+import shutil
+import tempfile
+import uuid
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
+from .extractor import extract_pile
 from .pipeline import run_pile
 from .router import Router
 from .uiview import build_pile_view
@@ -27,6 +33,14 @@ PILES = {
 
 app = FastAPI(title="paperflow")
 _routers: dict[str, Router] = {}
+
+# session-scoped "real" piles: session_id -> {"dir": Path, "schema": Path}
+REAL = Path(tempfile.gettempdir()) / "paperflow_real"
+REAL.mkdir(exist_ok=True)
+_real_sessions: dict[str, dict] = {}
+ALLOWED_UPLOAD_SUFFIXES = {".pdf", ".txt", ".md", ".xlsx"}
+MAX_UPLOAD_BYTES = 8 * 1024 * 1024
+MAX_UPLOAD_FILES = 12
 
 
 def _schema(pile: str) -> Path:
@@ -169,8 +183,132 @@ def run(body: RunBody):
 
 @app.post("/api/ask")
 def ask(body: AskBody):
+    if body.pile.startswith("real:"):
+        sess = _real_session(body.pile[len("real:"):])
+        run_dir = sess["dir"] / "run"
+        if not (run_dir / "run_output.json").exists():
+            raise HTTPException(409, "run the real pile first")
+        rk = "real:" + body.pile[len("real:"):]
+        if rk not in _routers:
+            _routers[rk] = Router(run_dir)
+        full_local = body.full_local or "FIREWORKS_API_KEY" not in os.environ
+        return _routers[rk].ask(body.question, full_local=full_local)
     run_dir = _ensure_run(body.pile)
     if body.pile not in _routers:
         _routers[body.pile] = Router(run_dir)
     full_local = body.full_local or "FIREWORKS_API_KEY" not in os.environ
     return _routers[body.pile].ask(body.question, full_local=full_local)
+
+
+# ---------- real pile ----------
+
+def _real_session(session_id: str) -> dict:
+    if session_id not in _real_sessions or not \
+            _real_sessions[session_id]["dir"].exists():
+        raise HTTPException(404, "no such real-pile session")
+    return _real_sessions[session_id]
+
+
+@app.post("/api/real/upload")
+async def real_upload(schema: str = Form("kyc"),
+                      files: list[UploadFile] = File(...)):
+    """Create a fresh session and store uploaded documents. Returns the
+    session_id; caller then POSTs /api/real/run to execute the pipeline."""
+    if schema not in {"kyc", "patient", "partner"}:
+        raise HTTPException(400, "unknown schema")
+    if not files or len(files) > MAX_UPLOAD_FILES:
+        raise HTTPException(400,
+                            f"1-{MAX_UPLOAD_FILES} files required")
+    session_id = uuid.uuid4().hex[:12]
+    sess_dir = REAL / session_id
+    sess_dir.mkdir(parents=True, exist_ok=True)
+    for uf in files:
+        name = Path(uf.filename or "doc").name  # strip any path parts
+        suffix = Path(name).suffix.lower()
+        if suffix not in ALLOWED_UPLOAD_SUFFIXES:
+            shutil.rmtree(sess_dir, ignore_errors=True)
+            raise HTTPException(400, f"unsupported file type: {suffix}")
+        content = await uf.read()
+        if len(content) > MAX_UPLOAD_BYTES:
+            shutil.rmtree(sess_dir, ignore_errors=True)
+            raise HTTPException(413, f"{name} > 8 MB")
+        (sess_dir / name).write_bytes(content)
+    _real_sessions[session_id] = {"dir": sess_dir, "schema": schema}
+    return {"session_id": session_id,
+            "files": [f.filename for f in files]}
+
+
+class RealRunBody(BaseModel):
+    session_id: str
+    full_local: bool | None = None
+
+
+@app.post("/api/real/run")
+def real_run(body: RealRunBody):
+    """Extract → redact → reconcile the uploaded pile. Extraction hits the
+    same Gemma endpoint as the demo piles; if VLLM_URL isn't reachable,
+    the pipeline degrades to text-only ingest (PDFs may return empty)."""
+    sess = _real_session(body.session_id)
+    schema_path = ROOT / "paperflow" / "schemas" / f"{sess['schema']}.yaml"
+    full_local = (body.full_local if body.full_local is not None
+                  else "FIREWORKS_API_KEY" not in os.environ)
+
+    # extract via live Gemma if reachable; cache the JSON for the pile view
+    extraction_path = sess["dir"] / "extraction.json"
+    try:
+        result = asyncio.run(extract_pile(sess["dir"], schema_path))
+        extraction_path.write_text(json.dumps(result.to_dict(), indent=1))
+    except Exception as e:  # noqa: BLE001 - remote unavailable: keep text
+        extraction_path.write_text(json.dumps(
+            {"pile": sess["dir"].name, "docs": [], "error": str(e)}))
+        raise HTTPException(502, f"extractor unavailable: {type(e).__name__}. "
+                                 f"Start a Gemma/vLLM endpoint and set "
+                                 f"VLLM_URL, or try text-only files.")
+
+    run_pile(sess["dir"], schema_path, extraction_path, full_local,
+             out_root=sess["dir"] / "runs")
+    # relocate to a stable location the router can open
+    src = sess["dir"] / "runs" / f"run_{sess['dir'].name}"
+    dst = sess["dir"] / "run"
+    if dst.exists():
+        shutil.rmtree(dst)
+    shutil.move(str(src), str(dst))
+    _routers.pop(f"real:{body.session_id}", None)
+    return {"ok": True, "session_id": body.session_id}
+
+
+@app.get("/api/real/pile/{session_id}")
+def real_pile(session_id: str):
+    sess = _real_session(session_id)
+    run_dir = sess["dir"] / "run"
+    extraction = sess["dir"] / "extraction.json"
+    if not (run_dir / "run_output.json").exists() or not extraction.exists():
+        raise HTTPException(409, "run the real pile first")
+    schema_path = ROOT / "paperflow" / "schemas" / f"{sess['schema']}.yaml"
+    view = build_pile_view(run_dir, extraction, schema_path)
+    view["real"] = True
+    return view
+
+
+@app.get("/api/real/doc/{session_id}/{filename}")
+def real_doc(session_id: str, filename: str):
+    sess = _real_session(session_id)
+    if "/" in filename or ".." in filename:
+        raise HTTPException(404, "not found")
+    path = sess["dir"] / filename
+    if not path.exists():
+        raise HTTPException(404, "not found")
+    mime = {"pdf": "application/pdf", "txt": "text/plain",
+            "md": "text/markdown",
+            "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            }.get(path.suffix.lstrip("."), "application/octet-stream")
+    return FileResponse(path, media_type=mime)
+
+
+@app.post("/api/real/reset/{session_id}")
+def real_reset(session_id: str):
+    sess = _real_sessions.pop(session_id, None)
+    if sess:
+        shutil.rmtree(sess["dir"], ignore_errors=True)
+    _routers.pop(f"real:{session_id}", None)
+    return {"ok": True}

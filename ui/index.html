@@ -346,6 +346,11 @@ main{ display: contents; }
   font-size: 10.5px; color: var(--muted2);
   margin-top: 14px; line-height: 1.5;
 }
+.band-legend-top{
+  margin: 0 0 14px; padding: 8px 12px;
+  border: 1px solid var(--line); border-radius: 8px;
+  background: rgba(255,255,255,0.02);
+}
 .band-legend .bl{ font-weight: 600; }
 .band-legend .bl-green{ color: var(--conf-good); }
 .band-legend .bl-amber{ color: var(--conf-review); }
@@ -736,9 +741,10 @@ main{ display: contents; }
 .field:first-child{ border-top: none; }
 .field .label{
   font-size: 11.5px; color: var(--muted); padding-top: 3px;
-  display: flex; align-items: center; gap: 6px;
+  display: flex; align-items: center; gap: 10px;
+  padding-left: 4px;
 }
-.label-icon{ display: inline-flex; flex-shrink: 0; width: 13px; height: 13px; }
+.label-icon{ display: inline-flex; flex-shrink: 0; width: 14px; height: 14px; }
 .label-icon svg{ width: 100%; height: 100%; }
 .field .value{ font-size: 13px; color: var(--ink); }
 .field .citation{ font-size: 10.5px; color: var(--muted2); margin-top: 3px; line-height: 1.45; }
@@ -1090,11 +1096,15 @@ main{ display: contents; }
 
 <nav class="tabs-bar">
   <div class="tabs-bar-inner">
+    <span class="tabs-label">Real pile</span>
+    <button class="tab pile-btn" data-pile="real" onclick="loadPile('real')" data-tooltip="Upload your own documents (PDF, TXT, MD, XLSX). The same pipeline that ran the demo piles will extract, redact and reconcile them, fully local. Session-scoped, cleared when you refresh.">📁 Your pile <span class="tab-count" id="real-tab-count">upload to start</span></button>
+    <span style="width:1px; height:22px; background:var(--line); margin:0 6px;"></span>
     <span class="tabs-label">Demo pile</span>
     <button class="tab pile-btn active" data-pile="kyc"     onclick="loadPile('kyc')">KYC onboarding <span class="tab-count">4 docs · 2 clients</span></button>
     <button class="tab pile-btn"        data-pile="partner" onclick="loadPile('partner')">Partner collation <span class="tab-count">6 docs · 3 partners</span></button>
     <button class="tab pile-btn"        data-pile="patient" onclick="loadPile('patient')">Patient intake <span class="tab-count">5 docs · 2 patients</span></button>
-    <span style="width:1px; height:22px; background:var(--line); margin:0 4px;"></span>
+    <span style="flex:1;"></span>
+    <span class="tabs-label" style="opacity:0.6;">Demo</span>
     <button class="tab" onclick="openSandbox()" data-tooltip="Paste anything with names, IDs, emails or addresses. See the redaction round-trip live on your own text. Nothing is stored or logged.">🧪 Redaction sandbox</button>
   </div>
 </nav>
@@ -1232,12 +1242,12 @@ main{ display: contents; }
       </div>
     </div>
     <div class="pane-body">
+      <div class="band-legend band-legend-top">Field bands: <span class="bl bl-green">green</span> auto-accept · <span class="bl bl-amber">amber</span> review · <span class="bl bl-red">red</span> blocked from any cloud call until a human approves</div>
       <div id="record-body"></div>
       <details class="overrides-log" id="overrides-log" hidden>
         <summary>Overrides <span class="ovr-count">0</span></summary>
         <div class="overrides-log-body"></div>
       </details>
-      <div class="band-legend">Field bands: <span class="bl bl-green">green</span> auto-accept · <span class="bl bl-amber">amber</span> review · <span class="bl bl-red">red</span> blocked from any cloud call until a human approves</div>
       <div class="export-bar">
         <button class="btn">Export CSV</button>
         <button class="btn ghost">Export JSON</button>
@@ -1803,7 +1813,23 @@ function loadPile(key){
 
   document.getElementById('pile-meta').textContent = '· ' + p.domain;
   document.getElementById('assistant-meta').textContent = '· ' + p.assistantRole;
-  document.getElementById('record-meta').textContent = '· ' + p.clients.length + ' entities · ' + p.stats[2][0] + ' conflicts · ' + p.stats[3][0] + ' gap' + (p.stats[3][0] === '1' ? '' : 's');
+  if(p.stats && p.stats.length >= 4){
+    document.getElementById('record-meta').textContent = '· ' + p.clients.length + ' entities · ' + p.stats[2][0] + ' conflicts · ' + p.stats[3][0] + ' gap' + (p.stats[3][0] === '1' ? '' : 's');
+  } else {
+    document.getElementById('record-meta').textContent = '';
+  }
+
+  // Real pile in empty state: replace the pane content with an upload screen.
+  if(p.real && p.empty){
+    document.getElementById('pile-grid').innerHTML = REAL_EMPTY_HTML;
+    document.getElementById('pile-stats').innerHTML = '';
+    document.getElementById('chat').innerHTML = '';
+    document.getElementById('record-body').innerHTML = '<div style="padding:24px; color:var(--muted); font-size:12.5px; text-align:center;">Upload documents on the left to see the reconciled record here.</div>';
+    document.getElementById('sidebar-entities').innerHTML = '';
+    document.getElementById('sidebar-note').textContent = 'No entities yet.';
+    resetSendGate(); updateInputDetection();
+    return;
+  }
 
   renderPile(p);
   renderChat(p);
@@ -2056,7 +2082,9 @@ async function openDoc(i){
   const pileName = LIVE_PILES[currentPile];
   const fname = d.file || d.name;
   const fmt = (d.format || 'txt').toLowerCase();
-  const url = pileName ? `/api/doc/${pileName}/${encodeURIComponent(fname)}` : null;
+  const url = (currentPile === 'real' && REAL_SESSION)
+    ? `/api/real/doc/${REAL_SESSION}/${encodeURIComponent(fname)}`
+    : pileName ? `/api/doc/${pileName}/${encodeURIComponent(fname)}` : null;
   let preview = '';
   if(url){
     if(fmt === 'pdf'){
@@ -2075,7 +2103,7 @@ async function openDoc(i){
           </div>`;
         }
       } catch(_){}
-    } else if(fmt === 'xlsx'){
+    } else if(fmt === 'xlsx' && pileName){
       try{
         const r = await fetch(`/api/xlsx_preview/${pileName}/${encodeURIComponent(fname)}`);
         if(r.ok){
@@ -2120,6 +2148,85 @@ function closeDoc(){
 document.addEventListener('keydown', e => {
   if(e.key === 'Escape'){ closeDoc(); closeSandbox(); }
 });
+
+// ============================================================
+// REAL PILE — user uploads their own docs; the same pipeline runs.
+// ============================================================
+piles.real = {
+  domain: 'your own documents · upload to run the same pipeline',
+  assistantRole: 'reconciler · your pile',
+  stats: [], docs: [], clients: [], entities: [],
+  initial: { user: '', receipt: '', ai: '', sources: '' },
+  suggestedQs: [], canned: [], real: true, empty: true,
+};
+
+const REAL_EMPTY_HTML = `
+  <div style="max-width:640px; margin:32px auto; padding:32px; border:1.5px dashed var(--line); border-radius:16px; background:rgba(255,255,255,0.015); text-align:center;">
+    <div style="font-size:28px; margin-bottom:6px;">📁</div>
+    <div style="font-size:15px; font-weight:600; color:var(--ink); margin-bottom:6px;">Bring your own pile</div>
+    <div style="font-size:12px; color:var(--muted); line-height:1.55; margin-bottom:18px;">
+      Upload 1&thinsp;-&thinsp;12 documents (PDF, TXT, MD, XLSX). The same Extract → Redact → Reconcile pipeline that ran the demo piles will run on your files, live.<br>
+      Nothing is uploaded to any cloud; extraction runs on the AMD MI300X, reconciliation on redacted tokens via Fireworks (or fully local if you toggle it).<br>
+      Session is cleared when you refresh.
+    </div>
+    <div style="display:inline-flex; gap:10px; align-items:center; margin-bottom:8px;">
+      <label style="font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em;">Domain</label>
+      <select id="real-schema" style="padding:6px 10px; background:rgba(255,255,255,0.03); color:var(--ink); border:1px solid var(--line); border-radius:6px; font-size:12px;">
+        <option value="kyc">KYC onboarding</option>
+        <option value="patient">Patient intake</option>
+        <option value="partner">Partner collation</option>
+      </select>
+    </div>
+    <div style="margin-top:6px;">
+      <input type="file" id="real-file-input" multiple accept=".pdf,.txt,.md,.xlsx" style="display:none;" onchange="uploadRealFiles(event)">
+      <button class="btn" onclick="document.getElementById('real-file-input').click()">Choose files…</button>
+    </div>
+    <div id="real-upload-status" style="margin-top:14px; font-size:11.5px; color:var(--muted); line-height:1.5; min-height:16px;"></div>
+  </div>`;
+
+async function uploadRealFiles(evt){
+  const files = evt.target.files;
+  if(!files || !files.length) return;
+  const status = document.getElementById('real-upload-status');
+  const schema = document.getElementById('real-schema').value;
+  status.innerHTML = `Uploading ${files.length} file${files.length > 1 ? 's' : ''}…`;
+  const fd = new FormData();
+  fd.append('schema', schema);
+  for(const f of files) fd.append('files', f);
+  try{
+    const r = await fetch('/api/real/upload', {method:'POST', body:fd});
+    if(!r.ok){ status.innerHTML = 'Upload failed: ' + (await r.text()).slice(0, 200); return; }
+    const d = await r.json();
+    REAL_SESSION = d.session_id;
+    status.innerHTML = `Uploaded. Running the pipeline (extraction ~5s per PDF page, one redacted reconciliation call)…`;
+    const t0 = performance.now();
+    const rr = await fetch('/api/real/run', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({session_id: REAL_SESSION, full_local: fullLocal})});
+    if(!rr.ok){
+      const err = await rr.text();
+      status.innerHTML = 'Run failed: ' + err.slice(0, 300)
+        + '<br><br>Tip: the container needs VLLM_URL to reach a live Gemma endpoint for PDF extraction. Text-only files (TXT/MD) should still work.';
+      return;
+    }
+    const dt = ((performance.now() - t0) / 1000).toFixed(1);
+    status.innerHTML = `Pipeline ran in ${dt}s. Loading…`;
+    const pv = await fetch(`/api/real/pile/${REAL_SESSION}`);
+    if(pv.ok){
+      piles.real = Object.assign({}, piles.real, await pv.json(), {empty:false});
+      document.getElementById('real-tab-count').textContent =
+        `${piles.real.docs.length} docs · ${piles.real.clients.length} entities`;
+      loadPile('real');
+    }
+  } catch(e){ status.innerHTML = 'Upload error: ' + e.message; }
+}
+
+async function resetRealPile(){
+  if(REAL_SESSION){ try{ await fetch(`/api/real/reset/${REAL_SESSION}`, {method:'POST'}); }catch(_){} }
+  REAL_SESSION = null;
+  piles.real = Object.assign({}, piles.real, {docs:[], clients:[], entities:[], stats:[], empty:true});
+  document.getElementById('real-tab-count').textContent = 'upload to start';
+  loadPile('real');
+}
 
 // ============================================================
 // REDACTION SANDBOX — paste-and-tokenise on the user's own text.
@@ -2817,6 +2924,7 @@ loadPile('kyc');
 // file, the canned demo remains fully functional.
 // ============================================================
 const LIVE_PILES = { kyc: 'kyc_onboarding', patient: 'patient_intake', partner: 'partner_collation' };
+let REAL_SESSION = null;   // session_id for the currently loaded real pile
 const TOKEN_TYPES = { PERSON: 'name', ORG: 'org', ID: 'id', UEN: 'id', POLICY: 'id', SERIAL: 'id', ADDR: 'address', POSTCODE: 'address', DATE: 'date', EMAIL: 'email', PHONE: 'phone' };
 
 function tokenChip(t){
@@ -2837,9 +2945,11 @@ async function hydrateLive(){
 hydrateLive();
 
 async function liveAsk(text){
+  const pileArg = (currentPile === 'real' && REAL_SESSION)
+    ? `real:${REAL_SESSION}` : LIVE_PILES[currentPile];
   const r = await fetch('/api/ask', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ pile: LIVE_PILES[currentPile], question: text, full_local: fullLocal })
+    body: JSON.stringify({ pile: pileArg, question: text, full_local: fullLocal })
   });
   if(!r.ok) throw new Error('ask failed');
   const d = await r.json();
