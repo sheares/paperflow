@@ -124,31 +124,40 @@ class EntityMap:
         def _has_initial(n: str) -> bool:
             return any(len(w.rstrip(".")) == 1 for w in _words(n))
 
-        # alias resolution: reuse the token of an existing alias in the family
-        for known_key, token in self._lookup.items():
-            if not token.startswith(f"[{family}_"):
-                continue
-            known = self._display[known_key]
-            if family == "PERSON":
-                canonical = self.token_to_value[token]
-                if _has_initial(known) and not _has_initial(value):
-                    # a full name meeting an initials alias: merge only if the
-                    # token is unclaimed (canonical still initials) or already
-                    # claimed by a matching full name. "Ramesh Kumar" cannot
-                    # bridge into a token Rajesh Kumar has claimed.
-                    ok = _person_alias(value, known) if _has_initial(canonical) \
-                        else _person_alias(value, canonical)
+        # alias resolution: reuse the token of an existing alias in the family.
+        # Only PERSON and ORG have string-similarity aliases; every other
+        # family (ID, ADDR, DATE, EMAIL, PHONE, etc.) treats distinct strings
+        # as distinct entities. Subword matching an address against another
+        # address is a leak class ("Singapore" == "8 Marina ... Singapore").
+        alias_families = {"PERSON", "ORG"}
+        if family in alias_families:
+            for known_key, token in self._lookup.items():
+                if not token.startswith(f"[{family}_"):
+                    continue
+                known = self._display[known_key]
+                if family == "PERSON":
+                    canonical = self.token_to_value[token]
+                    if _has_initial(known) and not _has_initial(value):
+                        # a full name meeting an initials alias: merge only if
+                        # the token is unclaimed (canonical still initials) or
+                        # already claimed by a matching full name. "Ramesh
+                        # Kumar" cannot bridge into a token Rajesh Kumar has
+                        # claimed.
+                        ok = (_person_alias(value, known)
+                              if _has_initial(canonical)
+                              else _person_alias(value, canonical))
+                    else:
+                        ok = _person_alias(value, known)
                 else:
-                    ok = _person_alias(value, known)
-            else:
-                ok = _org_alias(value, known)
-            if ok:
-                self._register(key, value, token)
-                # the fullest surface form is the canonical one (re-hydration
-                # restores "Tan Mei Ling", not a partial NER catch "Mei Ling")
-                if len(value) > len(self.token_to_value[token]):
-                    self.token_to_value[token] = value
-                return token
+                    ok = _org_alias(value, known)
+                if ok:
+                    self._register(key, value, token)
+                    # the fullest surface form is the canonical one
+                    # (re-hydration restores "Tan Mei Ling", not a partial NER
+                    # catch "Mei Ling")
+                    if len(value) > len(self.token_to_value[token]):
+                        self.token_to_value[token] = value
+                    return token
 
         self._counters[family] = self._counters.get(family, 0) + 1
         token = f"[{family}_{self._counters[family]}]"

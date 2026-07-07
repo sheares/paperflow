@@ -87,7 +87,7 @@ class Conflict:
     variants: list[Variant]
     features: dict = field(default_factory=dict)
 
-    def compute_features(self) -> None:
+    def compute_features(self, entity_display: str = "") -> None:
         vals = [v.value for v in self.variants]
         f: dict = {"n_variants": len(vals)}
         if len(vals) == 2:
@@ -99,6 +99,16 @@ class Conflict:
                 f["char_diffs"] = len(diffs)
                 f["likely_ocr_substitution"] = (
                     len(diffs) == 1 and diffs[0][1].isdigit() != diffs[0][2].isdigit())
+                # adjacent digit swap ("02" vs "20"): classic transcription slip
+                f["likely_transposition"] = (
+                    len(diffs) == 2 and diffs[0][0] + 1 == diffs[1][0]
+                    and diffs[0][1] == diffs[1][2] and diffs[0][2] == diffs[1][1])
+        if "@" in "".join(vals) and entity_display:
+            ent_words = {w for w in re.split(r"[^a-z0-9]+", entity_display.lower())
+                         if len(w) >= 4}
+            f["email_domain_matches_entity"] = {
+                v.token: any(w in v.value.split("@")[-1].lower() for w in ent_words)
+                for v in self.variants if "@" in v.value}
         f["format_validity"] = {v.token: v.format_valid for v in self.variants}
         self.features = f
 
@@ -133,13 +143,16 @@ pipeline. You see only placeholder tokens, document-type hints, and computed \
 features. You never see real values; do not ask for them.
 
 For each conflict below, decide which variant token is most likely correct, \
-or escalate if the evidence is insufficient. Reasoning guide: a variant that \
-fails format validation is likely an error; a single character substitution \
-between a digit and a letter suggests OCR corruption in the scan-prone \
-document; self-submitted signed documents outrank third-party artefacts for \
-personal fields; third-party issued documents outrank self-declared ones for \
-their own domain (e.g. an insurance card for a policy number) unless features \
-say otherwise.
+or escalate if the evidence is insufficient. Reasoning principles, in order: \
+1) a variant failing format validation is likely an error; 2) when variants \
+differ by a digit/letter substitution or an adjacent transposition and one \
+source is scan-prone or small-print, that variant is likely a scan or \
+transcription error: prefer the signed, self-submitted source; 3) for contact \
+fields (email, phone), the entity's own recent correspondence or signature \
+reflects the live value and outranks transcribed forms, and an email domain \
+matching the organisation outranks one that does not; 4) otherwise, \
+self-submitted signed documents outrank third-party artefacts for identity \
+fields; 5) escalate when nothing above is decisive.
 
 Conflicts:
 {conflicts}
@@ -204,7 +217,7 @@ class Reconciler:
                             format_valid=bool(fmt.match(value.strip())) if fmt else None))
                     c = Conflict(field_key=key, entity_token=etoken,
                                  variants=variants)
-                    c.compute_features()
+                    c.compute_features(entity_map.rehydrate(etoken))
                     conflicts.append(c)
                     resolved[etoken][key] = {
                         "value": None, "sources": [v.doc for v in variants],

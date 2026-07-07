@@ -111,12 +111,27 @@ def run_pile(pile_dir: Path, schema_path: Path, cached_extraction: Path | None,
         else:
             slot["status"] = "escalated"
 
-    # 4. audit: required fields missing everywhere for an entity = gap
+    # 4. audit: required fields missing everywhere for an entity = gap.
+    # gap_when: negative treats "No"/"unsigned" as substantively missing
+    # (the required action has not happened even though a value exists).
+    NEGATIVE = re.compile(
+        r"^[\(\[\-\*_\s]*"                                # leading punctuation
+        r"(no|not\s+signed|unsigned|pending|nil|not\s+yet.*"
+        r"|awaiting.*|outstanding|tbc|tbd|missing|awaiting\s+signature)"
+        r"[\)\]\-\*_\s\.\!]*$", re.I)
+    negative_keys = {f["key"] for f in spec["required_fields"]
+                     if f.get("gap_when") == "negative"}
     for etoken, fields_ in records.items():
         for key in schema_keys:
             if key not in fields_:
                 fields_[key] = {"value": None, "sources": [], "status": "missing",
                                 "variants": []}
+            elif key in negative_keys and fields_[key].get("value") \
+                    and NEGATIVE.match(str(fields_[key]["value"]).strip()):
+                fields_[key]["status"] = "missing"
+                fields_[key]["note"] = (f"recorded as "
+                                        f"'{fields_[key]['value']}': the "
+                                        f"required action is outstanding")
 
     # 5. emit
     alias_groups = {}
