@@ -1130,14 +1130,14 @@ main{ display: contents; }
       <div class="pile-grid" id="pile-grid"></div>
 
       <div class="drop-row">
-        <div class="drop-zone" data-tooltip="In the shipped product, dropped docs run through the same local Gemma 4 31B IT extractor pipeline. Disabled in this demo build so the eval numbers stay reproducible against the tracked synthetic pile.">
+        <div class="drop-zone" style="cursor:pointer;" onclick="loadPile('real')" data-tooltip="This demo pile is locked so the eval numbers in the README stay reproducible. To add your own docs and run them through the same pipeline live, use Your pile.">
           <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
             <polyline points="17 8 12 3 7 8"/>
             <line x1="12" y1="3" x2="12" y2="15"/>
           </svg>
-          <div class="drop-title">Drop more documents to add to the pile</div>
-          <div class="drop-hint">Disabled in the demo · the tracked synthetic pile keeps the eval numbers reproducible</div>
+          <div class="drop-title">Want to add your own documents?</div>
+          <div class="drop-hint">This demo pile is locked so the README's eval numbers stay reproducible. Click here to switch to <b style="color:var(--c-name);">Your pile</b> and upload real files through the same pipeline.</div>
         </div>
       </div>
 
@@ -2172,17 +2172,15 @@ const REAL_EMPTY_HTML = `
       <span style="color:var(--conf-good);">•</span> Toggle <b style="color:var(--ink);">Full-local mode</b> in the header and even the tokens stay on the MI300X.<br><br>
       Session is cleared when you refresh.
     </div>
-    <div style="display:inline-flex; gap:10px; align-items:center; margin-bottom:8px;">
-      <label style="font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em;">Domain</label>
-      <select id="real-schema" style="padding:6px 10px; background:rgba(255,255,255,0.03); color:var(--ink); border:1px solid var(--line); border-radius:6px; font-size:12px;">
-        <option value="kyc">KYC onboarding</option>
-        <option value="patient">Patient intake</option>
-        <option value="partner">Partner collation</option>
-      </select>
-    </div>
-    <div style="margin-top:6px;">
+    <div style="display:inline-flex; gap:10px; align-items:center;">
       <input type="file" id="real-file-input" multiple accept=".pdf,.txt,.md,.xlsx" style="display:none;" onchange="uploadRealFiles(event)">
       <button class="btn" onclick="document.getElementById('real-file-input').click()">Choose files…</button>
+      <span style="font-size:11.5px; color:var(--muted);">as a</span>
+      <select id="real-schema" data-tooltip="The schema defines which fields are required and which entity the record is keyed on. Change it to match the kind of documents you're uploading." style="padding:6px 10px; background:rgba(255,255,255,0.03); color:var(--ink); border:1px solid var(--line); border-radius:6px; font-size:12px;">
+        <option value="kyc">KYC onboarding pile</option>
+        <option value="patient">Patient intake pile</option>
+        <option value="partner">Partner collation pile</option>
+      </select>
     </div>
     <div id="real-upload-status" style="margin-top:14px; font-size:11.5px; color:var(--muted); line-height:1.5; min-height:16px;"></div>
   </div>`;
