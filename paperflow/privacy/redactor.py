@@ -95,6 +95,9 @@ class PrivacyRoundTrip:
             # to the more specific recogniser
             for r in sorted(results, key=lambda r: -r.score):
                 value = text[r.start:r.end].strip()
+                # newline-spanning NER spans are label bleed, not entities
+                if "\n" in value:
+                    continue
                 if len(value) >= 2 and value.lower() not in LABEL_STOPWORDS:
                     entity_map.add(value, r.entity_type)
             # labelled form fields catch what NER misses on non-Western names

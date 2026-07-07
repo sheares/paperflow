@@ -15,3 +15,4 @@ required_fields:
     note: explicit "none known" counts as captured
   - key: consent_signed
     label: Consent signed
+entity_field: patient_name

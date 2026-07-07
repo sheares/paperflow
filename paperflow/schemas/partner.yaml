@@ -14,3 +14,4 @@ required_fields:
     label: Phone
   - key: rsvp_status
     label: RSVP status
+entity_field: organisation

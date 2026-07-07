@@ -14,3 +14,4 @@ required_fields:
     label: Source of funds
   - key: beneficial_owner
     label: Beneficial owner
+entity_field: full_name
