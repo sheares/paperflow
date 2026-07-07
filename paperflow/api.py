@@ -95,6 +95,62 @@ def get_doc(pile: str, filename: str):
     return FileResponse(path, media_type=mime)
 
 
+@app.get("/api/xlsx_preview/{pile}/{filename}")
+def xlsx_preview(pile: str, filename: str, n: int = 5):
+    if pile not in PILES or "/" in filename or ".." in filename:
+        raise HTTPException(404, "not found")
+    path = ROOT / "synthetic" / pile / filename
+    if not path.exists() or path.suffix != ".xlsx":
+        raise HTTPException(404, "not found")
+    import openpyxl
+    wb = openpyxl.load_workbook(path, data_only=True)
+    sheets = []
+    for ws in wb.worksheets:
+        rows = []
+        for row in ws.iter_rows(values_only=True):
+            rows.append(["" if c is None else str(c) for c in row])
+            if len(rows) >= n:
+                break
+        sheets.append({"name": ws.title, "rows": rows,
+                       "total_rows": ws.max_row, "total_cols": ws.max_column})
+    return {"sheets": sheets, "showing": n}
+
+
+class RedactBody(BaseModel):
+    text: str
+
+
+@app.post("/api/redact")
+def redact(body: RedactBody):
+    """Paste-and-redact sandbox. No pile, no reconciliation: just the
+    privacy round-trip on the submitted text, so anyone can watch their
+    own words get tokenised. Text stays in memory; no logging, no
+    persistence."""
+    text = (body.text or "").strip()
+    if not text:
+        raise HTTPException(400, "empty text")
+    if len(text) > 20_000:
+        raise HTTPException(413, "text too large (max 20k characters)")
+    from paperflow.privacy.redactor import PrivacyRoundTrip
+    result = PrivacyRoundTrip().process_pile({"pasted.txt": text})
+    emap = result.entity_map
+    entities = []
+    for tok, canonical in emap.token_to_value.items():
+        forms = sorted({emap._display[k] for k, t in emap._lookup.items()
+                        if t == tok})
+        family = tok.strip("[]").rsplit("_", 1)[0]
+        entities.append({"token": tok, "family": family, "forms": forms,
+                         "canonical": canonical})
+    return {
+        "original": text,
+        "redacted": result.redacted["pasted.txt"],
+        "rehydrated": emap.rehydrate(result.redacted["pasted.txt"]),
+        "entities": entities,
+        "counts": {"tokens": len(emap.token_to_value),
+                   "surface_forms": len(emap._lookup)},
+    }
+
+
 @app.get("/api/pile/{pile}")
 def pile_view(pile: str):
     run_dir = _ensure_run(pile)

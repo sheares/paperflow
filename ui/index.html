@@ -1094,6 +1094,8 @@ main{ display: contents; }
     <button class="tab pile-btn active" data-pile="kyc"     onclick="loadPile('kyc')">KYC onboarding <span class="tab-count">4 docs · 2 clients</span></button>
     <button class="tab pile-btn"        data-pile="partner" onclick="loadPile('partner')">Partner collation <span class="tab-count">6 docs · 3 partners</span></button>
     <button class="tab pile-btn"        data-pile="patient" onclick="loadPile('patient')">Patient intake <span class="tab-count">5 docs · 2 patients</span></button>
+    <span style="width:1px; height:22px; background:var(--line); margin:0 4px;"></span>
+    <button class="tab" onclick="openSandbox()" data-tooltip="Paste anything with names, IDs, emails or addresses. See the redaction round-trip live on your own text. Nothing is stored or logged.">🧪 Redaction sandbox</button>
   </div>
 </nav>
 
@@ -1251,6 +1253,37 @@ main{ display: contents; }
 <!-- Per-doc detail overlay -->
 <div class="doc-overlay" id="doc-overlay" onclick="if(event.target === this) closeDoc()">
   <div class="doc-modal" id="doc-modal"></div>
+</div>
+
+<!-- Redaction sandbox overlay -->
+<div class="doc-overlay" id="sandbox-overlay" onclick="if(event.target === this) closeSandbox()">
+  <div class="doc-modal" id="sandbox-modal" style="max-width:960px;">
+    <div class="doc-modal-head">
+      <div class="doc-modal-title">🧪 Redaction sandbox <span style="color:var(--muted); font-weight:400; font-size:12px;">· paste anything · no logging, no storage</span></div>
+      <button class="doc-modal-close" onclick="closeSandbox()" aria-label="Close">✕</button>
+    </div>
+    <div class="doc-modal-meta">Presidio + custom Singapore recognisers run entirely in this container. Every detected value gets a stable token; identical values across your paste share one token.</div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:8px;">
+      <div>
+        <div class="doc-preview-head">Your text</div>
+        <textarea id="sb-input" placeholder="Paste a paragraph, a form field, an email. Try including names, NRICs (S1234567A), phone numbers (+65 6123 4567), emails, addresses, dates." style="width:100%; height:220px; padding:12px; font-family:'JetBrains Mono', ui-monospace, monospace; font-size:12px; background:rgba(255,255,255,0.02); color:var(--ink); border:1px solid var(--line); border-radius:0 0 6px 6px; resize:vertical;"></textarea>
+        <div style="margin-top:10px; display:flex; gap:8px; align-items:center;">
+          <button class="btn" onclick="runSandbox()" style="padding:7px 14px;">Redact ✂</button>
+          <button class="btn ghost" onclick="sandboxSample()" style="padding:7px 14px;">Load sample</button>
+          <span id="sb-status" style="font-size:11px; color:var(--muted);"></span>
+        </div>
+      </div>
+      <div>
+        <div class="doc-preview-head">Redacted output <span id="sb-count" style="float:right; color:var(--muted); text-transform:none; letter-spacing:0;"></span></div>
+        <pre id="sb-output" style="margin:0; padding:12px; height:220px; overflow:auto; font-family:'JetBrains Mono', ui-monospace, monospace; font-size:12px; background:rgba(255,255,255,0.02); border:1px solid var(--line); border-radius:0 0 6px 6px; color:var(--ink); white-space:pre-wrap;"></pre>
+      </div>
+    </div>
+    <div style="margin-top:14px;">
+      <div class="doc-preview-head" style="border-radius:6px 6px 0 0;">Entity map · click a token to see its surface forms</div>
+      <div id="sb-entities" style="padding:10px 12px; border:1px solid var(--line); border-radius:0 0 6px 6px; background:rgba(255,255,255,0.015); min-height:60px; display:flex; flex-wrap:wrap; gap:6px; font-size:11.5px;"></div>
+    </div>
+    <div class="doc-modal-foot">This is the same PrivacyRoundTrip module that runs on every pile in the main UI. No text you paste here is stored or logged; it lives in memory for the length of this request and is garbage-collected when this modal closes.</div>
+  </div>
 </div>
 
 <script>
@@ -2043,10 +2076,28 @@ async function openDoc(i){
         }
       } catch(_){}
     } else if(fmt === 'xlsx'){
-      preview = `<div class="doc-preview">
-        <div class="doc-preview-head">Original spreadsheet · ${escapeHtml(fname)} <a href="${url}" download style="float:right; color:var(--c-name); text-decoration:none;">↓ Download</a></div>
-        <pre>Spreadsheet preview requires download. Every cell was parsed by the local text reader; the extracted fields above are the full readable content.</pre>
-      </div>`;
+      try{
+        const r = await fetch(`/api/xlsx_preview/${pileName}/${encodeURIComponent(fname)}`);
+        if(r.ok){
+          const data = await r.json();
+          const sheetHtml = data.sheets.map(sh => {
+            const nCols = Math.max(...sh.rows.map(r => r.length), 1);
+            const th = Array.from({length: nCols}, (_, i) => `<th style="text-align:left; padding:6px 10px; border-bottom:1px solid var(--line); font-size:10.5px; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted);">Col ${i+1}</th>`).join('');
+            const rows = sh.rows.map(row => {
+              const cells = Array.from({length: nCols}, (_, i) => `<td style="padding:6px 10px; border-bottom:1px solid rgba(255,255,255,0.03); font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ink);">${escapeHtml(row[i] || '')}</td>`).join('');
+              return `<tr>${cells}</tr>`;
+            }).join('');
+            const moreRows = sh.total_rows > data.showing ? `<tr><td colspan="${nCols}" style="padding:8px 10px; font-size:10.5px; color:var(--muted2); font-style:italic;">… ${sh.total_rows - data.showing} more row${sh.total_rows - data.showing !== 1 ? 's' : ''} in this sheet</td></tr>` : '';
+            return `<table style="width:100%; border-collapse:collapse;"><thead><tr>${th}</tr></thead><tbody>${rows}${moreRows}</tbody></table>`;
+          }).join('');
+          preview = `<div class="doc-preview">
+            <div class="doc-preview-head">Original spreadsheet · ${escapeHtml(fname)} · showing top ${data.showing} rows <a href="${url}" download style="float:right; color:var(--c-name); text-decoration:none;">↓ Download</a></div>
+            <div style="max-height:220px; overflow:auto;">${sheetHtml}</div>
+          </div>`;
+        }
+      } catch(_){
+        preview = `<div class="doc-preview"><div class="doc-preview-head">Original spreadsheet · <a href="${url}" download style="float:right; color:var(--c-name); text-decoration:none;">↓ Download</a></div><pre>Preview failed; download to view.</pre></div>`;
+      }
     }
   }
 
@@ -2066,7 +2117,65 @@ async function openDoc(i){
 function closeDoc(){
   document.getElementById('doc-overlay').classList.remove('open');
 }
-document.addEventListener('keydown', e => { if(e.key === 'Escape') closeDoc(); });
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape'){ closeDoc(); closeSandbox(); }
+});
+
+// ============================================================
+// REDACTION SANDBOX — paste-and-tokenise on the user's own text.
+// No pile, no reconciliation: a live demo of the privacy round-trip.
+// ============================================================
+const SB_SAMPLE = `Meeting note, 8 Jul 2026.
+
+Mohammed Farid bin Hassan (NRIC S1234567A, +65 6123 4567,
+mfh@acmerobotics.sg) confirmed the address change from Blk 210
+Bishan St 23 #11-04 Singapore 570210 to 8 Marina Boulevard
+#30-01 Singapore 018981, effective 2026-07-15.
+
+His alias "Farid Hassan" appears on the utility bill; treat
+as the same person for the client record.`;
+
+const SB_ENT_COLOUR = { PERSON:'name', ORG:'org', ID:'id', UEN:'id',
+  POLICY:'id', SERIAL:'id', ADDR:'address', POSTCODE:'address',
+  DATE:'date', EMAIL:'email', PHONE:'phone' };
+
+function openSandbox(){
+  document.getElementById('sandbox-overlay').classList.add('open');
+  if(!document.getElementById('sb-input').value) sandboxSample();
+}
+function closeSandbox(){
+  document.getElementById('sandbox-overlay').classList.remove('open');
+}
+function sandboxSample(){
+  document.getElementById('sb-input').value = SB_SAMPLE;
+  runSandbox();
+}
+async function runSandbox(){
+  const text = document.getElementById('sb-input').value.trim();
+  const status = document.getElementById('sb-status');
+  const output = document.getElementById('sb-output');
+  const ents = document.getElementById('sb-entities');
+  const countEl = document.getElementById('sb-count');
+  if(!text){ status.textContent = 'paste something first'; return; }
+  status.textContent = 'running the round-trip locally…';
+  output.textContent = ''; ents.innerHTML = '';
+  try{
+    const t0 = performance.now();
+    const r = await fetch('/api/redact', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({text}),
+    });
+    if(!r.ok){ status.textContent = 'error: ' + r.status; return; }
+    const d = await r.json();
+    const dt = ((performance.now() - t0) / 1000).toFixed(2);
+    // colour tokens in the output
+    output.innerHTML = d.redacted.replace(/\[([A-Z]+)_([\w*]+)\]/g,
+      (m, fam) => `<code class="chip chip-${SB_ENT_COLOUR[fam] || 'id'}" style="padding:1px 6px; font-size:11px;">${m}</code>`);
+    countEl.textContent = `${d.counts.tokens} tokens · ${d.counts.surface_forms} surface forms · ${dt}s`;
+    ents.innerHTML = d.entities.map(e => `<span title="${escapeHtml(e.forms.join(' / '))}" style="cursor:help; display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border:1px solid var(--line); border-radius:6px; background:rgba(255,255,255,0.02);"><code class="chip chip-${SB_ENT_COLOUR[e.family] || 'id'}" style="padding:1px 6px; font-size:11px;">${e.token}</code><span style="color:var(--ink-soft);">${escapeHtml(e.canonical)}</span>${e.forms.length > 1 ? `<span style="color:var(--muted2); font-size:10px;">+${e.forms.length - 1}</span>` : ''}</span>`).join('') || '<span style="color:var(--muted);">no entities detected</span>';
+    status.textContent = 'nothing left the container · pure local pipeline';
+  } catch(e){ status.textContent = 'error: ' + e.message; }
+}
 
 // Stress-test toggle — injects 22 additional persons into whichever pile
 // is loaded, so the auto-collapse behaviour on large groups is visible.
