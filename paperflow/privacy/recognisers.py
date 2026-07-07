@@ -48,11 +48,33 @@ def get_recognisers() -> list[PatternRecognizer]:
             name="sg_phone",
             patterns=[Pattern("phone", r"\+65[ -]?[689]\d{3}[ -]?\d{4}\b", 0.85)],
         ),
-        # Postcode is context-gated to avoid mass 6-digit false positives.
+        # Labelled postcode ("Singapore 570210") is unambiguous.
+        PatternRecognizer(
+            supported_entity="SG_POSTCODE",
+            name="sg_postcode_labelled",
+            patterns=[Pattern("postcode_lbl", r"\bSingapore\s+\d{6}\b", 0.85)],
+        ),
+        # Bare postcode is context-gated to avoid mass 6-digit false positives.
         PatternRecognizer(
             supported_entity="SG_POSTCODE",
             name="sg_postcode",
             patterns=[Pattern("postcode", r"\b\d{6}\b", 0.3)],
             context=["singapore", "sg", "address", "blk", "ave", "street", "st", "road"],
+        ),
+        # SG street addresses: "Blk 210 Bishan St 23 #11-04", "8 Marina Boulevard #30-01"
+        PatternRecognizer(
+            supported_entity="SG_ADDRESS",
+            name="sg_address",
+            patterns=[Pattern(
+                "sg_addr",
+                r"\b(?:Blk\s+\d+|\d+)\s+[A-Za-z][A-Za-z0-9 .]*?#\d{2}-\d{2}\b",
+                0.8,
+            )],
+        ),
+        # ISO dates (DOBs and record dates in the piles)
+        PatternRecognizer(
+            supported_entity="ISO_DATE",
+            name="iso_date",
+            patterns=[Pattern("iso_date", r"\b\d{4}-\d{2}-\d{2}\b", 0.6)],
         ),
     ]
