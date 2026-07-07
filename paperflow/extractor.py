@@ -78,9 +78,17 @@ def _pdf_content(pdf: Path) -> list[dict]:
         return parts
 
 
+IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp"}
+
+
 def _doc_content(path: Path) -> tuple[list[dict], str]:
     if path.suffix == ".pdf":
         return _pdf_content(path), "vision"
+    if path.suffix in IMAGE_SUFFIXES:
+        mime = "jpeg" if path.suffix in {".jpg", ".jpeg"} else path.suffix[1:]
+        b64 = base64.b64encode(path.read_bytes()).decode()
+        return [{"type": "image_url",
+                 "image_url": {"url": f"data:image/{mime};base64,{b64}"}}], "vision"
     text = load_text(path)
     return [{"type": "text", "text": f"DOCUMENT ({path.name}):\n{text}"}], "text"
 
@@ -124,7 +132,8 @@ async def _extract_doc(client: httpx.AsyncClient, sem: asyncio.Semaphore,
 async def extract_pile(pile_dir: Path, schema_path: Path) -> PileExtraction:
     schema = load_schema(schema_path)
     docs = [f for f in sorted(pile_dir.iterdir())
-            if f.suffix in {".pdf", ".txt", ".xlsx"}]
+            if f.suffix in {".pdf", ".txt", ".md", ".xlsx"} | IMAGE_SUFFIXES
+            and f.name != "README.md"]
     sem = asyncio.Semaphore(MAX_CONCURRENCY)
     async with httpx.AsyncClient(timeout=180) as client:
         results = await asyncio.gather(

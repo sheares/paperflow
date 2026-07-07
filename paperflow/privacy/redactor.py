@@ -33,14 +33,20 @@ LABEL_STOPWORDS = {
 # Group 1 captures the value; a post-filter rejects non-name-like captures.
 import re  # noqa: E402
 
+# name characters: ASCII + Latin-1 letters (French, German, Nordic...),
+# apostrophes (O'Connor) and hyphens (Jean-Pierre). Labels may be wrapped
+# in markdown emphasis (**Full Name:** value).
+_NC = r"A-Za-zÀ-ÖØ-öø-ÿ"
 _PERSON_LABELS = re.compile(
     r"(?im)\b(?:account holder|cardholder|patient name|contact name|full name|"
-    r"primary contact|patient|contact|applicant|name|referral)[ \t]*[:|\-–][ \t]*"
-    r"([A-Z][A-Za-z.]*(?:[ \t]+(?:bin|binte|s/o|d/o|[A-Z][A-Za-z.]*)){0,4})")
+    r"primary contact|patient|contact|applicant|name|referral)"
+    r"[*_]*[ \t]*[:|\-–][*_]*[ \t]*"
+    rf"([{_NC}][{_NC}.'-]*(?:[ \t]+(?:bin|binte|s/o|d/o|[{_NC}][{_NC}.'-]*)){{0,4}})")
 
 _ORG_LABELS = re.compile(
-    r"(?im)\b(?:organisation|organization|company|employer|partner)[ \t]*[:|\-–][ \t]*"
-    r"([A-Z][A-Za-z&.]*(?:[ \t]+[A-Za-z&.]+){0,4})")
+    r"(?im)\b(?:organisation|organization|company|employer|partner)"
+    r"[*_]*[ \t]*[:|\-–][*_]*[ \t]*"
+    rf"([{_NC}][{_NC}&.'-]*(?:[ \t]+[{_NC}&.'-]+){{0,4}})")
 
 _ORG_SUFFIX = re.compile(
     r"\b([A-Z][A-Za-z&]*(?:\s+[A-Za-z&]+){0,3}\s+(?:Pte\.?\s+Ltd\.?|LLP|Ltd\.?|Inc\.?|Limited))\b")

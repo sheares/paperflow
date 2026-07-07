@@ -13,7 +13,13 @@ from __future__ import annotations
 
 import json
 import re
+import unicodedata
 from dataclasses import dataclass, field
+
+
+def _fold(s: str) -> str:
+    """Accent-fold: François -> Francois (clerks drop diacritics)."""
+    return unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode()
 
 # detector entity type -> token family
 FAMILIES = {
@@ -39,15 +45,24 @@ _ORG_SUFFIX_RE = re.compile(r"\s+(?:pte\.?\s+ltd\.?|llp|ltd\.?|inc\.?|limited|ll
 
 
 def _words(value: str) -> list[str]:
-    return [w for w in re.split(r"[^\w.]+", value.lower()) if w]
+    """Split a name into words. Hyphenated compound given names
+    (Jean-Pierre) and apostrophe surnames (O'Connor) stay atomic, so
+    "Jean Dubois" is NOT an alias of "Jean-Pierre Dubois"."""
+    return [w.strip(".'-") or w for w in re.split(r"[^\w.'-]+", value.lower()) if w]
 
 
 def _person_alias(a: str, b: str) -> bool:
-    """True if the shorter name reads as an alias of the longer one: every
-    word matches a word (or the initial of a word) in the longer name, with
-    at least one shared full word of length >= 4."""
+    """True if either name reads as an alias (shortening) of the other.
+    Both directions are tried: with equal word counts ("R. Kumar" vs
+    "Rajesh Kumar") the alias direction is not knowable from length."""
     wa, wb = _words(a), _words(b)
-    short, long_ = (wa, wb) if len(wa) <= len(wb) else (wb, wa)
+    return _alias_of(wa, wb) or _alias_of(wb, wa)
+
+
+def _alias_of(short: list[str], long_: list[str]) -> bool:
+    """Every word of `short` matches a word (or the initial of a word) in
+    `long_`, with at least one shared full word (>=3 letters, or a 2-letter
+    surname in final position)."""
     if not short or short == long_:
         return False
     shared_full = False
@@ -96,13 +111,38 @@ class EntityMap:
             return self._lookup[key]
         family = FAMILIES.get(entity_type, entity_type)
 
+        # accent-fold hit: "François Lefèvre" arriving after a typed
+        # "Francois Lefevre" (or vice versa) is the same entity
+        folded_key = _fold(value).lower()
+        if folded_key != key and folded_key in self._lookup:
+            token = self._lookup[folded_key]
+            self._register(key, value, token)
+            if value != _fold(value):     # diacritic form carries more info
+                self.token_to_value[token] = value
+            return token
+
+        def _has_initial(n: str) -> bool:
+            return any(len(w.rstrip(".")) == 1 for w in _words(n))
+
         # alias resolution: reuse the token of an existing alias in the family
         for known_key, token in self._lookup.items():
             if not token.startswith(f"[{family}_"):
                 continue
             known = self._display[known_key]
-            if (family == "PERSON" and _person_alias(value, known)) or \
-               (family == "ORG" and _org_alias(value, known)):
+            if family == "PERSON":
+                canonical = self.token_to_value[token]
+                if _has_initial(known) and not _has_initial(value):
+                    # a full name meeting an initials alias: merge only if the
+                    # token is unclaimed (canonical still initials) or already
+                    # claimed by a matching full name. "Ramesh Kumar" cannot
+                    # bridge into a token Rajesh Kumar has claimed.
+                    ok = _person_alias(value, known) if _has_initial(canonical) \
+                        else _person_alias(value, canonical)
+                else:
+                    ok = _person_alias(value, known)
+            else:
+                ok = _org_alias(value, known)
+            if ok:
                 self._register(key, value, token)
                 # the fullest surface form is the canonical one (re-hydration
                 # restores "Tan Mei Ling", not a partial NER catch "Mei Ling")
@@ -126,6 +166,12 @@ class EntityMap:
     def _register(self, key: str, display: str, token: str) -> None:
         self._lookup[key] = token
         self._display[key] = display
+        # accent-folded twin: a doc typing "Francois" for "François" still
+        # redacts to the same token
+        folded = _fold(display)
+        if folded and folded.lower() != key and folded.lower() not in self._lookup:
+            self._lookup[folded.lower()] = token
+            self._display[folded.lower()] = folded
 
     def redact(self, text: str) -> str:
         """Replace every mapped value in ONE pass (longest-first alternation,

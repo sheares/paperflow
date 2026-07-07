@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 def load_text(path: Path) -> str:
-    if path.suffix == ".txt":
+    if path.suffix in {".txt", ".md"}:
         return path.read_text()
     if path.suffix == ".xlsx":
         import openpyxl
@@ -30,6 +30,6 @@ def load_pile(pile_dir: Path) -> dict[str, str]:
     """doc filename -> extracted text, sorted for deterministic token order."""
     docs = {}
     for f in sorted(pile_dir.iterdir()):
-        if f.suffix in {".txt", ".xlsx", ".pdf"} and f.name != "README.md":
+        if f.suffix in {".txt", ".md", ".xlsx", ".pdf"} and f.name != "README.md":
             docs[f.name] = load_text(f)
     return docs
