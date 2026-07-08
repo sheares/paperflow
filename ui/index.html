@@ -1813,8 +1813,8 @@ function loadPile(key){
 
   document.getElementById('pile-meta').textContent = '· ' + p.domain;
   document.getElementById('assistant-meta').textContent = '· ' + p.assistantRole;
-  if(p.stats && p.stats.length >= 4){
-    document.getElementById('record-meta').textContent = '· ' + p.clients.length + ' entities · ' + p.stats[2][0] + ' conflicts · ' + p.stats[3][0] + ' gap' + (p.stats[3][0] === '1' ? '' : 's');
+  if(p.stats && p.stats.length >= 3){
+    document.getElementById('record-meta').textContent = '· ' + p.clients.length + ' entities · ' + p.stats[2][0] + ' conflicts';
   } else {
     document.getElementById('record-meta').textContent = '';
   }

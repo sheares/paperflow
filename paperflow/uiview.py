@@ -71,10 +71,19 @@ def build_pile_view(run_dir: Path, extraction_path: Path,
         })
 
     # ---- clients (records) ----
+    # Note (2026-07-09): required-field gaps are computed by the Auditor and
+    # still land in run_output.json (the scorer uses them), but they are
+    # deliberately NOT surfaced in the UI. Rationale: for user-uploaded
+    # documents we cannot know what should have been present, and applying
+    # a curated schema's required list to arbitrary content read as a bug
+    # ("REQUIRED · not found in any document") more than a compliance
+    # workflow. The record pane shows only fields that were actually found.
     clients, n_conflicts, n_gaps = [], 0, 0
     for i, rec in enumerate(run["records"]):
         fields, open_c, open_g = [], 0, 0
         for key, f in rec["fields"].items():
+            if f["status"] == "missing":
+                continue   # gap hidden from the UI
             base = {"label": _pretty(key), "type": FIELD_TYPES.get(key, "id")}
             dec = f.get("decision")
             if f["status"] in {"conflict", "escalated"} or \
@@ -97,20 +106,6 @@ def build_pile_view(run_dir: Path, extraction_path: Path,
                                         for v in variants],
                                "action": "Escalate"})
                 n_conflicts += 1
-            elif f["status"] == "missing":
-                extra = f.get("note")   # e.g. gap_when: negative note
-                note = "⚠ REQUIRED · not found in any document"
-                detail = ("This field is mandatory for "
-                          f"{spec['display_name'].lower()}; ask the "
-                          "client to supply it.")
-                if extra:
-                    note = f"⚠ REQUIRED · {extra}"
-                    detail = ("The required action is outstanding; follow up "
-                              "with the client before proceeding.")
-                fields.append({**base, "missing": True, "missingNote": note,
-                               "missingDetail": detail, "action": "Request"})
-                n_gaps += 1
-                open_g += 1
             else:
                 cite = "Source: " + ", ".join(f.get("sources", []))
                 if dec:
@@ -156,8 +151,7 @@ def build_pile_view(run_dir: Path, extraction_path: Path,
           f"{spec.get('entity_noun', 'entit')}{'s' if n_entities != 1 else ''}</b> "
           f"across {len(docs)} documents: {n_conflicts} conflict"
           f"{'s' if n_conflicts != 1 else ''} "
-          f"({sum(1 for c in clients for f in c['fields'] if f.get('conflict') and any(o['selected'] for o in f.get('opts', [])))} resolved with rationale), "
-          f"{n_gaps} required gap{'s' if n_gaps != 1 else ''}. "
+          f"({sum(1 for c in clients for f in c['fields'] if f.get('conflict') and any(o['selected'] for o in f.get('opts', [])))} resolved with rationale). "
           f"Records are in the panel; every value cites its source.")
 
     # ---- suggested questions from real artefacts ----
@@ -175,14 +169,15 @@ def build_pile_view(run_dir: Path, extraction_path: Path,
                 break
         if len(qs) >= 2:
             break
-    qs.append(["What is still missing?",
-               "What is still missing across this pile?"])
+    qs.append(["Summarise this pile",
+               "Give me a summary of what was reconciled across this pile."])
 
     return {
         "domain": f"synthetic {spec['display_name'].lower()} · live pipeline",
         "assistantRole": "reconciler · live",
-        "stats": [[len(docs), "documents"], [n_entities, spec.get("entity_noun", "entities") + "s"],
-                  [n_conflicts, "conflicts"], [n_gaps, "gaps"]],
+        "stats": [[len(docs), "documents"],
+                  [n_entities, spec.get("entity_noun", "entities") + "s"],
+                  [n_conflicts, "conflicts"]],
         "docs": docs, "clients": clients, "entities": entities,
         "initial": {"user": f"Reconcile this pile for "
                             f"{spec['display_name'].lower()}.",
