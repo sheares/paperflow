@@ -1245,6 +1245,10 @@ main{ display: contents; }
       </div>
     </div>
     <div class="pane-body">
+      <div class="record-caption" style="padding:10px 14px 12px; font-size:11.5px; color:var(--muted); line-height:1.55;">
+        One clean row per real-world entity (a person, an organisation, or — in <b>Generic</b> schema — a document), with each field's canonical value picked from every doc paperflow saw. Cross-doc conflicts resolved; sources cited.
+        <span id="record-caption-hint" style="display:block; margin-top:4px; color:var(--muted2);"></span>
+      </div>
       <div class="band-legend band-legend-top">Field bands: <span class="bl bl-green">green</span> auto-accept · <span class="bl bl-amber">amber</span> review · <span class="bl bl-red">red</span> blocked from any cloud call until a human approves</div>
       <div id="record-body"></div>
       <details class="overrides-log" id="overrides-log" hidden>
@@ -1839,6 +1843,12 @@ function loadPile(key){
   exchangeIndex = 0;
   const p = piles[key];
 
+  // The Real pile injects a toolbar + "Add more documents" drop zone
+  // via insertAdjacentHTML. Switching to a demo pile without clearing
+  // them leaves them in the DOM, so users see both drop zones. Wipe
+  // any previously-injected block before deciding whether to re-add.
+  document.querySelectorAll('.real-pile-injected').forEach(el => el.remove());
+
   document.querySelectorAll('.pile-btn').forEach(b => b.classList.toggle('active', b.dataset.pile === key));
 
   document.getElementById('pile-meta').textContent = '· ' + p.domain;
@@ -1847,6 +1857,20 @@ function loadPile(key){
     document.getElementById('record-meta').textContent = '· ' + p.clients.length + ' entities · ' + p.stats[2][0] + ' conflicts';
   } else {
     document.getElementById('record-meta').textContent = '';
+  }
+  // Schema-specific caption hint: KYC/patient/partner group by
+  // person/patient/organisation; Generic (the default for Your pile)
+  // groups by document because there's no entity_field to key on.
+  // Reupload the same docs under KYC/patient/partner to get the
+  // grouped output.
+  const hint = document.getElementById('record-caption-hint');
+  if(hint){
+    const dom = (p.domain || '').toLowerCase();
+    hint.textContent = dom.includes('kyc')     ? 'This pile is grouped by client (KYC schema).'
+                     : dom.includes('patient') ? 'This pile is grouped by patient (Patient schema).'
+                     : dom.includes('partner') ? 'This pile is grouped by organisation (Partner schema).'
+                     : dom.includes('generic') ? 'This pile is grouped by document (Generic schema — no entity_field). Switch the "Treat as" dropdown above the upload zone to KYC / Patient / Partner if your docs share a client / patient / organisation, and you\'ll see rows grouped by that instead.'
+                     : '';
   }
 
   // The demo-redirect tile only makes sense on the demo piles.
@@ -1879,7 +1903,7 @@ function loadPile(key){
     const emptyExtract = p.docs.length && p.docs.every(d => d.fields === 0);
     let banner = '';
     if(emptyExtract){
-      banner = `<div style="margin:14px 0 6px; padding:10px 14px; border:1px solid rgba(248,113,113,0.35); border-radius:8px; background:rgba(248,113,113,0.08); font-size:11.5px; color:var(--conf-block); line-height:1.5;">
+      banner = `<div class="real-pile-injected" style="margin:14px 0 6px; padding:10px 14px; border:1px solid rgba(248,113,113,0.35); border-radius:8px; background:rgba(248,113,113,0.08); font-size:11.5px; color:var(--conf-block); line-height:1.5;">
         <b>Extractor returned 0 fields on every document.</b> This is usually because the vision endpoint (Gemma on the MI300X) is not reachable from the container. Text-only files (TXT / MD / XLSX) work without the GPU; PDFs and images need it. Check the header badge for MI300X status.</div>`;
     }
     const currentSchema = (p.domain && (
@@ -1887,7 +1911,7 @@ function loadPile(key){
       p.domain.includes('patient') ? 'patient' :
       p.domain.includes('partner') ? 'partner' : 'generic')) || 'generic';
     const opt = (v, lbl) => `<option value="${v}"${v === currentSchema ? ' selected' : ''}>${lbl}</option>`;
-    const toolbar = `<div style="margin-top:14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+    const toolbar = `<div class="real-pile-injected" style="margin-top:14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
       <span style="font-size:11px; color:var(--muted);">Treat as</span>
       <select id="real-schema-live" onchange="changeRealSchema(this.value)" style="padding:5px 8px; background:rgba(255,255,255,0.03); color:var(--ink); border:1px solid var(--line); border-radius:6px; font-size:11.5px;">
         ${opt('generic', 'Generic')}${opt('kyc', 'KYC onboarding')}${opt('patient', 'Patient intake')}${opt('partner', 'Partner collation')}
@@ -1895,8 +1919,8 @@ function loadPile(key){
       <span style="flex:1;"></span>
       <button class="btn ghost" onclick="resetRealPile()" style="padding:6px 12px; font-size:11.5px;" data-tooltip="Clear the current pile and start over.">↺ Reset</button>
     </div>`;
-    const addMore = `<input type="file" id="real-file-input-add" multiple accept=".pdf,.txt,.md,.xlsx" style="display:none;" onchange="uploadRealFiles(event, {append:true})">
-      <div id="real-dropzone-add" class="drop-zone" style="margin-top:14px; cursor:pointer; transition:border-color 0.18s, background 0.18s;"
+    const addMore = `<input type="file" id="real-file-input-add" class="real-pile-injected" multiple accept=".pdf,.txt,.md,.xlsx" style="display:none;" onchange="uploadRealFiles(event, {append:true})">
+      <div id="real-dropzone-add" class="drop-zone real-pile-injected" style="margin-top:14px; cursor:pointer; transition:border-color 0.18s, background 0.18s;"
            onclick="document.getElementById('real-file-input-add').click()"
            ondragover="event.preventDefault(); this.style.borderColor='var(--c-name)'; this.style.background='rgba(129,140,248,0.05)';"
            ondragleave="this.style.borderColor=''; this.style.background='';"
