@@ -77,11 +77,20 @@ def run_pile(pile_dir: Path, schema_path: Path, cached_extraction: Path | None,
                 continue
             if key:
                 fields.setdefault(key, value)
-        # in generic mode all fields feed the map (there are no schema keys
-        # to gate on) so redaction covers whatever the vision model found
+        # in generic mode all fields COULD feed the map (there are no schema
+        # keys to gate on) but only if the field key or the value shape looks
+        # like a real identifier. Unknown labels ('Prize pool', 'thehype')
+        # would otherwise pile up as SERIAL tokens and clutter the entity
+        # panel with non-entities. Presidio-detected values are already in
+        # the map at this point (from the text-scan pass), so skipping the
+        # unrecognized extractor labels does not shrink the redaction map.
         for key, value in fields.items():
-            if generic or key in schema_keys:
-                emap.add(value, _family_for(key))
+            if key in schema_keys:
+                emap.add(value, _family_for(key, value) or "SERIAL")
+            elif generic:
+                fam = _family_for(key, value)
+                if fam:
+                    emap.add(value, fam)
 
         ent_value = fields.get(entity_field)
         etoken = emap.token_of(ent_value) if ent_value else None

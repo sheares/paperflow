@@ -323,13 +323,57 @@ class Reconciler:
         return decisions
 
 
-def _family_for(key: str) -> str:
-    table = {
-        "national_id": "SG_NRIC_SUSPECT", "nric_fin": "SG_NRIC",
-        "policy_number": "POLICY_NUMBER", "email": "EMAIL_ADDRESS",
-        "phone": "SG_PHONE", "residential_address": "SG_ADDRESS",
-        "date_of_birth": "ISO_DATE", "declaration_date": "ISO_DATE",
-        "full_name": "PERSON", "patient_name": "PERSON",
-        "contact_name": "PERSON", "organisation": "ORG",
-    }
-    return table.get(key, "SERIAL")
+_EXACT_FAMILY = {
+    "national_id": "SG_NRIC_SUSPECT", "nric_fin": "SG_NRIC",
+    "policy_number": "POLICY_NUMBER", "email": "EMAIL_ADDRESS",
+    "phone": "SG_PHONE", "residential_address": "SG_ADDRESS",
+    "date_of_birth": "ISO_DATE", "declaration_date": "ISO_DATE",
+    "full_name": "PERSON", "patient_name": "PERSON",
+    "contact_name": "PERSON", "organisation": "ORG", "uen": "SG_UEN",
+}
+_KW_FAMILY = [
+    (("email", "e mail", "mail"), "EMAIL_ADDRESS"),
+    (("phone", "mobile", "telephone", "tel ", "contact number", "hp "), "SG_PHONE"),
+    (("nric", "fin", "national id", "identity card"), "SG_NRIC"),
+    (("uen", "acra", "company reg"), "SG_UEN"),
+    (("policy",), "POLICY_NUMBER"),
+    (("dob", "date of birth", "birthday"), "ISO_DATE"),
+    (("date", "issued", "expires", "expiry", "deadline", "closes",
+      "signed on"), "ISO_DATE"),
+    (("address", "residence", "residing", "block", "street", "postal"), "SG_ADDRESS"),
+    (("postcode", "zip"), "SG_POSTCODE"),
+    (("name", "holder", "applicant", "customer", "cardholder", "patient",
+      "contact", "primary contact"), "PERSON"),
+    (("organisation", "organization", "company", "employer", "firm",
+      "corporation", "vendor", "supplier", "brand"), "ORG"),
+    (("serial", "reference", "ref no", "req no", "id number", "id no",
+      "account number", "account no", "lab serial"), "SERIAL"),
+]
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+_PHONE_RE = re.compile(r"^\+?\d[\d\s\-()]{6,}$")
+_ISO_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def _family_for(key: str, value: str | None = None) -> str | None:
+    """Family for a field key, or None if this field doesn't look like a
+    real identifier and the caller shouldn't force-register it. In generic
+    mode the extractor may emit arbitrary labels ('Prize pool', '200 points',
+    'Community Partners'), and registering those as SERIAL clutters the
+    entity map with non-entities that don't belong in the trust story."""
+    k = key.lower().replace("_", " ").replace("-", " ").strip()
+    if key in _EXACT_FAMILY:
+        return _EXACT_FAMILY[key]
+    if k.replace(" ", "_") in _EXACT_FAMILY:
+        return _EXACT_FAMILY[k.replace(" ", "_")]
+    for kws, fam in _KW_FAMILY:
+        if any(w.strip() in k for w in kws):
+            return fam
+    if value:
+        v = value.strip()
+        if _EMAIL_RE.match(v):
+            return "EMAIL_ADDRESS"
+        if _PHONE_RE.match(v):
+            return "SG_PHONE"
+        if _ISO_DATE_RE.match(v):
+            return "ISO_DATE"
+    return None
