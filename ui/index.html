@@ -3517,6 +3517,10 @@ function escapeHtml(text){
 document.getElementById('chat-input').addEventListener('keypress', e => {
   if(e.key === 'Enter'){ sendMessage(); }
 });
+// Live entity + routing detection as the user types. Without this
+// listener the input-detect strip never populates because keypress
+// alone doesn't cover paste, backspace, IME composition, etc.
+document.getElementById('chat-input').addEventListener('input', updateInputDetection);
 
 // Predict routing from the message text alone. In production this would be
 // a small local intent classifier; here it's a keyword heuristic that catches
