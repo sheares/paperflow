@@ -2329,19 +2329,28 @@ async function uploadRealFiles(evt, opts = {}){
   if(!files || !files.length) return;
   const schemaSel = document.getElementById('real-schema');
   const schema = opts.schema || (schemaSel && schemaSel.value) || 'generic';
-  const nPdf = Array.from(files).filter(f => /\.(pdf|png|jpe?g|webp)$/i.test(f.name)).length;
-  const kinds = nPdf
-    ? `${nPdf} vision doc${nPdf > 1 ? 's' : ''} · Gemma on the MI300X reads each page`
-    : `text-only pile · no vision extraction needed`;
+  const filesArr = Array.from(files);
+  const nPdf = filesArr.filter(f => /\.(pdf|png|jpe?g|webp)$/i.test(f.name)).length;
+  const nTxt = filesArr.length - nPdf;
+  const parts = [];
+  if(nPdf) parts.push(`${nPdf} vision doc${nPdf !== 1 ? 's' : ''}`);
+  if(nTxt) parts.push(`${nTxt} text doc${nTxt !== 1 ? 's' : ''}`);
+  const kinds = parts.join(' · ') +
+    (nPdf ? ' · Gemma on the MI300X reads each page in parallel' : ' · no vision extraction needed');
+  // filename preview (up to 4)
+  const nameList = filesArr.slice(0, 4).map(f => f.name).join(', ') +
+    (filesArr.length > 4 ? `, +${filesArr.length - 4} more` : '');
 
   showRunOverlay();
   setRunTitle(opts.append
-    ? `Adding ${files.length} file${files.length > 1 ? 's' : ''} to your pile`
-    : `Running the paperflow pipeline on ${files.length} file${files.length > 1 ? 's' : ''}`);
-  const stages = ['Upload', 'Extract fields (vision)', 'Redact + build entity map',
-                  'Reconcile (redacted tokens to Fireworks)', 'Emit reconciled record'];
+    ? `Adding ${files.length} file${files.length !== 1 ? 's' : ''} to your pile`
+    : `Running the paperflow pipeline on ${files.length} file${files.length !== 1 ? 's' : ''}`);
+  const stages = ['Upload', 'Extract fields (vision, concurrent)',
+                  'Redact + build entity map',
+                  'Reconcile (redacted tokens to Fireworks)',
+                  'Emit reconciled record'];
   setRunStages(stages, 0,
-    `${kinds} · nothing crosses the network unredacted`);
+    `<b>Files:</b> ${nameList}<br>${kinds} · nothing crosses the network unredacted`);
 
   const fd = new FormData();
   fd.append('schema', schema);
@@ -2369,10 +2378,16 @@ async function uploadRealFiles(evt, opts = {}){
     // Real timings: extract dominates on vision piles; redact + reconcile
     // are seconds. Nudge the visible stage after a bit so the spinner
     // reads as making progress even without server-sent events.
+    // Advance stages on timers roughly scaled to the real pipeline profile.
+    // Extraction is concurrent (asyncio.gather) so wall time ≈ slowest doc,
+    // not sum. A rough model: 5s baseline per doc that scales sub-linearly
+    // for concurrent runs, plus 3s constant for redact + reconcile.
     let flightStage = 1;
     const advance = () => { flightStage = Math.min(flightStage + 1, stages.length - 1); setRunStages(stages, flightStage); };
-    const t1 = setTimeout(advance, nPdf ? 6000 : 800);
-    const t2 = setTimeout(advance, nPdf ? 14000 : 2200);
+    const extractMs = nPdf ? 4000 + 1500 * Math.min(nPdf, 6) : 700;
+    const redactMs = extractMs + 2500;
+    const t1 = setTimeout(advance, extractMs);
+    const t2 = setTimeout(advance, redactMs);
     const rr = await fetch('/api/real/run', {method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({session_id: REAL_SESSION, full_local: fullLocal})});
     clearTimeout(t1); clearTimeout(t2);
