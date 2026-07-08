@@ -2204,6 +2204,55 @@ document.addEventListener('keydown', e => {
 // ============================================================
 // REAL PILE — user uploads their own docs; the same pipeline runs.
 // ============================================================
+
+// ---- work-in-progress overlay ----
+function showRunOverlay(){
+  let ov = document.getElementById('run-overlay');
+  if(!ov){
+    ov = document.createElement('div');
+    ov.id = 'run-overlay';
+    ov.style.cssText = 'position:fixed; inset:0; z-index:1000; background:rgba(10,10,10,0.72); backdrop-filter:blur(3px); display:flex; align-items:center; justify-content:center;';
+    ov.innerHTML = `
+      <div style="width:min(560px, 92vw); padding:22px 26px; border-radius:14px; border:1px solid var(--line); background:var(--paper); box-shadow:0 24px 60px rgba(0,0,0,0.5);">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
+          <div class="ro-spin" style="width:22px; height:22px; border:2.5px solid rgba(255,255,255,0.12); border-top-color:var(--c-name); border-radius:50%; animation: ro-rot 0.9s linear infinite;"></div>
+          <div id="run-overlay-title" style="font-size:13.5px; font-weight:600; color:var(--ink);">Running the paperflow pipeline…</div>
+        </div>
+        <div id="run-overlay-stages" style="display:flex; flex-direction:column; gap:7px; font-size:11.5px; color:var(--muted); line-height:1.4;"></div>
+        <div id="run-overlay-note" style="margin-top:14px; padding-top:12px; border-top:1px solid var(--line); font-size:10.5px; color:var(--muted2); line-height:1.5;"></div>
+      </div>
+      <style>@keyframes ro-rot { to { transform: rotate(360deg); } }</style>`;
+    document.body.appendChild(ov);
+  }
+  ov.style.display = 'flex';
+  return ov;
+}
+function setRunStages(stages, current, note){
+  const box = document.getElementById('run-overlay-stages');
+  if(!box) return;
+  box.innerHTML = stages.map((label, i) => {
+    const done = i < current;
+    const active = i === current;
+    const dot = done
+      ? '<span style="width:10px; height:10px; border-radius:50%; background:var(--conf-good); display:inline-block;"></span>'
+      : active
+        ? '<span class="ro-spin" style="width:10px; height:10px; border:1.6px solid rgba(255,255,255,0.15); border-top-color:var(--c-name); border-radius:50%; display:inline-block; animation: ro-rot 0.9s linear infinite;"></span>'
+        : '<span style="width:10px; height:10px; border-radius:50%; border:1.5px solid var(--muted2); display:inline-block; box-sizing:border-box;"></span>';
+    const colour = done ? 'var(--conf-good)' : active ? 'var(--ink)' : 'var(--muted2)';
+    const weight = active ? '600' : '400';
+    return `<div style="display:flex; align-items:center; gap:10px; color:${colour}; font-weight:${weight};">${dot}<span>${label}</span></div>`;
+  }).join('');
+  if(note !== undefined) document.getElementById('run-overlay-note').innerHTML = note;
+}
+function setRunTitle(text){
+  const t = document.getElementById('run-overlay-title');
+  if(t) t.textContent = text;
+}
+function hideRunOverlay(){
+  const ov = document.getElementById('run-overlay');
+  if(ov) ov.style.display = 'none';
+}
+
 piles.real = {
   domain: 'your own documents · upload to run the same pipeline',
   assistantRole: 'reconciler · your pile',
@@ -2253,13 +2302,22 @@ function handleRealDrop(evt){
 async function uploadRealFiles(evt, opts = {}){
   const files = evt.target.files;
   if(!files || !files.length) return;
-  const status = document.getElementById('real-upload-status')
-    || {innerHTML: ''};   // status element may not exist in add-more mode
   const schemaSel = document.getElementById('real-schema');
   const schema = opts.schema || (schemaSel && schemaSel.value) || 'generic';
-  status.innerHTML = opts.append
-    ? `Adding ${files.length} file${files.length > 1 ? 's' : ''} to the pile…`
-    : `Uploading ${files.length} file${files.length > 1 ? 's' : ''}…`;
+  const nPdf = Array.from(files).filter(f => /\.(pdf|png|jpe?g|webp)$/i.test(f.name)).length;
+  const kinds = nPdf
+    ? `${nPdf} vision doc${nPdf > 1 ? 's' : ''} · Gemma on the MI300X reads each page`
+    : `text-only pile · no vision extraction needed`;
+
+  showRunOverlay();
+  setRunTitle(opts.append
+    ? `Adding ${files.length} file${files.length > 1 ? 's' : ''} to your pile`
+    : `Running the paperflow pipeline on ${files.length} file${files.length > 1 ? 's' : ''}`);
+  const stages = ['Upload', 'Extract fields (vision)', 'Redact + build entity map',
+                  'Reconcile (redacted tokens to Fireworks)', 'Emit reconciled record'];
+  setRunStages(stages, 0,
+    `${kinds} · nothing crosses the network unredacted`);
+
   const fd = new FormData();
   fd.append('schema', schema);
   if(opts.append && REAL_SESSION) fd.append('session_id', REAL_SESSION);
@@ -2269,28 +2327,38 @@ async function uploadRealFiles(evt, opts = {}){
     if(!r.ok){
       let msg = await r.text();
       try{ msg = JSON.parse(msg).detail || msg; } catch(_){}
-      status.innerHTML = 'Upload failed: ' + msg.slice(0, 300);
+      setRunTitle('Upload failed');
+      setRunStages(stages, -1, '<span style="color:var(--conf-block);">' + msg.slice(0, 300) + '</span><br><br><button class="btn ghost" onclick="hideRunOverlay()" style="padding:5px 12px; font-size:11px;">Dismiss</button>');
       return;
     }
     const d = await r.json();
     REAL_SESSION = d.session_id;
-    status.innerHTML = `Uploaded. Running the pipeline (extraction ~5s per PDF page, one redacted reconciliation call)…`;
+    setRunStages(stages, 1);   // Extract in progress
     const t0 = performance.now();
     if(opts.schema && REAL_SESSION){
       await fetch('/api/real/set_schema', {method:'POST',
         headers:{'Content-Type':'application/json'},
         body: JSON.stringify({session_id: REAL_SESSION, schema: opts.schema})});
     }
+    // Optimistically advance the middle stages while /run is in flight.
+    // Real timings: extract dominates on vision piles; redact + reconcile
+    // are seconds. Nudge the visible stage after a bit so the spinner
+    // reads as making progress even without server-sent events.
+    let flightStage = 1;
+    const advance = () => { flightStage = Math.min(flightStage + 1, stages.length - 1); setRunStages(stages, flightStage); };
+    const t1 = setTimeout(advance, nPdf ? 6000 : 800);
+    const t2 = setTimeout(advance, nPdf ? 14000 : 2200);
     const rr = await fetch('/api/real/run', {method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({session_id: REAL_SESSION, full_local: fullLocal})});
+    clearTimeout(t1); clearTimeout(t2);
     if(!rr.ok){
       const err = await rr.text();
-      status.innerHTML = 'Run failed: ' + err.slice(0, 300)
-        + '<br><br>Tip: the container needs VLLM_URL to reach a live Gemma endpoint for PDF extraction. Text-only files (TXT/MD) should still work.';
+      setRunTitle('Pipeline run failed');
+      setRunStages(stages, flightStage, '<span style="color:var(--conf-block);">' + err.slice(0, 300) + '</span><br><br>Tip: the container needs VLLM_URL to reach a live Gemma endpoint for PDF extraction. Text-only files (TXT/MD) still work. <button class="btn ghost" onclick="hideRunOverlay()" style="padding:5px 12px; font-size:11px; margin-top:6px;">Dismiss</button>');
       return;
     }
     const dt = ((performance.now() - t0) / 1000).toFixed(1);
-    status.innerHTML = `Pipeline ran in ${dt}s. Loading…`;
+    setRunStages(stages, stages.length, `Pipeline ran in <b style="color:var(--conf-good);">${dt}s</b>. Loading the reconciled record…`);
     const pv = await fetch(`/api/real/pile/${REAL_SESSION}`);
     if(pv.ok){
       piles.real = Object.assign({}, piles.real, await pv.json(), {empty:false});
@@ -2298,7 +2366,11 @@ async function uploadRealFiles(evt, opts = {}){
         `${piles.real.docs.length} docs · ${piles.real.clients.length} entities`;
       loadPile('real');
     }
-  } catch(e){ status.innerHTML = 'Upload error: ' + e.message; }
+    hideRunOverlay();
+  } catch(e){
+    setRunTitle('Upload error');
+    setRunStages(stages, -1, '<span style="color:var(--conf-block);">' + e.message + '</span><br><br><button class="btn ghost" onclick="hideRunOverlay()" style="padding:5px 12px; font-size:11px;">Dismiss</button>');
+  }
 }
 
 async function resetRealPile(){
@@ -2311,19 +2383,34 @@ async function resetRealPile(){
 
 async function changeRealSchema(schema){
   if(!REAL_SESSION) return;
+  showRunOverlay();
+  setRunTitle('Re-running the pipeline with the new schema');
+  const stages = ['Update schema', 'Extract fields (cached)',
+                  'Redact + build entity map',
+                  'Reconcile (redacted tokens to Fireworks)',
+                  'Emit reconciled record'];
+  setRunStages(stages, 0);
   try{
     await fetch('/api/real/set_schema', {method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({session_id: REAL_SESSION, schema})});
+    setRunStages(stages, 2);
+    const t0 = performance.now();
     await fetch('/api/real/run', {method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({session_id: REAL_SESSION, full_local: fullLocal})});
+    const dt = ((performance.now() - t0) / 1000).toFixed(1);
+    setRunStages(stages, stages.length, `Re-ran in <b style="color:var(--conf-good);">${dt}s</b>.`);
     const pv = await fetch(`/api/real/pile/${REAL_SESSION}`);
     if(pv.ok){
       piles.real = Object.assign({}, piles.real, await pv.json(), {empty:false});
       loadPile('real');
     }
-  } catch(e){ console.warn('schema change failed', e); }
+    hideRunOverlay();
+  } catch(e){
+    setRunTitle('Schema change failed');
+    setRunStages(stages, -1, '<span style="color:var(--conf-block);">' + e.message + '</span> <button class="btn ghost" onclick="hideRunOverlay()" style="padding:5px 12px; font-size:11px;">Dismiss</button>');
+  }
 }
 
 // ============================================================
