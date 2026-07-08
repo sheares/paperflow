@@ -506,14 +506,22 @@ main{ display: contents; }
 }
 @keyframes tip-in{ from{opacity:0; transform:translateY(2px)} to{opacity:1; transform:translateY(0)} }
 
-/* Live input detection indicator (below chat input) */
+/* Live input detection indicator (below chat input). Reserves vertical
+   space only when it has content — otherwise a big empty band sits
+   between the chat input and the suggested chips. */
 .input-detect{
   font-size: 11px;
   color: var(--muted2);
-  margin: 6px 22px 12px;
-  min-height: 18px;
   line-height: 1.4;
   display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px;
+}
+.input-detect:not(:empty){
+  margin: 6px 22px 12px;
+  min-height: 18px;
+}
+.input-detect:empty{
+  margin: 0;
+  min-height: 0;
 }
 .input-detect .label{
   text-transform: uppercase;
