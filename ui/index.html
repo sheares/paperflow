@@ -1841,9 +1841,9 @@ function loadPile(key){
   renderSidebar(p);
   playPipeline();
 
-  // Real pile with docs: add a "reset / upload again" affordance, and if
-  // every doc came back with 0 fields (usually because the vision extractor
-  // is unreachable) surface that as an actionable notice.
+  // Real pile with docs: add a small toolbar (schema, add more, reset) and,
+  // when every doc came back with 0 fields, a red-bordered banner explaining
+  // that the vision extractor is likely unreachable.
   if(p.real && !p.empty){
     const grid = document.getElementById('pile-grid');
     const emptyExtract = p.docs.length && p.docs.every(d => d.fields === 0);
@@ -1852,10 +1852,22 @@ function loadPile(key){
       banner = `<div style="margin:14px 0 6px; padding:10px 14px; border:1px solid rgba(248,113,113,0.35); border-radius:8px; background:rgba(248,113,113,0.08); font-size:11.5px; color:var(--conf-block); line-height:1.5;">
         <b>Extractor returned 0 fields on every document.</b> This is usually because the vision endpoint (Gemma on the MI300X) is not reachable from the container. Text-only files (TXT / MD / XLSX) work without the GPU; PDFs and images need it. Check the header badge for MI300X status.</div>`;
     }
-    const reset = `<div style="margin-top:12px; display:flex; gap:10px; justify-content:center;">
-      <button class="btn" onclick="resetRealPile()" style="padding:7px 14px;">↺ Reset · upload different files</button>
+    const currentSchema = (p.domain && (
+      p.domain.includes('kyc') ? 'kyc' :
+      p.domain.includes('patient') ? 'patient' :
+      p.domain.includes('partner') ? 'partner' : 'generic')) || 'generic';
+    const opt = (v, lbl) => `<option value="${v}"${v === currentSchema ? ' selected' : ''}>${lbl}</option>`;
+    const toolbar = `<div style="margin-top:14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+      <input type="file" id="real-file-input-add" multiple accept=".pdf,.txt,.md,.xlsx" style="display:none;" onchange="uploadRealFiles(event, {append:true})">
+      <button class="btn" onclick="document.getElementById('real-file-input-add').click()" style="padding:6px 12px; font-size:11.5px;">+ Add more documents</button>
+      <span style="font-size:11px; color:var(--muted);">Treat as</span>
+      <select id="real-schema-live" onchange="changeRealSchema(this.value)" style="padding:5px 8px; background:rgba(255,255,255,0.03); color:var(--ink); border:1px solid var(--line); border-radius:6px; font-size:11.5px;">
+        ${opt('generic', 'Generic')}${opt('kyc', 'KYC onboarding')}${opt('patient', 'Patient intake')}${opt('partner', 'Partner collation')}
+      </select>
+      <span style="flex:1;"></span>
+      <button class="btn ghost" onclick="resetRealPile()" style="padding:6px 12px; font-size:11.5px;" data-tooltip="Clear the current pile and start over.">↺ Reset</button>
     </div>`;
-    grid.insertAdjacentHTML('afterend', banner + reset);
+    grid.insertAdjacentHTML('afterend', banner + toolbar);
   }
 
   // Pile data changed: disarm the confirm gate and re-run detection so the
@@ -2219,14 +2231,19 @@ function handleRealDrop(evt){
   uploadRealFiles({target: input});
 }
 
-async function uploadRealFiles(evt){
+async function uploadRealFiles(evt, opts = {}){
   const files = evt.target.files;
   if(!files || !files.length) return;
-  const status = document.getElementById('real-upload-status');
-  const schema = 'kyc';   // default schema; can be surfaced as a setting later
-  status.innerHTML = `Uploading ${files.length} file${files.length > 1 ? 's' : ''}…`;
+  const status = document.getElementById('real-upload-status')
+    || {innerHTML: ''};   // status element may not exist in add-more mode
+  const schemaSel = document.getElementById('real-schema');
+  const schema = opts.schema || (schemaSel && schemaSel.value) || 'generic';
+  status.innerHTML = opts.append
+    ? `Adding ${files.length} file${files.length > 1 ? 's' : ''} to the pile…`
+    : `Uploading ${files.length} file${files.length > 1 ? 's' : ''}…`;
   const fd = new FormData();
   fd.append('schema', schema);
+  if(opts.append && REAL_SESSION) fd.append('session_id', REAL_SESSION);
   for(const f of files) fd.append('files', f);
   try{
     const r = await fetch('/api/real/upload', {method:'POST', body:fd});
@@ -2240,6 +2257,11 @@ async function uploadRealFiles(evt){
     REAL_SESSION = d.session_id;
     status.innerHTML = `Uploaded. Running the pipeline (extraction ~5s per PDF page, one redacted reconciliation call)…`;
     const t0 = performance.now();
+    if(opts.schema && REAL_SESSION){
+      await fetch('/api/real/set_schema', {method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({session_id: REAL_SESSION, schema: opts.schema})});
+    }
     const rr = await fetch('/api/real/run', {method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({session_id: REAL_SESSION, full_local: fullLocal})});
     if(!rr.ok){
@@ -2266,6 +2288,23 @@ async function resetRealPile(){
   piles.real = Object.assign({}, piles.real, {docs:[], clients:[], entities:[], stats:[], empty:true});
   document.getElementById('real-tab-count').textContent = 'upload to start';
   loadPile('real');
+}
+
+async function changeRealSchema(schema){
+  if(!REAL_SESSION) return;
+  try{
+    await fetch('/api/real/set_schema', {method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({session_id: REAL_SESSION, schema})});
+    await fetch('/api/real/run', {method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({session_id: REAL_SESSION, full_local: fullLocal})});
+    const pv = await fetch(`/api/real/pile/${REAL_SESSION}`);
+    if(pv.ok){
+      piles.real = Object.assign({}, piles.real, await pv.json(), {empty:false});
+      loadPile('real');
+    }
+  } catch(e){ console.warn('schema change failed', e); }
 }
 
 // ============================================================

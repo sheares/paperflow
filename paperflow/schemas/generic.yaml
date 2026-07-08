@@ -1,0 +1,5 @@
+pile_type: generic
+display_name: Generic pile
+entity_noun: entity
+required_fields: []
+entity_field: name

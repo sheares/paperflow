@@ -240,34 +240,68 @@ def _real_session(session_id: str) -> dict:
     return _real_sessions[session_id]
 
 
+ALLOWED_SCHEMAS = {"kyc", "patient", "partner", "generic"}
+
+
 @app.post("/api/real/upload")
-async def real_upload(schema: str = Form("kyc"),
+async def real_upload(schema: str = Form("generic"),
+                      session_id: str = Form(""),
                       files: list[UploadFile] = File(...)):
-    """Create a fresh session and store uploaded documents. Returns the
-    session_id; caller then POSTs /api/real/run to execute the pipeline."""
-    if schema not in {"kyc", "patient", "partner"}:
+    """Create a fresh session (or add to an existing one) with the uploaded
+    documents. Pass session_id to append; leave empty to start fresh."""
+    if schema not in ALLOWED_SCHEMAS:
         raise HTTPException(400, "unknown schema")
-    if not files or len(files) > MAX_UPLOAD_FILES:
-        raise HTTPException(400,
-                            f"1-{MAX_UPLOAD_FILES} files required")
-    session_id = uuid.uuid4().hex[:12]
-    sess_dir = REAL / session_id
-    sess_dir.mkdir(parents=True, exist_ok=True)
+    if not files:
+        raise HTTPException(400, "no files")
+
+    if session_id:
+        sess = _real_sessions.get(session_id)
+        if not sess or not sess["dir"].exists():
+            raise HTTPException(404, "no such real-pile session")
+        sess_dir = sess["dir"]
+        existing = sum(1 for _ in sess_dir.iterdir()
+                       if _.is_file() and _.name not in {"extraction.json"})
+        if existing + len(files) > MAX_UPLOAD_FILES:
+            raise HTTPException(400, f"pile limit {MAX_UPLOAD_FILES} files "
+                                     f"(currently has {existing})")
+        sess["schema"] = schema
+    else:
+        if len(files) > MAX_UPLOAD_FILES:
+            raise HTTPException(400, f"1-{MAX_UPLOAD_FILES} files required")
+        session_id = uuid.uuid4().hex[:12]
+        sess_dir = REAL / session_id
+        sess_dir.mkdir(parents=True, exist_ok=True)
+
     for uf in files:
         name = Path(uf.filename or "doc").name  # strip any path parts
         suffix = Path(name).suffix.lower()
         if suffix not in ALLOWED_UPLOAD_SUFFIXES:
-            shutil.rmtree(sess_dir, ignore_errors=True)
+            if not (REAL / session_id).exists():
+                shutil.rmtree(sess_dir, ignore_errors=True)
             raise HTTPException(400, f"unsupported file type: {suffix}")
         content = await uf.read()
         if len(content) > MAX_UPLOAD_BYTES:
-            shutil.rmtree(sess_dir, ignore_errors=True)
             raise HTTPException(413, f"{name} is {len(content) / 1024 / 1024:.1f} MB, over the "
                                      f"{MAX_UPLOAD_BYTES // 1024 // 1024} MB per-file limit")
         (sess_dir / name).write_bytes(content)
     _real_sessions[session_id] = {"dir": sess_dir, "schema": schema}
     return {"session_id": session_id,
             "files": [f.filename for f in files]}
+
+
+class RealSchemaBody(BaseModel):
+    session_id: str
+    schema: str
+
+
+@app.post("/api/real/set_schema")
+def real_set_schema(body: RealSchemaBody):
+    if body.schema not in ALLOWED_SCHEMAS:
+        raise HTTPException(400, "unknown schema")
+    sess = _real_session(body.session_id)
+    sess["schema"] = body.schema
+    _routers.pop(f"real:{body.session_id}", None)
+    return {"ok": True}
 
 
 class RealRunBody(BaseModel):

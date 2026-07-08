@@ -64,6 +64,7 @@ def run_pile(pile_dir: Path, schema_path: Path, cached_extraction: Path | None,
 
     # register extracted values into the map (extractor catches what raw-text
     # analysis may phrase differently), then group fields by entity
+    generic = not schema_keys       # generic mode: no required fields at all
     records_raw: dict[str, dict[str, list]] = {}
     for doc in extraction["docs"]:
         fields = {}
@@ -76,8 +77,10 @@ def run_pile(pile_dir: Path, schema_path: Path, cached_extraction: Path | None,
                 continue
             if key:
                 fields.setdefault(key, value)
+        # in generic mode all fields feed the map (there are no schema keys
+        # to gate on) so redaction covers whatever the vision model found
         for key, value in fields.items():
-            if key in schema_keys:
+            if generic or key in schema_keys:
                 emap.add(value, _family_for(key))
 
         ent_value = fields.get(entity_field)
@@ -86,10 +89,16 @@ def run_pile(pile_dir: Path, schema_path: Path, cached_extraction: Path | None,
             # fallback: first person/org token present in the doc's redacted text
             rtext = red.redacted.get(doc["doc"], "")
             m = re.search(r"\[(?:PERSON|ORG)_\d+\]", rtext)
-            etoken = m.group(0) if m else "[UNASSIGNED]"
+            if m:
+                etoken = m.group(0)
+            elif generic:
+                # one record per document keyed by the doc's filename
+                etoken = f"[DOC_{doc['doc']}]"
+            else:
+                etoken = "[UNASSIGNED]"
         bucket = records_raw.setdefault(etoken, {})
         for key, value in fields.items():
-            if key in schema_keys:
+            if generic or key in schema_keys:
                 bucket.setdefault(key, [])
                 if not any(v == value for _, v in bucket[key]):
                     bucket[key].append((doc["doc"], value))
