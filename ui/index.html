@@ -495,6 +495,15 @@ main{ display: contents; }
   pointer-events: none;
   animation: tip-in .08s ease-out;
 }
+/* Tooltips on the top header land above the viewport by default —
+   flip them to below and left-align so the arrow doesn't crawl off
+   the right edge either. Applied via [data-tip-below] on the trigger. */
+[data-tooltip][data-tip-below]:hover::after{
+  bottom: auto;
+  top: calc(100% + 6px);
+  right: auto;
+  left: 0;
+}
 @keyframes tip-in{ from{opacity:0; transform:translateY(2px)} to{opacity:1; transform:translateY(0)} }
 
 /* Live input detection indicator (below chat input) */
@@ -1138,7 +1147,7 @@ main{ display: contents; }
   <div class="header-inner">
     <div class="logo">paper<span class="dot">·</span>flow</div>
     <div class="header-right">
-      <button class="mode-toggle" id="mode-toggle" onclick="toggleFullLocal()" data-tooltip="Air-gapped mode: every stage runs on the MI300X + paperflow container. Fireworks is never called, so the zero-egress claim is true by construction. Trade-off: cross-doc reasoning falls back to deterministic local rules (less depth than the cloud model).">
+      <button class="mode-toggle" id="mode-toggle" data-tip-below onclick="toggleFullLocal()" data-tooltip="Air-gapped mode: every stage runs on the MI300X + paperflow container. Fireworks is never called, so the zero-egress claim is true by construction. Trade-off: cross-doc reasoning falls back to deterministic local rules (less depth than the cloud model).">
         <span class="mt-dot"></span>Air-gapped mode
       </button>
       <div class="amd-badge">
@@ -1155,9 +1164,9 @@ main{ display: contents; }
 <nav class="tabs-bar">
   <div class="tabs-bar-inner">
     <span class="tabs-label">Pile</span>
-    <button class="tab pile-btn active" data-pile="real" onclick="loadPile('real')" data-tooltip="Load a sample or upload your own documents. Session-scoped, cleared when you refresh.">📁 Your pile <span class="tab-count" id="real-tab-count">load a sample or upload</span></button>
+    <button class="tab pile-btn active" data-pile="real" data-tip-below onclick="loadPile('real')" data-tooltip="Load a sample or upload your own documents. Session-scoped, cleared when you refresh.">📁 Your pile <span class="tab-count" id="real-tab-count">load a sample or upload</span></button>
     <span style="flex:1;"></span>
-    <button class="tab" onclick="openSandbox()" data-tooltip="Paste anything with names, IDs, emails or addresses. See the redaction round-trip live on your own text. Nothing is stored or logged.">🧪 Redaction sandbox</button>
+    <button class="tab" data-tip-below onclick="openSandbox()" data-tooltip="Paste anything with names, IDs, emails or addresses. See the redaction round-trip live on your own text. Nothing is stored or logged.">🧪 Redaction sandbox</button>
   </div>
 </nav>
 
