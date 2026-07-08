@@ -18,7 +18,7 @@
 set -euo pipefail
 
 # ---- config ----------------------------------------------------------
-DROPLET_NAME="${PAPERFLOW_DROPLET:-gpu-mi300x1-192gb-devcloud-atl1}"
+DROPLET_NAME="${PAPERFLOW_DROPLET:-snapshots-gpu-mi300x1-192gb-devcloud-atl1}"
 DROPLET_SIZE="${PAPERFLOW_DROPLET_SIZE:-gpu-mi300x1-192gb-devcloud}"
 DROPLET_REGION="${PAPERFLOW_DROPLET_REGION:-atl1}"
 DROPLET_IMAGE_SLUG="${PAPERFLOW_DROPLET_IMAGE:-gpu-h100x1-80gb}"   # fallback if no snapshot yet
