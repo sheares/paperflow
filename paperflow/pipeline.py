@@ -28,6 +28,65 @@ SYNONYMS = {
     "name": [],   # too ambiguous; resolved via entity_field below
 }
 NOISE_LABELS = {"doc_id", "doc", "document_id", "page"}
+# Field keys the extractor uses when the value is "who/what this doc is
+# about". Checked in order under generic mode: the first key that maps
+# to a real PERSON/ORG token wins. Beats scanning the redacted text
+# because these keys are labelled by the extractor as the subject, not
+# an incidental mention (a clinician on a patient intake is a bystander,
+# even if the clinician's name repeats across the pile).
+SUBJECT_FIELD_KEYS = [
+    # ORG-labelled subject fields first: on partner/vendor docs both the
+    # org and the contact person are labelled, but the doc is ABOUT the
+    # org (the contact just happens to work there). Patient/KYC docs
+    # don't have these keys, so they still fall through to the person
+    # keys below.
+    "organisation", "organization", "party_1_provider",
+    "party_2_organiser", "party",
+    # Personal-subject fields (patient/KYC docs, cardholder scans).
+    "patient_name", "full_name", "cardholder", "applicant",
+    "contact_name", "primary_contact", "name",
+]
+
+# Lowercase particles that are legitimately part of names in Malay,
+# Indian, Arabic, Dutch, Portuguese, etc. — the shape filter has to let
+# these through or it drops "Mohammed Farid bin Hassan", "Rajesh s/o
+# Kumar", "Vincent van Gogh" as if they weren't names at all.
+_NAME_PARTICLES = {"bin", "binte", "binti", "s/o", "d/o",
+                   "van", "von", "der", "den", "de", "del", "della",
+                   "di", "da", "du", "la", "le"}
+# spaCy false-positives spot-checked in the KYC pile: bureaucratic
+# phrasings that always match its PERSON classifier. The alias filter
+# below is the primary line of defence; this is just a fast reject.
+_NAME_REJECT_TOKENS = {"kyc", "aml", "cft", "nric", "fin", "uen",
+                        "acra", "moh", "mas", "ica", "ecg", "hba1c",
+                        "crp", "receipt", "invoice", "stub", "payment",
+                        "statement", "reference", "previous", "current"}
+
+
+def _looks_like_name(value: str) -> bool:
+    """True if a token's canonical value reads as a personal name.
+    Guards against spaCy PERSON false-positives like 'PAYMENT STUB' or
+    'KYC/2026/05/00218' contaminating the entity-based grouping. Real
+    person names contain only letters + a small set of punctuation,
+    2-5 words, and titlecase everything except known particles."""
+    if not value or any(ch.isdigit() or ch in "/@" for ch in value):
+        return False
+    words = value.split()
+    if not (2 <= len(words) <= 5):
+        return False
+    for w in words:
+        lw = w.lower()
+        if lw in _NAME_REJECT_TOKENS:
+            return False
+        if lw in _NAME_PARTICLES:
+            continue
+        # non-particle words: must be title-cased and use only name-safe
+        # characters (letters, apostrophe, hyphen, period for initials)
+        if not w[0].isupper():
+            return False
+        if not all(ch.isalpha() or ch in "'-." for ch in w):
+            return False
+    return True
 
 
 def _norm_label(label: str, schema_keys: list[str], entity_field: str) -> str | None:
@@ -71,6 +130,43 @@ def run_pile(pile_dir: Path, schema_path: Path, cached_extraction: Path | None,
     # under a sequential [DOC_N] identifier and keep the filename-to-token
     # map internal for the UI's source-citation column.
     doc_token_of: dict[str, str] = {}
+
+    # Precompute per-doc PERSON/ORG tokens + a cross-doc frequency map,
+    # so the ranked pick below can prefer entities that actually appear
+    # in multiple docs (the client/patient/vendor) over letterheads that
+    # appear only once (the doc's issuer). Old fallback grabbed the
+    # first PERSON/ORG token per doc, which was always the letterhead.
+    from collections import Counter
+    doc_persons = {name: set(re.findall(r"\[PERSON_\d+\]", rtext))
+                   for name, rtext in red.redacted.items()}
+    doc_orgs = {name: set(re.findall(r"\[ORG_\d+\]", rtext))
+                for name, rtext in red.redacted.items()}
+    cross_doc: Counter = Counter()
+    for toks in list(doc_persons.values()) + list(doc_orgs.values()):
+        for t in toks:
+            cross_doc[t] += 1
+
+    def _rank_pick(doc_name: str) -> str | None:
+        """Best PERSON/ORG token to key this doc's record on:
+        1. Prefer PERSON tokens whose canonical value passes the
+           name-shape filter (kills spaCy false-positives like 'PAYMENT
+           STUB', 'KYC/2026/…', 'Statement Date').
+        2. Break ties by cross-doc frequency — a token in 3 docs is the
+           subject; a token in 1 doc is a bystander/letterhead.
+        3. Fall back to ORG (same frequency ranking) only if no valid
+           PERSON. No shape filter on ORG because real org names can
+           be all-caps ('DBS Private') and the frequency ranking
+           already suppresses letterhead false-positives.
+        Returns None if the doc has neither → caller allocates DOC_N."""
+        persons = [t for t in doc_persons.get(doc_name, ())
+                   if _looks_like_name(emap.token_to_value.get(t, ""))]
+        if persons:
+            persons.sort(key=lambda t: (-cross_doc[t], t))
+            return persons[0]
+        orgs = sorted(doc_orgs.get(doc_name, ()),
+                      key=lambda t: (-cross_doc[t], t))
+        return orgs[0] if orgs else None
+
     for doc in extraction["docs"]:
         fields = {}
         for f in doc["fields"]:
@@ -99,16 +195,34 @@ def run_pile(pile_dir: Path, schema_path: Path, cached_extraction: Path | None,
 
         ent_value = fields.get(entity_field)
         etoken = emap.token_of(ent_value) if ent_value else None
+        if etoken is None and generic:
+            # Generic-mode subject-field lookup: the extractor labels the
+            # subject explicitly ("patient_name", "full_name",
+            # "organisation"). Trust that over anything the redacted-text
+            # scan can infer. Skip tokens that failed the name-shape
+            # filter — the extractor sometimes emits phrasal labels.
+            for sk in SUBJECT_FIELD_KEYS:
+                v = fields.get(sk)
+                if not v:
+                    continue
+                t = emap.token_of(v)
+                if t and t.startswith(("[PERSON_", "[ORG_")):
+                    if t.startswith("[PERSON_") and \
+                            not _looks_like_name(emap.token_to_value.get(t, "")):
+                        continue
+                    etoken = t
+                    break
         if etoken is None:
-            # fallback: first person/org token present in the doc's redacted text
-            rtext = red.redacted.get(doc["doc"], "")
-            m = re.search(r"\[(?:PERSON|ORG)_\d+\]", rtext)
-            if m:
-                etoken = m.group(0)
-            elif generic:
-                # one record per document, keyed by a SEQUENTIAL DOC token
-                # so the filename itself never rides on the cloud-side
-                # payload (filenames may embed PII, e.g. chloe_ng_nric.pdf)
+            # Fallback: ranked pick over PERSON/ORG tokens in the
+            # redacted text. Cross-doc frequency + name-shape filter
+            # keep letterheads and label false-positives out of the
+            # bucketing key.
+            etoken = _rank_pick(doc["doc"])
+        if etoken is None:
+            if generic:
+                # No shared entity found → key on a sequential DOC token
+                # (never the filename; filenames may embed PII, e.g.
+                # chloe_ng_nric.pdf).
                 if doc["doc"] not in doc_token_of:
                     doc_token_of[doc["doc"]] = f"[DOC_{len(doc_token_of) + 1}]"
                 etoken = doc_token_of[doc["doc"]]
