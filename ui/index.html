@@ -534,6 +534,15 @@ main{ display: contents; }
 .drop-zone:hover .drop-icon{ color: var(--c-name); }
 .drop-title{ font-size: 13px; font-weight: 500; color: var(--ink-soft); margin-bottom: 3px; letter-spacing: -0.005em; }
 .drop-hint{ font-size: 10.5px; color: var(--muted2); font-family: 'JetBrains Mono', ui-monospace, monospace; letter-spacing: -0.02em; }
+/* Vision endpoint down — soft-block PDFs/images but keep text uploads. */
+.drop-zone.drop-zone-offline{
+  border-color: rgba(248,113,113,0.30);
+  background: rgba(248,113,113,0.04);
+}
+.drop-zone.drop-zone-offline:hover{
+  border-color: rgba(248,113,113,0.55);
+  background: rgba(248,113,113,0.06);
+}
 
 /* Buttons */
 .btn{
@@ -1888,6 +1897,8 @@ function loadPile(key){
   // Real pile in empty state: replace the pane content with an upload screen.
   if(p.real && p.empty){
     document.getElementById('pile-grid').innerHTML = REAL_EMPTY_HTML;
+    // Apply the vision-offline gate to the freshly-injected zone.
+    setTimeout(() => updateDropZoneGate && updateDropZoneGate(), 0);
     document.getElementById('pile-stats').innerHTML = '';
     document.getElementById('chat').innerHTML = '';
     document.getElementById('record-body').innerHTML = '<div style="padding:24px; color:var(--muted); font-size:12.5px; text-align:center;">Upload documents on the left to see the reconciled record here.</div>';
@@ -1956,6 +1967,7 @@ function loadPile(key){
         <div class="drop-hint">Drag files here, or click to browse. Same pile · same schema.</div>
       </div>`;
     grid.insertAdjacentHTML('afterend', banner + toolbar + addMore);
+    setTimeout(() => updateDropZoneGate && updateDropZoneGate(), 0);
   }
 
   // Pile data changed: disarm the confirm gate and re-run detection so the
@@ -2443,13 +2455,55 @@ function handleRealDropAdd(evt){
   uploadRealFiles({target: input}, {append: true});
 }
 
+function visionOffline(){
+  // Docker container can't reach Gemma on the MI300X (typical cause: the
+  // SSH tunnel from Mac -> droplet dropped). PDFs and images need Gemma;
+  // text-only files still work through pdftotext / openpyxl.
+  return !!(LIVE_STATUS && LIVE_STATUS.remote_configured
+            && LIVE_STATUS.local_reachable === false);
+}
+
+function showUploadToast(msg, tone = 'block'){
+  // Small overlay toast for pre-upload rejections. Auto-dismisses.
+  const colour = tone === 'block' ? 'var(--conf-block)' : 'var(--conf-review)';
+  const t = document.createElement('div');
+  t.style.cssText = `position:fixed; top:64px; left:50%; transform:translateX(-50%);
+    z-index:1100; padding:10px 16px; border:1px solid ${colour};
+    background:var(--paper); color:${colour}; font-size:12px; border-radius:8px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.4); max-width:520px; line-height:1.5;`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 5200);
+}
+
 async function uploadRealFiles(evt, opts = {}){
   const files = evt.target.files;
   if(!files || !files.length) return;
   const schemaSel = document.getElementById('real-schema');
   const schema = opts.schema || (schemaSel && schemaSel.value) || 'generic';
-  const filesArr = Array.from(files);
-  const nPdf = filesArr.filter(f => /\.(pdf|png|jpe?g|webp)$/i.test(f.name)).length;
+  let filesArr = Array.from(files);
+  const isVision = f => /\.(pdf|png|jpe?g|webp)$/i.test(f.name);
+
+  // Pre-flight gate: block vision-required files when Gemma is offline.
+  if(visionOffline()){
+    const visionFiles = filesArr.filter(isVision);
+    const textFiles = filesArr.filter(f => !isVision(f));
+    if(visionFiles.length && !textFiles.length){
+      showUploadToast('MI300X vision extractor is offline. PDFs and images can\'t be processed right now — restart the SSH tunnel to the droplet and try again. Text-only files (TXT / MD / XLSX) still work.');
+      evt.target.value = '';
+      return;
+    }
+    if(visionFiles.length){
+      showUploadToast(`MI300X offline: dropping ${visionFiles.length} PDF/image file${visionFiles.length !== 1 ? 's' : ''}, uploading the ${textFiles.length} text-only file${textFiles.length !== 1 ? 's' : ''} instead.`, 'review');
+      filesArr = textFiles;
+      // Rebuild a DataTransfer with just the text files
+      const dt = new DataTransfer();
+      textFiles.forEach(f => dt.items.add(f));
+      evt.target.files = dt.files;
+    }
+  }
+
+  const nPdf = filesArr.filter(isVision).length;
   const nTxt = filesArr.length - nPdf;
   const parts = [];
   if(nPdf) parts.push(`${nPdf} vision doc${nPdf !== 1 ? 's' : ''}`);
@@ -2474,7 +2528,7 @@ async function uploadRealFiles(evt, opts = {}){
   const fd = new FormData();
   fd.append('schema', schema);
   if(opts.append && REAL_SESSION) fd.append('session_id', REAL_SESSION);
-  for(const f of files) fd.append('files', f);
+  for(const f of filesArr) fd.append('files', f);
   RUN_ABORT = new AbortController();
   const sig = RUN_ABORT.signal;
   try{
@@ -3396,6 +3450,34 @@ async function refreshStatus(){
     LIVE_STATUS = await r.json();
   } catch(_){ LIVE_STATUS = null; }
   renderStatusBadge();
+  updateDropZoneGate();
+}
+
+function updateDropZoneGate(){
+  // Reflect Gemma reachability on every visible drop zone: dim + warn
+  // strip + shrink the accept filter so the OS file picker only shows
+  // text-only files. The click/drop handlers still enforce this in JS
+  // for the drag-drop path (which ignores accept).
+  const offline = visionOffline();
+  document.querySelectorAll('#real-file-input, #real-file-input-add')
+    .forEach(inp => {
+      inp.setAttribute('accept', offline ? '.txt,.md,.xlsx' : '.pdf,.txt,.md,.xlsx');
+    });
+  document.querySelectorAll('#real-dropzone, #real-dropzone-add')
+    .forEach(dz => {
+      dz.classList.toggle('drop-zone-offline', offline);
+      // hint text swap so users know why PDFs are being rejected
+      const hint = dz.querySelector('.drop-hint');
+      const title = dz.querySelector('.drop-title');
+      if(hint){
+        if(offline){
+          hint.dataset.original = hint.dataset.original || hint.innerHTML;
+          hint.innerHTML = '<span style="color:var(--conf-block);">MI300X vision extractor offline · PDFs and images disabled</span> — TXT, MD, XLSX still work';
+        } else if(hint.dataset.original){
+          hint.innerHTML = hint.dataset.original;
+        }
+      }
+    });
 }
 function renderStatusBadge(){
   const t = document.getElementById('amd-badge-text');
