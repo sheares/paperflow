@@ -156,7 +156,24 @@ def xlsx_preview(pile: str, filename: str, n: int = 5):
             rows.append(["" if c is None else str(c) for c in row])
             if len(rows) >= n:
                 break
+
+        # column widths from the workbook (openpyxl default width ≈ 8)
+        widths = []
+        for i in range(1, (ws.max_column or 1) + 1):
+            from openpyxl.utils import get_column_letter
+            col = ws.column_dimensions.get(get_column_letter(i))
+            widths.append(col.width if col and col.width else 12)
+
+        # rows fully spanned by a merge on this sheet (the title-bar rows
+        # from write_xlsx: single value that occupies every column)
+        merges = []
+        for m in ws.merged_cells.ranges:
+            if m.min_col == 1 and m.max_col >= (ws.max_column or 1) \
+                    and m.min_row == m.max_row:
+                merges.append(m.min_row - 1)   # 0-indexed row
+
         sheets.append({"name": ws.title, "rows": rows,
+                       "widths": widths, "spanned_rows": merges,
                        "total_rows": ws.max_row, "total_cols": ws.max_column})
     return {"sheets": sheets, "showing": n}
 
