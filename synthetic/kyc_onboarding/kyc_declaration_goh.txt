@@ -1,12 +1,16 @@
 From: yvonne.goh@example.com
 To: kyc@bank.sg
 Subject: KYC Declaration
+Date: 2026-05-24 14:12 SGT
 
 Doc ID: doc_003
 
 Hi team,
 
-Please find my KYC declaration below.
+Please find my KYC declaration below. I have reviewed the form and
+confirm the following details are accurate as at today. I will also
+attach a scan of my NRIC in a separate message so the two documents
+do not exceed the mailbox size cap.
 
 Full Name: Yvonne Goh
 National ID (NRIC): K3098551
@@ -17,4 +21,6 @@ Source of Funds: Employment income
 Note: I'll pop by the branch on Monday to sign the paper form.
 
 Regards,
-Yvonne
+Yvonne Goh
+Senior Product Manager, Fintech Practice
+8 Marina Boulevard #30-01, Singapore 018981

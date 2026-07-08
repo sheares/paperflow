@@ -29,6 +29,8 @@ def main() -> int:
     failures = 0
 
     for pile_dir in sorted(p for p in SYN.iterdir() if p.is_dir()):
+        if not (pile_dir / "ground_truth.json").exists():
+            continue   # e.g. samples/, docs/, other non-scored subdirs
         gt = json.loads((pile_dir / "ground_truth.json").read_text())
         docs = load_pile(pile_dir)
         result = rt.process_pile(docs)

@@ -141,7 +141,8 @@ def main() -> int:
     ap.add_argument("--json", action="store_true")
     args = ap.parse_args()
     piles = [args.pile.name] if args.pile else \
-        [p.name for p in sorted(SYN.iterdir()) if p.is_dir()]
+        [p.name for p in sorted(SYN.iterdir())
+         if p.is_dir() and (p / "ground_truth.json").exists()]
 
     results = [score_pile(p) for p in piles]
     if args.json:
