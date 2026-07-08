@@ -11,6 +11,8 @@ from pathlib import Path
 
 import yaml
 
+from .reconciler import _family_for
+
 FIELD_TYPES = {
     "full_name": "name", "patient_name": "name", "contact_name": "name",
     "national_id": "id", "nric_fin": "id", "policy_number": "id", "uen": "id",
@@ -26,6 +28,32 @@ FAMILY_TYPES = {
     "SERIAL": "id", "ADDR": "address", "POSTCODE": "address", "DATE": "date",
     "EMAIL": "email", "PHONE": "phone",
 }
+# _family_for (from the reconciler) emits detector-level names; map those to
+# the same UI chip colours the sidebar uses. Any family we don't recognise
+# and any None result falls through to "text" (plain monospace, no chip),
+# so extracted facts that aren't identifiers stop rendering as purple ID
+# chips in the doc modal.
+_DETECTOR_TO_TYPE = {
+    "PERSON": "name", "ORG": "org",
+    "SG_NRIC": "id", "SG_NRIC_SUSPECT": "id", "SG_UEN": "id",
+    "POLICY_NUMBER": "id", "SERIAL": "id",
+    "EMAIL_ADDRESS": "email", "SG_PHONE": "phone",
+    "SG_ADDRESS": "address", "SG_POSTCODE": "address",
+    "ISO_DATE": "date",
+}
+
+
+def _chip_type(label: str, value: str | None) -> str:
+    """Curated schema fields (FIELD_TYPES) win first; otherwise let the
+    reconciler's detector decide. If it returns None (the label + value
+    don't look like an identifier), render as plain text so extracted
+    facts don't cosplay as tokens."""
+    if label in FIELD_TYPES:
+        return FIELD_TYPES[label]
+    fam = _family_for(label, value)
+    if fam is None:
+        return "text"
+    return _DETECTOR_TO_TYPE.get(fam, "text")
 DOC_TYPES = [("form", "KYC form"), ("intake", "Intake form"),
              ("declaration", "Declaration"), ("bill", "Utility bill"),
              ("scan", "ID copy"), ("nric", "ID copy"),
@@ -65,7 +93,7 @@ def build_pile_view(run_dir: Path, extraction_path: Path,
             "fields": len(d["fields"]), "conf": round(conf, 2),
             "state": "review" if conf < 0.75 else "good",
             "fieldsList": [{"label": f["label"],
-                            "type": FIELD_TYPES.get(f["label"], "id"),
+                            "type": _chip_type(f["label"], f.get("value")),
                             "value": f["value"], "conf": f["confidence"]}
                            for f in d["fields"]],
         })
@@ -84,7 +112,7 @@ def build_pile_view(run_dir: Path, extraction_path: Path,
         for key, f in rec["fields"].items():
             if f["status"] == "missing":
                 continue   # gap hidden from the UI
-            base = {"label": _pretty(key), "type": FIELD_TYPES.get(key, "id")}
+            base = {"label": _pretty(key), "type": _chip_type(key, f.get("value"))}
             dec = f.get("decision")
             if f["status"] in {"conflict", "escalated"} or \
                     (f["status"] == "resolved_conflict" and f.get("variants")):

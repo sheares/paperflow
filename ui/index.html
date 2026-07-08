@@ -670,6 +670,9 @@ main{ display: contents; }
 /* Document references — neutral grey, deliberately outside the entity palette
    so colour always means "entity type", never "document". */
 .chip-doc, .token-doc{ background: rgba(148,163,184,0.10); color: #94a3b8; border: 1px solid rgba(148,163,184,0.28); }
+/* Extracted values that are NOT identifiers ("Prize pool", "Online", etc.).
+   Rendered plain so purple never over-claims "we tokenised this". */
+.chip-text{ background: transparent; color: var(--ink-soft); border: 1px solid transparent; padding: 1px 0; }
 
 .chip{
   display: inline-block;
