@@ -263,6 +263,49 @@ def _real_session(session_id: str) -> dict:
 
 ALLOWED_SCHEMAS = {"kyc", "patient", "partner", "generic"}
 
+# Curated sample piles that the empty-state UI can drop into a fresh
+# session with one click. Each maps to a synthetic/<name>/ folder and
+# uses the pile-appropriate schema (so the sample loads with domain
+# rationale on, not Auto).
+SAMPLE_PILES = {
+    "individual": {"folder": "kyc_onboarding",  "schema": "kyc",
+                   "label": "Individual identity"},
+    "corporate":  {"folder": "partner_collation", "schema": "partner",
+                   "label": "Corporate identity"},
+    "case":       {"folder": "patient_intake",    "schema": "patient",
+                   "label": "Case records"},
+}
+
+
+@app.post("/api/real/load_sample/{name}")
+def real_load_sample(name: str):
+    """One-click load a curated sample pile into a fresh real-pile
+    session. Copies the sample docs into a new session dir, sets the
+    matching schema, but does NOT run the pipeline — client posts
+    /api/real/run separately so the same progress overlay animates."""
+    if name not in SAMPLE_PILES:
+        raise HTTPException(404, f"no sample named '{name}'")
+    src_dir = ROOT / "synthetic" / SAMPLE_PILES[name]["folder"]
+    if not src_dir.exists():
+        raise HTTPException(500, f"sample folder missing: {src_dir}")
+    session_id = uuid.uuid4().hex[:12]
+    sess_dir = REAL / session_id
+    sess_dir.mkdir(parents=True, exist_ok=True)
+    copied = []
+    for f in sorted(src_dir.iterdir()):
+        # skip eval artefacts — samples are demo docs, not scorer input
+        if not f.is_file() or f.name == "ground_truth.json":
+            continue
+        (sess_dir / f.name).write_bytes(f.read_bytes())
+        copied.append(f.name)
+    _real_sessions[session_id] = {"dir": sess_dir,
+                                  "schema": SAMPLE_PILES[name]["schema"]}
+    return {"session_id": session_id,
+            "sample": name,
+            "label": SAMPLE_PILES[name]["label"],
+            "schema": SAMPLE_PILES[name]["schema"],
+            "files": copied}
+
 
 @app.post("/api/real/upload")
 async def real_upload(schema: str = Form("generic"),

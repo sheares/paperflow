@@ -534,6 +534,31 @@ main{ display: contents; }
 .drop-zone:hover .drop-icon{ color: var(--c-name); }
 .drop-title{ font-size: 13px; font-weight: 500; color: var(--ink-soft); margin-bottom: 3px; letter-spacing: -0.005em; }
 .drop-hint{ font-size: 10.5px; color: var(--muted2); font-family: 'JetBrains Mono', ui-monospace, monospace; letter-spacing: -0.02em; }
+/* Sample-pile cards on the empty-state Your pile view — one-click load
+   a curated sample through the same live pipeline as user uploads. */
+.sample-card{
+  padding: 12px 14px; border: 1px solid var(--line);
+  border-radius: 10px; background: rgba(255,255,255,0.015);
+  cursor: pointer; transition: all .16s;
+  text-align: left;
+}
+.sample-card:hover{
+  border-color: var(--c-name);
+  background: rgba(129,140,248,0.06);
+  transform: translateY(-1px);
+}
+.sample-card-title{
+  font-size: 12.5px; font-weight: 600; color: var(--ink);
+  margin-bottom: 3px;
+}
+.sample-card-meta{
+  font-size: 10.5px; color: var(--muted); font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 6px;
+}
+.sample-card-hint{
+  font-size: 10px; color: var(--muted2);
+  padding-top: 6px; border-top: 1px solid var(--line);
+}
 /* Vision endpoint down — soft-block PDFs/images but keep text uploads. */
 .drop-zone.drop-zone-offline{
   border-color: rgba(248,113,113,0.30);
@@ -1108,15 +1133,9 @@ main{ display: contents; }
 
 <nav class="tabs-bar">
   <div class="tabs-bar-inner">
-    <span class="tabs-label">Real pile</span>
-    <button class="tab pile-btn" data-pile="real" onclick="loadPile('real')" data-tooltip="Upload your own documents (PDF, TXT, MD, XLSX). The same pipeline that ran the demo piles will extract, redact and reconcile them, fully local. Session-scoped, cleared when you refresh.">📁 Your pile <span class="tab-count" id="real-tab-count">upload to start</span></button>
-    <span style="width:1px; height:22px; background:var(--line); margin:0 6px;"></span>
-    <span class="tabs-label">Demo pile</span>
-    <button class="tab pile-btn active" data-pile="kyc"     onclick="loadPile('kyc')">Individual identity <span class="tab-count">4 docs · 2 individuals</span></button>
-    <button class="tab pile-btn"        data-pile="partner" onclick="loadPile('partner')">Corporate identity <span class="tab-count">6 docs · 3 organisations</span></button>
-    <button class="tab pile-btn"        data-pile="patient" onclick="loadPile('patient')">Case records <span class="tab-count">5 docs · 2 records</span></button>
+    <span class="tabs-label">Pile</span>
+    <button class="tab pile-btn active" data-pile="real" onclick="loadPile('real')" data-tooltip="Load a sample or upload your own documents. Session-scoped, cleared when you refresh.">📁 Your pile <span class="tab-count" id="real-tab-count">load a sample or upload</span></button>
     <span style="flex:1;"></span>
-    <span class="tabs-label" style="opacity:0.6;">Demo</span>
     <button class="tab" onclick="openSandbox()" data-tooltip="Paste anything with names, IDs, emails or addresses. See the redaction round-trip live on your own text. Nothing is stored or logged.">🧪 Redaction sandbox</button>
   </div>
 </nav>
@@ -1817,7 +1836,7 @@ function addCustomEntity(){
 // RENDER FUNCTIONS
 // ============================================================
 
-let currentPile = 'kyc';
+let currentPile = 'real';
 let exchangeIndex = 0;
 
 function toggleSchemaAdvanced(){
@@ -2407,14 +2426,39 @@ piles.real = {
 const REAL_EMPTY_HTML = `
   <input type="file" id="real-file-input" multiple accept=".pdf,.txt,.md,.xlsx" style="display:none;" onchange="uploadRealFiles(event)">
 
-  <div style="max-width:560px; margin:20px auto 16px; padding:16px 20px; border:1px solid var(--line); border-radius:12px; background:rgba(255,255,255,0.015); font-size:12px; color:var(--muted); line-height:1.6; text-align:left;">
-    <b style="color:var(--ink); display:block; margin-bottom:6px; font-size:12.5px;">Bring your own pile · what crosses the boundary, honestly</b>
-    <span style="color:var(--conf-good);">•</span> Your files stay inside <b style="color:var(--ink);">your PaperFlow service</b>, a dedicated environment running on an AMD MI300X you control. Never a shared LLM API endpoint.<br>
-    <span style="color:var(--c-name);">•</span> Only <b style="color:var(--ink);">redacted tokens</b> (like <code style="color:var(--c-name);">[PERSON_1]</code>) reach the reasoning model. Real identifiers never do.<br>
-    <span style="color:var(--conf-good);">•</span> Toggle <b style="color:var(--ink);">Full-local mode</b> in the header and even the tokens stay inside your PaperFlow service. Session is cleared on refresh.
+  <div style="max-width:640px; margin:16px auto 12px; padding:14px 20px; border:1px solid var(--line); border-radius:12px; background:rgba(255,255,255,0.015); font-size:12px; color:var(--muted); line-height:1.55; text-align:left;">
+    <b style="color:var(--ink); display:block; margin-bottom:4px; font-size:12.5px;">What crosses the boundary, honestly</b>
+    <span style="color:var(--conf-good);">•</span> Files stay in <b style="color:var(--ink);">this paperflow container</b>. Presidio + Gemma vision run here on your AMD MI300X. Nothing goes to a third-party OCR / vision API.<br>
+    <span style="color:var(--c-name);">•</span> Only <b style="color:var(--ink);">redacted tokens</b> (like <code style="color:var(--c-name);">[PERSON_1]</code>) reach Fireworks for cross-doc reasoning. Real identifiers never do.<br>
+    <span style="color:var(--conf-good);">•</span> Toggle <b style="color:var(--ink);">Full-local</b> in the header and even the tokens stay local. Session clears on refresh.
   </div>
 
-  <div id="real-dropzone" class="drop-zone" style="max-width:560px; margin:0 auto; cursor:pointer; transition:border-color 0.18s, background 0.18s;"
+  <div style="max-width:640px; margin:14px auto 8px; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.6px; text-align:left; padding-left:2px;">Load a sample</div>
+  <div style="max-width:640px; margin:0 auto; display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+    <div class="sample-card" onclick="loadSample('individual')" data-tooltip="4 docs about 2 individuals · KYC form, utility bill, NRIC scan, email declaration. Demonstrates alias merging + address conflict + NRIC OCR handling.">
+      <div class="sample-card-title">Individual identity</div>
+      <div class="sample-card-meta">4 docs · 2 individuals</div>
+      <div class="sample-card-hint">KYC · alias merge · address conflict</div>
+    </div>
+    <div class="sample-card" onclick="loadSample('corporate')" data-tooltip="6 docs about 3 organisations · registrations, MoU, business card, email. Demonstrates org alias merging + UEN + email/phone conflicts.">
+      <div class="sample-card-title">Corporate identity</div>
+      <div class="sample-card-meta">6 docs · 3 organisations</div>
+      <div class="sample-card-hint">Vendor onboarding · MoU · contact conflicts</div>
+    </div>
+    <div class="sample-card" onclick="loadSample('case')" data-tooltip="5 docs about 2 records · intake forms, referral, lab requisition, insurance. Demonstrates initials alias + DOB transposition + policy transposition + affirmative gap (consent-signed).">
+      <div class="sample-card-title">Case records</div>
+      <div class="sample-card-meta">5 docs · 2 records</div>
+      <div class="sample-card-hint">Intake · DOB conflict · consent gap</div>
+    </div>
+  </div>
+
+  <div style="max-width:640px; margin:18px auto 8px; display:flex; align-items:center; gap:10px;">
+    <span style="flex:1; height:1px; background:var(--line);"></span>
+    <span style="font-size:11px; color:var(--muted2); letter-spacing:0.4px;">OR UPLOAD YOUR OWN</span>
+    <span style="flex:1; height:1px; background:var(--line);"></span>
+  </div>
+
+  <div id="real-dropzone" class="drop-zone" style="max-width:640px; margin:0 auto; cursor:pointer; transition:border-color 0.18s, background 0.18s;"
        onclick="document.getElementById('real-file-input').click()"
        ondragover="event.preventDefault(); this.style.borderColor='var(--c-name)'; this.style.background='rgba(129,140,248,0.05)';"
        ondragleave="this.style.borderColor=''; this.style.background='';"
@@ -2427,7 +2471,7 @@ const REAL_EMPTY_HTML = `
     <div class="drop-title">Drag files here, or click to browse</div>
     <div class="drop-hint">1&thinsp;-&thinsp;12 documents · PDF, TXT, MD, XLSX · 25&thinsp;MB each</div>
   </div>
-  <div id="real-upload-status" style="max-width:560px; margin:12px auto 0; font-size:11.5px; color:var(--muted); line-height:1.5; min-height:16px; text-align:center;"></div>`;
+  <div id="real-upload-status" style="max-width:640px; margin:12px auto 0; font-size:11.5px; color:var(--muted); line-height:1.5; min-height:16px; text-align:center;"></div>`;
 
 function handleRealDrop(evt){
   evt.preventDefault();
@@ -2453,6 +2497,73 @@ function handleRealDropAdd(evt){
   files.forEach(f => dt.items.add(f));
   input.files = dt.files;
   uploadRealFiles({target: input}, {append: true});
+}
+
+async function loadSample(name){
+  // One-click load: server copies the curated sample docs into a fresh
+  // real-pile session, then we run the same /run + hydrate flow that
+  // uploadRealFiles uses. Same pipeline, same overlay, same result —
+  // the sample cards are just a shortcut around the file picker.
+  const labels = {individual:'Individual identity',
+                  corporate:'Corporate identity',
+                  case:'Case records'};
+  showRunOverlay();
+  setRunTitle(`Loading ${labels[name] || name} sample`);
+  const stages = ['Copy sample docs',
+                  'Extract fields (vision, concurrent)',
+                  'Redact + build entity map (on this paperflow server)',
+                  'Reconcile (only redacted tokens leave paperflow)',
+                  'Emit reconciled record'];
+  setRunStages(stages, 0,
+    `<b>Sample:</b> ${labels[name] || name}<br>The same pipeline that would process your own upload · runs live now.<br><br><b style="color:var(--conf-good);">Trust boundary:</b> redaction runs on this paperflow server, not on the LLM side. Only redacted tokens — never raw names, IDs, addresses or phones — reach Fireworks / DeepSeek.`);
+  RUN_ABORT = new AbortController();
+  const sig = RUN_ABORT.signal;
+  try{
+    const r = await fetch(`/api/real/load_sample/${name}`, {method:'POST', signal:sig});
+    if(!r.ok){
+      const msg = await r.text();
+      setRunTitle('Sample load failed');
+      setRunStages(stages, -1, '<span style="color:var(--conf-block);">' + msg.slice(0, 300) + '</span><br><br><button class="btn ghost" onclick="hideRunOverlay()" style="padding:5px 12px; font-size:11px;">Dismiss</button>');
+      return;
+    }
+    const d = await r.json();
+    REAL_SESSION = d.session_id;
+    setRunStages(stages, 1);
+    const t0 = performance.now();
+    // rough profile: samples have 4-6 PDFs, extract dominates
+    let flightStage = 1;
+    const advance = () => { flightStage = Math.min(flightStage + 1, stages.length - 1); setRunStages(stages, flightStage); };
+    const nPdf = (d.files || []).filter(f => /\.(pdf|png|jpe?g|webp)$/i.test(f)).length;
+    const extractMs = nPdf ? 4000 + 1500 * Math.min(nPdf, 6) : 700;
+    const t1 = setTimeout(advance, extractMs);
+    const t2 = setTimeout(advance, extractMs + 2500);
+    const rr = await fetch('/api/real/run', {method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({session_id: REAL_SESSION, full_local: fullLocal}),
+      signal: sig});
+    clearTimeout(t1); clearTimeout(t2);
+    if(!rr.ok){
+      const err = await rr.text();
+      setRunTitle('Pipeline run failed');
+      setRunStages(stages, flightStage, '<span style="color:var(--conf-block);">' + err.slice(0, 300) + '</span><br><br>Tip: PDF samples need Gemma on the MI300X reachable. Check the header badge. <button class="btn ghost" onclick="hideRunOverlay()" style="padding:5px 12px; font-size:11px; margin-top:6px;">Dismiss</button>');
+      return;
+    }
+    const dt = ((performance.now() - t0) / 1000).toFixed(1);
+    setRunStages(stages, stages.length, `Sample loaded in <b style="color:var(--conf-good);">${dt}s</b>. Rendering the reconciled record…`);
+    const pv = await fetch(`/api/real/pile/${REAL_SESSION}`, {signal: sig});
+    if(pv.ok){
+      piles.real = Object.assign({}, piles.real, await pv.json(), {empty:false});
+      document.getElementById('real-tab-count').textContent =
+        `${piles.real.docs.length} docs · ${piles.real.clients.length} entities`;
+      loadPile('real');
+    }
+    RUN_ABORT = null;
+    hideRunOverlay();
+  } catch(e){
+    if(e.name === 'AbortError'){ RUN_ABORT = null; return; }
+    setRunTitle('Sample load error');
+    setRunStages(stages, -1, '<span style="color:var(--conf-block);">' + e.message + '</span><br><br><button class="btn ghost" onclick="hideRunOverlay()" style="padding:5px 12px; font-size:11px;">Dismiss</button>');
+  }
 }
 
 function visionOffline(){
