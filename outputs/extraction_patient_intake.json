@@ -4,7 +4,7 @@
     {
       "doc": "insurance_ng.pdf",
       "kind": "vision",
-      "latency_s": 26.14,
+      "latency_s": 19.18,
       "fields": [
         {
           "label": "patient_name",
@@ -17,13 +17,8 @@
           "confidence": 1.0
         },
         {
-          "label": "plan",
-          "value": "Health Shield Gold Max A",
-          "confidence": 1.0
-        },
-        {
-          "label": "effective_from",
-          "value": "2024-01-01",
+          "label": "card_no",
+          "value": "AIA-CARD-4451-9932",
           "confidence": 1.0
         },
         {
@@ -32,8 +27,13 @@
           "confidence": 1.0
         },
         {
-          "label": "card_number",
-          "value": "AIA-CARD-4451-9932",
+          "label": "effective_date",
+          "value": "2024-01-01",
+          "confidence": 1.0
+        },
+        {
+          "label": "plan",
+          "value": "Health Shield Gold Max A",
           "confidence": 1.0
         },
         {
@@ -47,8 +47,18 @@
     {
       "doc": "intake_kumar.pdf",
       "kind": "vision",
-      "latency_s": 37.92,
+      "latency_s": 35.87,
       "fields": [
+        {
+          "label": "Doc ID",
+          "value": "doc_001",
+          "confidence": 1.0
+        },
+        {
+          "label": "MRN",
+          "value": "NHC-8829471",
+          "confidence": 1.0
+        },
         {
           "label": "patient_name",
           "value": "Rajesh Kumar",
@@ -62,31 +72,6 @@
         {
           "label": "nric_fin",
           "value": "S8612345Z",
-          "confidence": 1.0
-        },
-        {
-          "label": "policy_number",
-          "value": "PRU-009281",
-          "confidence": 1.0
-        },
-        {
-          "label": "allergies",
-          "value": "Penicillin",
-          "confidence": 1.0
-        },
-        {
-          "label": "consent_signed",
-          "value": "Not specified",
-          "confidence": 0.9
-        },
-        {
-          "label": "Doc ID",
-          "value": "doc_001",
-          "confidence": 1.0
-        },
-        {
-          "label": "MRN",
-          "value": "NHC-8829471",
           "confidence": 1.0
         },
         {
@@ -135,8 +120,18 @@
           "confidence": 1.0
         },
         {
+          "label": "allergies",
+          "value": "Penicillin",
+          "confidence": 1.0
+        },
+        {
           "label": "Insurance",
           "value": "Prudential PRUShield",
+          "confidence": 1.0
+        },
+        {
+          "label": "policy_number",
+          "value": "PRU-009281",
           "confidence": 1.0
         },
         {
@@ -150,23 +145,13 @@
           "confidence": 1.0
         },
         {
-          "label": "Reference",
-          "value": "NHC-ZAKE-KUMAR-88",
-          "confidence": 0.9
-        },
-        {
-          "label": "Appointment Date",
-          "value": "2026-06-15",
+          "label": "consent_signed",
+          "value": "",
           "confidence": 1.0
         },
         {
-          "label": "Appointment Location",
-          "value": "Cardiology OP - Room B/2",
-          "confidence": 1.0
-        },
-        {
-          "label": "Consultation Date/Time",
-          "value": "2026-07-02, 10:30",
+          "label": "Consent Date",
+          "value": "",
           "confidence": 1.0
         },
         {
@@ -175,8 +160,13 @@
           "confidence": 1.0
         },
         {
-          "label": "Staff Name",
-          "value": "Farah Nshba bte Iskandar",
+          "label": "Receptionist Name",
+          "value": "Farah Nisha bte Iskandar",
+          "confidence": 1.0
+        },
+        {
+          "label": "Registration Date",
+          "value": "2026-06-15",
           "confidence": 1.0
         }
       ],
@@ -185,8 +175,18 @@
     {
       "doc": "intake_ng.pdf",
       "kind": "vision",
-      "latency_s": 36.39,
+      "latency_s": 35.37,
       "fields": [
+        {
+          "label": "Doc Id",
+          "value": "doc_004",
+          "confidence": 1.0
+        },
+        {
+          "label": "MRN",
+          "value": "NHC-8829504",
+          "confidence": 1.0
+        },
         {
           "label": "patient_name",
           "value": "Chloe Ng",
@@ -203,38 +203,13 @@
           "confidence": 1.0
         },
         {
-          "label": "policy_number",
-          "value": "AIA-553102",
-          "confidence": 1.0
-        },
-        {
-          "label": "allergies",
-          "value": "None",
-          "confidence": 1.0
-        },
-        {
-          "label": "consent_signed",
-          "value": "Yes (2026-06-10)",
-          "confidence": 1.0
-        },
-        {
-          "label": "Doc Id",
-          "value": "doc_004",
-          "confidence": 1.0
-        },
-        {
-          "label": "MRN",
-          "value": "NHC-8829504",
+          "label": "Sex",
+          "value": "Female",
           "confidence": 1.0
         },
         {
           "label": "Nationality",
           "value": "Singaporean",
-          "confidence": 1.0
-        },
-        {
-          "label": "Sex",
-          "value": "Female",
           "confidence": 1.0
         },
         {
@@ -273,8 +248,18 @@
           "confidence": 1.0
         },
         {
+          "label": "allergies",
+          "value": "None",
+          "confidence": 1.0
+        },
+        {
           "label": "Insurance",
           "value": "AIA HealthShield Gold Max",
+          "confidence": 1.0
+        },
+        {
+          "label": "policy_number",
+          "value": "AIA-553102",
           "confidence": 1.0
         },
         {
@@ -285,6 +270,11 @@
         {
           "label": "Plan",
           "value": "Standard",
+          "confidence": 1.0
+        },
+        {
+          "label": "consent_signed",
+          "value": "Yes (2026-06-10)",
           "confidence": 1.0
         },
         {
@@ -301,16 +291,6 @@
           "label": "Staff Name",
           "value": "Farah Nisha bte Iskandar",
           "confidence": 1.0
-        },
-        {
-          "label": "Consultation Date",
-          "value": "2026-06-28",
-          "confidence": 1.0
-        },
-        {
-          "label": "Consultation Time",
-          "value": "09:15",
-          "confidence": 1.0
         }
       ],
       "error": null
@@ -318,16 +298,51 @@
     {
       "doc": "lab_kumar.pdf",
       "kind": "vision",
-      "latency_s": 37.18,
+      "latency_s": 35.83,
       "fields": [
         {
-          "label": "patient_name",
-          "value": "Rajesh Kumar",
+          "label": "Lab Serial",
+          "value": "LABREQ-44120",
           "confidence": 1.0
         },
         {
-          "label": "date_of_birth",
-          "value": "1986-03-14",
+          "label": "Received",
+          "value": "2026-06-16 \u00b7 08:12",
+          "confidence": 1.0
+        },
+        {
+          "label": "Priority",
+          "value": "Routine",
+          "confidence": 1.0
+        },
+        {
+          "label": "Container",
+          "value": "SST \u00b7 Purple \u00b7 Grey",
+          "confidence": 1.0
+        },
+        {
+          "label": "Requesting Clinician",
+          "value": "Dr Lee Wai Meng",
+          "confidence": 1.0
+        },
+        {
+          "label": "Clinic",
+          "value": "Clinic ABC",
+          "confidence": 1.0
+        },
+        {
+          "label": "MCR",
+          "value": "32194B",
+          "confidence": 1.0
+        },
+        {
+          "label": "Doc Id",
+          "value": "doc_003",
+          "confidence": 1.0
+        },
+        {
+          "label": "patient_name",
+          "value": "Rajesh Kumar",
           "confidence": 1.0
         },
         {
@@ -336,8 +351,8 @@
           "confidence": 1.0
         },
         {
-          "label": "Doc Id",
-          "value": "doc_003",
+          "label": "date_of_birth",
+          "value": "1986-03-14",
           "confidence": 1.0
         },
         {
@@ -386,32 +401,22 @@
           "confidence": 1.0
         },
         {
+          "label": "Tests requested",
+          "value": "Lipid panel (fasting), C-reactive protein, HbA1c",
+          "confidence": 1.0
+        },
+        {
+          "label": "Requesting clinician signature date",
+          "value": "2026-06-15",
+          "confidence": 1.0
+        },
+        {
           "label": "Lab ID",
           "value": "IQ-DESK-07",
           "confidence": 1.0
         },
         {
-          "label": "Collection Date",
-          "value": "2026-06-16 08:12",
-          "confidence": 1.0
-        },
-        {
-          "label": "Priority",
-          "value": "Routine",
-          "confidence": 1.0
-        },
-        {
-          "label": "Container",
-          "value": "5ST \u00b7 Purple \u00b7 Grey",
-          "confidence": 1.0
-        },
-        {
-          "label": "Requesting Clinician Signature Date",
-          "value": "2026-06-15",
-          "confidence": 1.0
-        },
-        {
-          "label": "Specimen Desk Received Date",
+          "label": "Received and accessioned date",
           "value": "2026-06-16 08:12",
           "confidence": 1.0
         }
@@ -421,7 +426,7 @@
     {
       "doc": "referral_kumar.txt",
       "kind": "text",
-      "latency_s": 15.01,
+      "latency_s": 15.19,
       "fields": [
         {
           "label": "patient_name",

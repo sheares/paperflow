@@ -4,7 +4,7 @@
     {
       "doc": "acme_business_card.pdf",
       "kind": "vision",
-      "latency_s": 19.0,
+      "latency_s": 16.95,
       "fields": [
         {
           "label": "organisation",
@@ -50,6 +50,21 @@
           "label": "doc_id",
           "value": "doc_002",
           "confidence": 1.0
+        },
+        {
+          "label": "received_date",
+          "value": "2026-05-10",
+          "confidence": 1.0
+        },
+        {
+          "label": "filed_by",
+          "value": "partners@event.sg",
+          "confidence": 1.0
+        },
+        {
+          "label": "attachment",
+          "value": "card_scan.pdf",
+          "confidence": 1.0
         }
       ],
       "error": null
@@ -57,7 +72,7 @@
     {
       "doc": "brightpath_contacts.xlsx",
       "kind": "text",
-      "latency_s": 13.78,
+      "latency_s": 7.89,
       "fields": [
         {
           "label": "organisation",
@@ -110,7 +125,7 @@
     {
       "doc": "brightpath_mou.pdf",
       "kind": "vision",
-      "latency_s": 19.69,
+      "latency_s": 19.28,
       "fields": [
         {
           "label": "organisation",
@@ -130,7 +145,7 @@
         {
           "label": "email",
           "value": "brightpath.edu.sg",
-          "confidence": 0.8
+          "confidence": 0.9
         },
         {
           "label": "phone",
@@ -143,13 +158,28 @@
           "confidence": 1.0
         },
         {
+          "label": "contact_name",
+          "value": "Cheryl Ong",
+          "confidence": 1.0
+        },
+        {
           "label": "uen",
           "value": "201811234K",
           "confidence": 1.0
         },
         {
-          "label": "contact_name",
-          "value": "Cheryl Ong",
+          "label": "document_type",
+          "value": "MEMORANDUM OF UNDERSTANDING",
+          "confidence": 1.0
+        },
+        {
+          "label": "reference_number",
+          "value": "Ref MOU/BRIGHTPATH/2026/11",
+          "confidence": 1.0
+        },
+        {
+          "label": "date",
+          "value": "2026-05-15",
           "confidence": 1.0
         },
         {
@@ -158,28 +188,8 @@
           "confidence": 1.0
         },
         {
-          "label": "agreement_id",
-          "value": "EMOU_BRIGHTPATH-2026",
-          "confidence": 1.0
-        },
-        {
-          "label": "executed_date",
-          "value": "2026-05-15",
-          "confidence": 1.0
-        },
-        {
-          "label": "effective_date",
-          "value": "2026-07-01",
-          "confidence": 1.0
-        },
-        {
-          "label": "expiry_date",
-          "value": "2026-12-31",
-          "confidence": 1.0
-        },
-        {
-          "label": "address",
-          "value": "15 Beach Road #04-08, Singapore 189677",
+          "label": "programme_name",
+          "value": "Community Partnership Programme \u00b7 Series 2026-B",
           "confidence": 1.0
         }
       ],
@@ -188,7 +198,7 @@
     {
       "doc": "cobalt_email.txt",
       "kind": "text",
-      "latency_s": 13.12,
+      "latency_s": 7.91,
       "fields": [
         {
           "label": "organisation",
@@ -236,7 +246,7 @@
     {
       "doc": "partner_registration_acme.xlsx",
       "kind": "text",
-      "latency_s": 8.6,
+      "latency_s": 9.69,
       "fields": [
         {
           "label": "organisation",
@@ -294,7 +304,7 @@
     {
       "doc": "partner_registration_cobalt.xlsx",
       "kind": "text",
-      "latency_s": 8.45,
+      "latency_s": 9.16,
       "fields": [
         {
           "label": "Doc ID",

@@ -79,6 +79,15 @@ def _accent(c, x1, y, x2, colour, w=1.6):
     c.line(x1, y, x2, y)
 
 
+def _double_rule(c, x1, y, x2, colour, gap=1.2 * mm):
+    """Two parallel rules — the visual signature of formal contracts and
+    government headers."""
+    c.setStrokeColor(colour); c.setLineWidth(1.2)
+    c.line(x1, y, x2, y)
+    c.setLineWidth(0.5)
+    c.line(x1, y - gap, x2, y - gap)
+
+
 def _letterhead(c, brand, name, tagline, address, contact, meta=None):
     """Full letterhead. Left: mark + wordmark + tagline + address block.
     Right: right-aligned meta lines (Ref, Date, Page, Series...).
@@ -113,6 +122,71 @@ def _letterhead(c, brand, name, tagline, address, contact, meta=None):
     return y - 25 * mm
 
 
+def _band_header(c, brand, name, tagline, address, contact, meta=None):
+    """Alternative header: full-width coloured band with the wordmark in
+    white on the brand, address on the right in light text. Used by
+    clinical / statement / government documents where the letterhead is
+    the whole top strip."""
+    x_left = MARGIN
+    x_right = PAGE_W - MARGIN
+    band_h = 30 * mm
+    y_top = PAGE_H - MARGIN + 5 * mm
+    # brand-coloured band across the full width
+    c.setFillColor(brand)
+    c.rect(0, y_top - band_h, PAGE_W, band_h, fill=1, stroke=0)
+    # brand mark on band: white square with brand-coloured knock-out
+    c.setFillColor(HexColor('#FFFFFF'))
+    c.rect(x_left, y_top - band_h + 12 * mm, 9 * mm, 9 * mm,
+           fill=1, stroke=0)
+    c.setFillColor(brand)
+    c.circle(x_left + 6.5 * mm, y_top - band_h + 15 * mm, 2 * mm,
+             fill=1, stroke=0)
+    # wordmark
+    c.setFillColor(HexColor('#FFFFFF'))
+    c.setFont('Helvetica-Bold', 16)
+    c.drawString(x_left + 12.5 * mm, y_top - band_h + 15 * mm, name)
+    c.setFont('Helvetica', 8.5)
+    c.setFillColor(HexColor('#EEEEEE'))
+    c.drawString(x_left + 12.5 * mm, y_top - band_h + 10 * mm, tagline)
+    # address + contact right-side, light
+    c.setFillColor(HexColor('#F1F1F1'))
+    c.setFont('Helvetica', 7.8)
+    c.drawRightString(x_right, y_top - band_h + 18 * mm, address)
+    c.drawRightString(x_right, y_top - band_h + 14 * mm, contact)
+    # meta line underneath (label · value pairs separated by pipes),
+    # bottom of the band
+    if meta:
+        parts = []
+        for label, value in meta:
+            parts.append(f'{label} {value}')
+        c.setFillColor(HexColor('#F1F1F1'))
+        c.setFont('Helvetica', 7.5)
+        c.drawRightString(x_right, y_top - band_h + 4 * mm,
+                          '  ·  '.join(parts))
+    return y_top - band_h - 6 * mm
+
+
+def _memo_header(c, brand, sender, address, contact, date, ref):
+    """Third header style: classic memo/letter — centred sender at the
+    very top, thin double rule under it, date + ref right-aligned. No
+    coloured band. Used for referral letters and MoUs where the doc
+    reads more like paper correspondence."""
+    x_left = MARGIN
+    x_right = PAGE_W - MARGIN
+    y = PAGE_H - MARGIN - 2 * mm
+    c.setFillColor(brand); c.setFont('Helvetica-Bold', 18)
+    c.drawCentredString(PAGE_W / 2, y, sender)
+    c.setFillColor(MUTED); c.setFont('Helvetica', 8.5)
+    c.drawCentredString(PAGE_W / 2, y - 5.5 * mm, address)
+    c.drawCentredString(PAGE_W / 2, y - 9 * mm, contact)
+    _double_rule(c, x_left, y - 13 * mm, x_right, brand)
+    # date + ref right-aligned under the double rule
+    c.setFillColor(MUTED); c.setFont('Helvetica', 8)
+    c.drawRightString(x_right, y - 18 * mm, f'Date {date}')
+    c.drawRightString(x_right, y - 21.5 * mm, f'Ref  {ref}')
+    return y - 27 * mm
+
+
 def _title(c, x, y, text, sub=None):
     c.setFillColor(INK); c.setFont('Helvetica-Bold', 15)
     c.drawString(x, y, text)
@@ -121,6 +195,36 @@ def _title(c, x, y, text, sub=None):
         c.drawString(x, y - 5.6 * mm, sub)
         return y - 12 * mm
     return y - 8 * mm
+
+
+def _numbered_section(c, x, y, num, title, brand):
+    """Alternative to _section_band: numbered clause header used by
+    contracts and formal declarations. No shaded band — just a big
+    numbered lead-in with a thin brand underline."""
+    c.setFillColor(brand); c.setFont('Helvetica-Bold', 13)
+    c.drawString(x, y, str(num))
+    c.setFillColor(INK); c.setFont('Helvetica-Bold', 11)
+    c.drawString(x + 9 * mm, y, title)
+    _rule(c, x, y - 2 * mm, x + 60 * mm, colour=brand, w=0.8)
+    return y - 8 * mm
+
+
+def _amount_due_block(c, x, y, w, brand, amount, due_date, account_no):
+    """Big amount-due panel used at the top-right of statements and
+    invoices. Bright brand-coloured strip with the number in a large
+    face; below, an account number line."""
+    h = 32 * mm
+    c.setFillColor(brand)
+    c.rect(x, y - h, w, h, fill=1, stroke=0)
+    c.setFillColor(HexColor('#FFFFFF'))
+    c.setFont('Helvetica-Bold', 8)
+    c.drawString(x + 4 * mm, y - 6 * mm, 'AMOUNT DUE')
+    c.setFont('Helvetica-Bold', 24)
+    c.drawString(x + 4 * mm, y - 16 * mm, amount)
+    c.setFont('Helvetica', 8)
+    c.drawString(x + 4 * mm, y - 22 * mm, f'Due by {due_date}')
+    c.drawString(x + 4 * mm, y - 26 * mm, f'Account {account_no}')
+    return y - h - 4 * mm
 
 
 def _section_band(c, y, letter, title, brand):
@@ -173,6 +277,31 @@ def _fields(c, x, y, rows, label_w=48 * mm, gap=5.5 * mm, label_size=9,
             c.drawString(x, y, str(row))
         y -= gap
     return y
+
+
+def _zebra_fields(c, x, y, rows, w=None, label_w=48 * mm, row_h=6 * mm,
+                  band=BG_SOFT, label_size=8.8, value_size=10):
+    """Zebra-striped label:value rows — the second row shaded, third
+    clear, etc. Very common on clinical intake forms and enrolment
+    sheets because it keeps the eye tracking across the page."""
+    if w is None:
+        w = PAGE_W - 2 * MARGIN
+    for i, row in enumerate(rows):
+        if row == '':
+            y -= row_h * 0.4
+            continue
+        if i % 2 == 0:
+            c.setFillColor(band)
+            c.rect(x, y - row_h + 1 * mm, w, row_h, fill=1, stroke=0)
+        if isinstance(row, tuple):
+            label, value = row
+            if label:
+                c.setFillColor(MUTED); c.setFont('Helvetica-Bold', label_size)
+                c.drawString(x + 3 * mm, y - 2.8 * mm, f'{label}:')
+            c.setFillColor(INK); c.setFont('Helvetica', value_size)
+            c.drawString(x + 3 * mm + label_w, y - 2.8 * mm, str(value))
+        y -= row_h
+    return y - 2 * mm
 
 
 def _grid_fields(c, x, y, rows, col_w=85 * mm, label_w=32 * mm,
@@ -368,14 +497,6 @@ def _watermark(c):
 def _page_num(c, page, of):
     c.setFillColor(MUTED); c.setFont('Helvetica', 7.5)
     c.drawRightString(PAGE_W - MARGIN, 6 * mm, f'Page {page} of {of}')
-
-
-def _mini_ref_barcode(c, ref):
-    """Small ref number strip in the top-right corner of a document.
-    Real forms use these instead of the plain 'Ref: xxx' text so scanners
-    can auto-file."""
-    _barcode(c, PAGE_W - MARGIN - 42 * mm, PAGE_H - MARGIN - 3 * mm,
-             42 * mm, 5 * mm, ref)
 
 
 # ============================================================
@@ -687,7 +808,6 @@ def build_kyc():
                     '12 Marina Boulevard, DBS Asia Central @ Marina Bay Financial Centre Tower 3, Singapore 018982',
                     'Tel +65 6878 8888  ·  dbs.com.sg/private  ·  UEN 196800306E',
                     meta=kyc_meta)
-    _mini_ref_barcode(c, 'KYC-2026-05-00218-DBS')
 
     y = _title(c, MARGIN, y,
                'Know Your Customer (KYC) Declaration Form',
@@ -789,36 +909,40 @@ def build_kyc():
     ])
     _watermark(c); _page_num(c, 2, 2); c.save()
 
-    # ---- 2. Utility bill (SP Group) — account summary + charges table
+    # ---- 2. Utility bill (SP Group) — band header + amount-due block
+    #        (statement / invoice layout, distinct from KYC's sectioned form)
     c = canvas.Canvas(str(d / 'utility_bill_hassan.pdf'), pagesize=A4)
-    y = _letterhead(c, SP_BRAND, 'SP Group',
-                    'Electricity, water and gas utilities · Regulated by EMA',
-                    '2 Kallang Sector, Singapore 349277',
-                    'Tel 1800 222 2333  ·  spgroup.com.sg  ·  UEN 199504676R',
-                    meta=[
-                        ('Invoice No.', 'SP-20260502-034172'),
-                        ('Statement Date', '2026-05-02'),
-                        ('Due Date', '2026-05-22'),
-                        ('Account No.', '03-124-5502-1'),
-                    ])
-    _mini_ref_barcode(c, 'SP-INV-034172-HASSAN')
+    y = _band_header(c, SP_BRAND, 'SP Group',
+                     'Electricity, water and gas utilities · Regulated by EMA',
+                     '2 Kallang Sector, Singapore 349277',
+                     'Tel 1800 222 2333  ·  spgroup.com.sg  ·  UEN 199504676R',
+                     meta=[('Invoice', 'SP-20260502-034172'),
+                           ('Statement', '2026-05-02'),
+                           ('Account', '03-124-5502-1')])
 
-    y = _title(c, MARGIN, y, 'Utility Bill · April 2026',
-               'Household electricity, water and gas · 4-room HDB tariff')
+    # left: title + subtitle; right: big amount-due block
+    c.setFillColor(INK); c.setFont('Helvetica-Bold', 16)
+    c.drawString(MARGIN, y - 4 * mm, 'Utility Bill · April 2026')
+    c.setFillColor(MUTED); c.setFont('Helvetica', 9)
+    c.drawString(MARGIN, y - 9 * mm,
+                 'Household electricity, water and gas · 4-room HDB tariff')
+    c.setFillColor(MUTED); c.setFont('Helvetica', 8)
+    c.drawString(MARGIN, y - 14 * mm,
+                 'Consumption in line with the seasonal average for a 4-room HDB flat.')
+    _amount_due_block(c, PAGE_W - MARGIN - 60 * mm, y - 2 * mm,
+                      60 * mm, SP_BRAND, 'SGD 84.30', '2026-05-22',
+                      '03-124-5502-1')
+    y -= 40 * mm
 
-    # Account summary panel (bordered box)
-    y = _boxed_panel(c, MARGIN, y, PAGE_W - 2 * MARGIN,
-                     'Account summary',
-                     [
-                         ('Doc ID', 'doc_002'),
-                         ('Account Holder', 'Farid Hassan'),
-                         ('Customer Ref (NRIC)', 'K7741209'),
-                         ('Service Address', 'Blk 88 Tampines Ave 4 #05-12'),
-                         ('', 'Singapore 521088'),
-                         ('Billing Period', '2026-04-01 to 2026-04-30'),
-                         ('Amount Due', 'SGD 84.30'),
-                     ],
-                     SP_BRAND, label_w=48 * mm)
+    # zebra-striped service details (statement style — no section band)
+    y = _zebra_fields(c, MARGIN, y, [
+        ('Doc ID', 'doc_002'),
+        ('Account Holder', 'Farid Hassan'),
+        ('Customer Ref (NRIC)', 'K7741209'),
+        ('Service Address', 'Blk 88 Tampines Ave 4 #05-12, Singapore 521088'),
+        ('Billing Period', '2026-04-01 to 2026-04-30'),
+        ('Amount Due', 'SGD 84.30'),
+    ], label_w=52 * mm)
 
     y -= 2 * mm
     c.setFillColor(INK); c.setFont('Helvetica-Bold', 9.5)
@@ -919,7 +1043,6 @@ def build_kyc():
                         ('Case Ref.', 'KYC/2026/05/00219'),
                         ('Attached To', 'kyc_declaration_goh.txt'),
                     ])
-    _mini_ref_barcode(c, 'NRIC-K3098S51-SCAN-2026')
 
     y = _title(c, MARGIN, y, 'ID Copy (Photostat)',
                "Scan submitted with Yvonne Goh's KYC declaration email · Section A verification")
@@ -1073,7 +1196,6 @@ def build_partner():
                         ('Filed By', 'partners@event.sg'),
                         ('Attachment', 'card_scan.pdf'),
                     ])
-    _mini_ref_barcode(c, 'BCARD-ACME-2026-05-10')
 
     y = _title(c, MARGIN, y, 'Business card (scanned & transcribed)',
                'Received at the SME Connect networking session, 10 May 2026 · Vendor collation')
@@ -1135,32 +1257,33 @@ def build_partner():
     ])
     _watermark(c); c.save()
 
-    # ---- Brightpath MoU — proper contract layout with two-party sig block
+    # ---- Brightpath MoU — memo/contract layout: centred sender, double
+    #      rule, numbered clauses (not lettered section bands)
     c = canvas.Canvas(str(d / 'brightpath_mou.pdf'), pagesize=A4)
-    y = _letterhead(c, BRIGHT_BRAND, 'Brightpath Learning',
-                    'MoE approved enrichment provider · Registered LLP',
-                    '15 Beach Road #04-08, Singapore 189677',
-                    'Tel +65 9876 5432  ·  brightpath.edu.sg  ·  UEN T18LL0042K',
-                    meta=[
-                        ('Agreement No.', 'MOU/BRIGHTPATH/2026-11'),
-                        ('Executed', '2026-05-15'),
-                        ('Effective', '2026-07-01'),
-                        ('Expires', '2026-12-31'),
-                    ])
-    _mini_ref_barcode(c, 'MOU-BRIGHTPATH-2026-11')
+    y = _memo_header(c, BRIGHT_BRAND,
+                     'Brightpath Learning LLP',
+                     '15 Beach Road #04-08, Singapore 189677  ·  UEN T18LL0042K',
+                     'Tel +65 9876 5432  ·  brightpath.edu.sg  ·  MoE approved enrichment provider',
+                     date='2026-05-15',
+                     ref='MOU/BRIGHTPATH/2026-11')
 
-    y = _title(c, MARGIN, y, 'Memorandum of Understanding',
-               'Community Partnership Programme · Series 2026-B · Enrichment delivery MoU')
+    c.setFillColor(INK); c.setFont('Helvetica-Bold', 16)
+    c.drawCentredString(PAGE_W / 2, y, 'MEMORANDUM OF UNDERSTANDING')
+    c.setFillColor(MUTED); c.setFont('Helvetica-Oblique', 9)
+    c.drawCentredString(PAGE_W / 2, y - 5.5 * mm,
+                        'Community Partnership Programme · Series 2026-B')
+    y -= 14 * mm
 
     y = _prose(c, MARGIN, y,
-               "This Memorandum of Understanding (this \"MoU\") is entered into on the "
-               "date shown below between the parties named. It sets out the "
-               "cooperative arrangements for the delivery of after-school enrichment "
-               "programmes across three participating community centres during the "
-               "second half of 2026, and is intended to be legally binding on the "
-               "parties in respect of the confidentiality and payment terms only.")
+               "This Memorandum of Understanding (this \"MoU\") is entered into on "
+               "15 May 2026 between the parties named below. It records the "
+               "cooperative arrangements for the delivery of after-school "
+               "enrichment programmes across three participating community centres "
+               "during the second half of 2026, and is intended to be legally "
+               "binding on the parties in respect of the confidentiality and "
+               "payment terms only.")
 
-    y = _section_band(c, y, 'A', 'Parties', BRIGHT_BRAND)
+    y = _numbered_section(c, MARGIN, y, '1.', 'Parties', BRIGHT_BRAND)
     y = _fields(c, MARGIN, y, [
         ('Doc ID', 'doc_003'),
         ('Party 1 (Provider)', 'Brightpath Learning LLP'),
@@ -1170,22 +1293,30 @@ def build_partner():
         ('Executed', '2026-05-15'),
     ], gap=5 * mm)
 
-    y = _section_band(c, y, 'B', 'Terms', BRIGHT_BRAND)
+    y = _numbered_section(c, MARGIN, y, '2.', 'Term', BRIGHT_BRAND)
     y = _prose(c, MARGIN, y,
-               "1. Term. This MoU takes effect on 1 July 2026 and expires on 31 "
-               "December 2026, unless extended in writing signed by both parties.\n\n"
-               "2. Responsibilities. Brightpath shall provide qualified facilitators, "
-               "all curriculum materials, and public liability insurance covering "
-               "registered participants.\n\n"
-               "3. Confidentiality. Each party shall treat the personal data of "
-               "participants disclosed under this MoU in accordance with the "
-               "Personal Data Protection Act 2012 and shall not disclose such data "
-               "to any third party save as required for the delivery of the "
-               "Programme.\n\n"
-               "4. Termination. Either party may terminate this MoU by giving "
-               "thirty (30) days' prior written notice to the other party.")
+               "This MoU takes effect on 1 July 2026 and expires on 31 December "
+               "2026, unless extended in writing signed by both parties.")
 
-    y = _section_band(c, y, 'C', 'Signatures', BRIGHT_BRAND)
+    y = _numbered_section(c, MARGIN, y, '3.', 'Responsibilities', BRIGHT_BRAND)
+    y = _prose(c, MARGIN, y,
+               "Brightpath shall provide qualified facilitators, all curriculum "
+               "materials, and public liability insurance covering registered "
+               "participants for the duration of the programme.")
+
+    y = _numbered_section(c, MARGIN, y, '4.', 'Confidentiality', BRIGHT_BRAND)
+    y = _prose(c, MARGIN, y,
+               "Each party shall treat the personal data of participants "
+               "disclosed under this MoU in accordance with the Personal Data "
+               "Protection Act 2012 and shall not disclose such data to any "
+               "third party save as required for the delivery of the Programme.")
+
+    y = _numbered_section(c, MARGIN, y, '5.', 'Termination', BRIGHT_BRAND)
+    y = _prose(c, MARGIN, y,
+               "Either party may terminate this MoU by giving thirty (30) days' "
+               "prior written notice to the other party.")
+
+    y = _numbered_section(c, MARGIN, y, '6.', 'Executed by', BRIGHT_BRAND)
     y -= 4 * mm
     y = _signature_grid(c, MARGIN, y, PAGE_W - 2 * MARGIN, [
         {'printed_name': 'Nurul Aisyah',
@@ -1321,32 +1452,33 @@ def build_patient():
     d = OUT / 'patient_intake'
     d.mkdir(parents=True, exist_ok=True)
 
-    # ---- Intake form (Rajesh) — sectioned NHC form
+    # ---- Intake form (Rajesh) — clinical band header + zebra-striped
+    #      particulars (distinct from KYC's lettered section bands)
     c = canvas.Canvas(str(d / 'intake_kumar.pdf'), pagesize=A4)
-    y = _letterhead(c, HEART_BRAND, 'National Heart Centre',
-                    'Outpatient Cardiology · MoH-accredited healthcare institution',
-                    '5 Hospital Drive, Singapore 169609',
-                    'Tel +65 6704 8000  ·  nhcs.com.sg  ·  UEN 199801148C',
-                    meta=[
-                        ('MRN', 'NHC-8829471'),
-                        ('Referral Rec.', '2026-06-15'),
-                        ('Clinic', 'Cardiology OP · Room B/2'),
-                        ('Consultation', '2026-07-02, 10:30'),
-                    ])
-    _mini_ref_barcode(c, 'NHC-INTAKE-KUMAR-8829471')
+    y = _band_header(c, HEART_BRAND, 'National Heart Centre',
+                     'Outpatient Cardiology · MoH-accredited healthcare institution',
+                     '5 Hospital Drive, Singapore 169609',
+                     'Tel +65 6704 8000  ·  nhcs.com.sg  ·  UEN 199801148C',
+                     meta=[('MRN', 'NHC-8829471'),
+                           ('Received', '2026-06-15'),
+                           ('Consultation', '2026-07-02 10:30')])
 
     y = _title(c, MARGIN, y, 'Outpatient Intake Form',
                'Cardiology consultation · Ministry of Health National Standards for Medical Records')
 
+    # thin clinical prose paragraph
     y = _prose(c, MARGIN, y,
                "This form captures the particulars submitted by the patient at "
                "registration. All fields marked as required under the Ministry of "
                "Health National Standards for Medical Records must be completed "
-               "before the consultation begins. Please review with reception if "
-               "any of the below is incorrect.")
+               "before the consultation begins.")
 
-    y = _section_band(c, y, 'A', 'Patient particulars', HEART_BRAND)
-    y = _grid_fields(c, MARGIN, y, [
+    # small caps section header (no shaded band, no letter box)
+    c.setFillColor(HEART_BRAND); c.setFont('Helvetica-Bold', 9)
+    c.drawString(MARGIN, y, 'PATIENT PARTICULARS')
+    _rule(c, MARGIN, y - 1.5 * mm, PAGE_W - MARGIN, colour=HEART_BRAND, w=0.6)
+    y -= 5 * mm
+    y = _zebra_fields(c, MARGIN, y, [
         ('Doc ID', 'doc_001'),
         ('MRN', 'NHC-8829471'),
         ('Patient Name', 'Rajesh Kumar'),
@@ -1357,30 +1489,38 @@ def build_patient():
         ('Race', 'Indian'),
         ('Contact', '+65 9821 3345'),
         ('Language', 'English, Tamil'),
-    ])
+    ], label_w=48 * mm)
 
-    y = _section_band(c, y, 'B', 'Clinical details', HEART_BRAND)
-    y = _fields(c, MARGIN, y, [
+    c.setFillColor(HEART_BRAND); c.setFont('Helvetica-Bold', 9)
+    c.drawString(MARGIN, y, 'CLINICAL DETAILS')
+    _rule(c, MARGIN, y - 1.5 * mm, PAGE_W - MARGIN, colour=HEART_BRAND, w=0.6)
+    y -= 5 * mm
+    y = _zebra_fields(c, MARGIN, y, [
         ('Chief Complaint', 'Occasional chest discomfort; on treatment for HTN'),
         ('Referring Clinician', 'Dr Lee Wai Meng (MCR 32194B)'),
         ('Referring Clinic', 'Clinic ABC, 218 East Coast Road #02-33'),
         ('Reason for Referral', 'Further cardiology assessment'),
         ('Allergies', 'Penicillin'),
-    ], gap=5 * mm)
+    ], label_w=48 * mm)
 
-    y = _section_band(c, y, 'C', 'Insurance & consent', HEART_BRAND)
-    y = _grid_fields(c, MARGIN, y, [
+    c.setFillColor(HEART_BRAND); c.setFont('Helvetica-Bold', 9)
+    c.drawString(MARGIN, y, 'INSURANCE & CONSENT')
+    _rule(c, MARGIN, y - 1.5 * mm, PAGE_W - MARGIN, colour=HEART_BRAND, w=0.6)
+    y -= 5 * mm
+    y = _zebra_fields(c, MARGIN, y, [
         ('Insurance', 'Prudential PRUShield'),
         ('Policy Number', 'PRU-009281'),
         ('Effective From', '2022-01-01'),
         ('Plan', 'Premier'),
         ('Consent Signed', ''),
         ('Consent Date', ''),
-    ])
+    ], label_w=48 * mm)
     y -= 2 * mm
 
-    y = _section_band(c, y, 'D', 'Signatures', HEART_BRAND)
-    y -= 3 * mm
+    c.setFillColor(HEART_BRAND); c.setFont('Helvetica-Bold', 9)
+    c.drawString(MARGIN, y, 'SIGNATURES')
+    _rule(c, MARGIN, y - 1.5 * mm, PAGE_W - MARGIN, colour=HEART_BRAND, w=0.6)
+    y -= 6 * mm
     y = _signature_grid(c, MARGIN, y, PAGE_W - 2 * MARGIN, [
         {'printed_name': 'Rajesh Kumar',
          'role': 'Patient',
@@ -1447,7 +1587,6 @@ def build_patient():
                         ('Priority', 'Routine'),
                         ('Container', 'SST · Purple · Grey'),
                     ])
-    _mini_ref_barcode(c, 'LABREQ-44120')
 
     y = _title(c, MARGIN, y, 'Lab Requisition',
                'Requesting Clinician: Dr Lee Wai Meng · Clinic ABC · MCR 32194B')
@@ -1522,17 +1661,13 @@ def build_patient():
 
     # ---- Intake (Chloe)
     c = canvas.Canvas(str(d / 'intake_ng.pdf'), pagesize=A4)
-    y = _letterhead(c, HEART_BRAND, 'National Heart Centre',
-                    'Outpatient Cardiology · MoH-accredited healthcare institution',
-                    '5 Hospital Drive, Singapore 169609',
-                    'Tel +65 6704 8000  ·  nhcs.com.sg  ·  UEN 199801148C',
-                    meta=[
-                        ('MRN', 'NHC-8829504'),
-                        ('Referral Rec.', '2026-06-10'),
-                        ('Clinic', 'Cardiology OP · Room B/2'),
-                        ('Consultation', '2026-06-28, 09:15'),
-                    ])
-    _mini_ref_barcode(c, 'NHC-INTAKE-NG-8829504')
+    y = _band_header(c, HEART_BRAND, 'National Heart Centre',
+                     'Outpatient Cardiology · MoH-accredited healthcare institution',
+                     '5 Hospital Drive, Singapore 169609',
+                     'Tel +65 6704 8000  ·  nhcs.com.sg  ·  UEN 199801148C',
+                     meta=[('MRN', 'NHC-8829504'),
+                           ('Received', '2026-06-10'),
+                           ('Consultation', '2026-06-28 09:15')])
 
     y = _title(c, MARGIN, y, 'Outpatient Intake Form',
                'Cardiology consultation · Ministry of Health National Standards for Medical Records')
@@ -1543,8 +1678,11 @@ def build_patient():
                "Health National Standards for Medical Records must be completed "
                "before the consultation begins.")
 
-    y = _section_band(c, y, 'A', 'Patient particulars', HEART_BRAND)
-    y = _grid_fields(c, MARGIN, y, [
+    c.setFillColor(HEART_BRAND); c.setFont('Helvetica-Bold', 9)
+    c.drawString(MARGIN, y, 'PATIENT PARTICULARS')
+    _rule(c, MARGIN, y - 1.5 * mm, PAGE_W - MARGIN, colour=HEART_BRAND, w=0.6)
+    y -= 5 * mm
+    y = _zebra_fields(c, MARGIN, y, [
         ('Doc ID', 'doc_004'),
         ('MRN', 'NHC-8829504'),
         ('Patient Name', 'Chloe Ng'),
@@ -1555,29 +1693,37 @@ def build_patient():
         ('Race', 'Chinese'),
         ('Contact', '+65 9662 8114'),
         ('Language', 'English, Mandarin'),
-    ])
+    ], label_w=48 * mm)
 
-    y = _section_band(c, y, 'B', 'Clinical details', HEART_BRAND)
-    y = _fields(c, MARGIN, y, [
+    c.setFillColor(HEART_BRAND); c.setFont('Helvetica-Bold', 9)
+    c.drawString(MARGIN, y, 'CLINICAL DETAILS')
+    _rule(c, MARGIN, y - 1.5 * mm, PAGE_W - MARGIN, colour=HEART_BRAND, w=0.6)
+    y -= 5 * mm
+    y = _zebra_fields(c, MARGIN, y, [
         ('Chief Complaint', 'Palpitations on exertion x 6 weeks'),
         ('Referring Clinician', 'Dr Kavitha S (MCR 40821E)'),
         ('Referring Clinic', 'Novena Cardiology Clinic, 10 Sinaran Drive'),
         ('Reason for Referral', 'Palpitation workup'),
         ('Allergies', ''),
-    ], gap=5 * mm)
+    ], label_w=48 * mm)
 
-    y = _section_band(c, y, 'C', 'Insurance & consent', HEART_BRAND)
-    y = _grid_fields(c, MARGIN, y, [
+    c.setFillColor(HEART_BRAND); c.setFont('Helvetica-Bold', 9)
+    c.drawString(MARGIN, y, 'INSURANCE & CONSENT')
+    _rule(c, MARGIN, y - 1.5 * mm, PAGE_W - MARGIN, colour=HEART_BRAND, w=0.6)
+    y -= 5 * mm
+    y = _zebra_fields(c, MARGIN, y, [
         ('Insurance', 'AIA HealthShield Gold Max'),
         ('Policy Number', 'AIA-553102'),
         ('Effective From', '2024-01-01'),
         ('Plan', 'Standard'),
         ('Consent Signed', 'Yes (2026-06-10)'),
         ('Consent Date', '2026-06-10'),
-    ])
+    ], label_w=48 * mm)
 
-    y = _section_band(c, y, 'D', 'Signatures', HEART_BRAND)
-    y -= 3 * mm
+    c.setFillColor(HEART_BRAND); c.setFont('Helvetica-Bold', 9)
+    c.drawString(MARGIN, y, 'SIGNATURES')
+    _rule(c, MARGIN, y - 1.5 * mm, PAGE_W - MARGIN, colour=HEART_BRAND, w=0.6)
+    y -= 6 * mm
     y = _signature_grid(c, MARGIN, y, PAGE_W - 2 * MARGIN, [
         {'printed_name': 'Chloe Ng',
          'role': 'Patient',
@@ -1607,7 +1753,6 @@ def build_patient():
                         ('Group', 'IND-STD-A'),
                         ('Effective', '2024-01-01'),
                     ])
-    _mini_ref_barcode(c, 'AIA-CARD-4451-9932')
 
     y = _title(c, MARGIN, y, 'Health Insurance Membership Card',
                'Card image scanned by the clinic reception on registration · Photocopy for verification')

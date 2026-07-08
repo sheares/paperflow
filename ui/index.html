@@ -2356,11 +2356,11 @@ async function uploadRealFiles(evt, opts = {}){
     ? `Adding ${files.length} file${files.length !== 1 ? 's' : ''} to your pile`
     : `Running the paperflow pipeline on ${files.length} file${files.length !== 1 ? 's' : ''}`);
   const stages = ['Upload', 'Extract fields (vision, concurrent)',
-                  'Redact + build entity map',
-                  'Reconcile (redacted tokens to Fireworks)',
+                  'Redact + build entity map (on this paperflow server)',
+                  'Reconcile (only redacted tokens leave paperflow)',
                   'Emit reconciled record'];
   setRunStages(stages, 0,
-    `<b>Files:</b> ${nameList}<br>${kinds} · nothing crosses the network unredacted`);
+    `<b>Files:</b> ${nameList}<br>${kinds}<br><br><b style="color:var(--conf-good);">Trust boundary:</b> redaction runs on this paperflow server, not on the LLM side. Only redacted tokens — never raw names, IDs, addresses or phones — reach Fireworks / DeepSeek.`);
 
   const fd = new FormData();
   fd.append('schema', schema);

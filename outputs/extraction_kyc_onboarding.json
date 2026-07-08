@@ -4,7 +4,7 @@
     {
       "doc": "kyc_declaration_goh.txt",
       "kind": "text",
-      "latency_s": 18.37,
+      "latency_s": 10.15,
       "fields": [
         {
           "label": "full_name",
@@ -67,7 +67,7 @@
     {
       "doc": "kyc_form_hassan.pdf",
       "kind": "vision",
-      "latency_s": 36.54,
+      "latency_s": 33.35,
       "fields": [
         {
           "label": "Reference No.",
@@ -90,8 +90,8 @@
           "confidence": 1.0
         },
         {
-          "label": "Received Date",
-          "value": "2026-05-22 - 10:14 SGT",
+          "label": "Received",
+          "value": "2026-05-22 \u00b7 10:14 SGT",
           "confidence": 1.0
         },
         {
@@ -161,7 +161,7 @@
         },
         {
           "label": "source_of_funds",
-          "value": "Self",
+          "value": "Not explicitly stated as a specific source, but referenced as 'funds referenced in Section C'",
           "confidence": 0.8
         },
         {
@@ -190,7 +190,7 @@
     {
       "doc": "nric_scan_goh.pdf",
       "kind": "vision",
-      "latency_s": 16.92,
+      "latency_s": 15.87,
       "fields": [
         {
           "label": "full_name",
@@ -208,18 +208,13 @@
           "confidence": 1.0
         },
         {
-          "label": "doc_id",
-          "value": "doc_004",
+          "label": "scan_date",
+          "value": "2026-05-24",
           "confidence": 1.0
         },
         {
-          "label": "date_of_issue",
-          "value": "2018-11-22",
-          "confidence": 1.0
-        },
-        {
-          "label": "card_version",
-          "value": "3rd generation polycarbonate",
+          "label": "scanned_by",
+          "value": "DBS Wealth Onboarding",
           "confidence": 1.0
         },
         {
@@ -233,8 +228,18 @@
           "confidence": 1.0
         },
         {
-          "label": "scanning_entity",
-          "value": "DBS Wealth Onboarding",
+          "label": "doc_id",
+          "value": "doc_004",
+          "confidence": 1.0
+        },
+        {
+          "label": "date_of_issue",
+          "value": "2018-11-22",
+          "confidence": 1.0
+        },
+        {
+          "label": "card_version",
+          "value": "3rd generation polycarbonate",
           "confidence": 1.0
         }
       ],
@@ -243,7 +248,7 @@
     {
       "doc": "utility_bill_hassan.pdf",
       "kind": "vision",
-      "latency_s": 19.78,
+      "latency_s": 17.86,
       "fields": [
         {
           "label": "full_name",
@@ -257,32 +262,17 @@
         },
         {
           "label": "residential_address",
-          "value": "Blk 88 Tampines Ave 4 #05-12 Singapore 521088",
-          "confidence": 1.0
-        },
-        {
-          "label": "invoice_number",
-          "value": "SPG-INV-M4172-HASSAN",
-          "confidence": 1.0
-        },
-        {
-          "label": "statement_date",
-          "value": "2026-05-02",
-          "confidence": 1.0
-        },
-        {
-          "label": "due_date",
-          "value": "2026-05-22",
-          "confidence": 1.0
-        },
-        {
-          "label": "account_no",
-          "value": "03-124-5502-1",
+          "value": "Blk 88 Tampines Ave 4 #05-12, Singapore 521088",
           "confidence": 1.0
         },
         {
           "label": "doc_id",
           "value": "doc_002",
+          "confidence": 1.0
+        },
+        {
+          "label": "account_number",
+          "value": "03-124-5502-1",
           "confidence": 1.0
         },
         {
@@ -293,6 +283,21 @@
         {
           "label": "amount_due",
           "value": "SGD 84.30",
+          "confidence": 1.0
+        },
+        {
+          "label": "due_date",
+          "value": "2026-05-22",
+          "confidence": 1.0
+        },
+        {
+          "label": "invoice_number",
+          "value": "SP-20260502-034172",
+          "confidence": 1.0
+        },
+        {
+          "label": "statement_date",
+          "value": "2026-05-02",
           "confidence": 1.0
         }
       ],
