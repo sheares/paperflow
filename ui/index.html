@@ -2113,7 +2113,10 @@ async function openDoc(i){
   `).join('');
 
   const pileName = LIVE_PILES[currentPile];
-  const fname = d.file || d.name;
+  // prefer the real filename over the mockup id: live data has both set to
+  // the filename, canned mockup data has file='doc_001' + name='real.pdf',
+  // and /api/doc/ can only serve real filenames.
+  const fname = (d.name && d.name.includes('.')) ? d.name : (d.file || d.name);
   const fmt = (d.format || 'txt').toLowerCase();
   const url = (currentPile === 'real' && REAL_SESSION)
     ? `/api/real/doc/${REAL_SESSION}/${encodeURIComponent(fname)}`
@@ -3010,13 +3013,30 @@ function tokenChip(t){
 }
 
 async function hydrateLive(){
+  const missed = [];
   for(const [key, name] of Object.entries(LIVE_PILES)){
     try{
-      const r = await fetch(`/api/pile/${name}`);
-      if(!r.ok) continue;
+      const r = await fetch(`/api/pile/${name}`, {cache: 'no-store'});
+      if(!r.ok){ missed.push([key, name]); continue; }
       piles[key] = Object.assign({}, piles[key], await r.json());
       if(key === currentPile) loadPile(key);
-    }catch(e){ /* no backend: canned demo mode */ }
+    }catch(e){ missed.push([key, name]); }
+  }
+  // Retry the ones that failed, backend may have been mid-restart. Space
+  // the attempts so we don't hammer.
+  if(missed.length){
+    for(let i = 0; i < 3 && missed.length; i++){
+      await new Promise(r => setTimeout(r, 1500 * (i + 1)));
+      for(const pair of missed.splice(0)){
+        const [key, name] = pair;
+        try{
+          const r = await fetch(`/api/pile/${name}`, {cache: 'no-store'});
+          if(!r.ok){ missed.push(pair); continue; }
+          piles[key] = Object.assign({}, piles[key], await r.json());
+          if(key === currentPile) loadPile(key);
+        } catch(_){ missed.push(pair); }
+      }
+    }
   }
 }
 hydrateLive();
