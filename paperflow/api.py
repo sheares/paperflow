@@ -19,7 +19,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from .extractor import extract_pile
-from .models import resolve as _resolve_model
+from .models import profile as _model_profile, resolve as _resolve_model
 from .pipeline import run_pile
 from .router import Router
 from .uiview import build_pile_view
@@ -104,6 +104,9 @@ def status():
         "remote_configured": "FIREWORKS_API_KEY" in os.environ,
         "remote_model": _resolve_model(
             os.environ.get("FIREWORKS_MODEL", "deepseek")),
+        "remote_model_label": (
+            (_model_profile(os.environ.get("FIREWORKS_MODEL", "deepseek")) or {})
+            .get("label", "Fireworks AI")),
     }
 
 

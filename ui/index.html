@@ -3142,8 +3142,10 @@ function flashRemote(){
   t.innerHTML = 'Sending tokenised payload to <b>Fireworks</b>…';
   pulse.style.background = 'var(--conf-review)';
   amdTimer = setTimeout(() => {
-    t.innerHTML = '<b>Local:</b> AMD MI300X <span class="sep">·</span> <b>Remote:</b> Fireworks AI';
-    pulse.style.background = 'var(--conf-good)';
+    // Reset via the same source of truth as the periodic status poll,
+    // so if FIREWORKS_MODEL was changed on the server the badge picks
+    // up the new label instead of falling back to 'Fireworks AI'.
+    refreshStatus();
   }, 1600);
 }
 
@@ -3366,8 +3368,9 @@ function renderStatusBadge(){
   const localStr = localOK
     ? '<b>Local:</b> AMD MI300X'
     : '<b>Local:</b> <span style="color:var(--conf-block);">MI300X offline</span>';
+  const modelLabel = s.remote_model_label || 'Fireworks AI';
   const remoteStr = remoteOK
-    ? '<b>Remote:</b> Fireworks AI'
+    ? `<b>Remote:</b> Fireworks <span style="color:var(--muted2);">·</span> ${modelLabel}`
     : '<b>Remote:</b> <span style="color:var(--conf-block);">not configured</span>';
   t.innerHTML = localStr + ' <span class="sep">·</span> ' + remoteStr;
   const bothOK = localOK && remoteOK;
