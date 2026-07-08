@@ -2182,12 +2182,19 @@ async function openDoc(i){
               }).join('');
               return `<tr>${cells}</tr>`;
             }).join('');
-            const moreRows = sh.total_rows > data.showing ? `<tr><td colspan="${nCols}" style="padding:8px 12px; font-size:10.5px; color:var(--muted2); font-style:italic;">… ${sh.total_rows - data.showing} more row${sh.total_rows - data.showing !== 1 ? 's' : ''} in this sheet</td></tr>` : '';
+            const rendered = sh.rows.length;
+            const remaining = Math.max(0, (sh.total_rows || rendered) - rendered);
+            const moreRows = remaining > 0 ? `<tr><td colspan="${nCols}" style="padding:8px 12px; font-size:10.5px; color:var(--muted2); font-style:italic;">… ${remaining} more row${remaining !== 1 ? 's' : ''} in this sheet</td></tr>` : '';
             return `<table style="width:100%; border-collapse:collapse; table-layout:fixed;"><colgroup>${cols}</colgroup><tbody>${rows}${moreRows}</tbody></table>`;
           }).join('');
+          const total = data.sheets.reduce((n, sh) => n + (sh.total_rows || sh.rows.length), 0);
+          const shown = data.sheets.reduce((n, sh) => n + sh.rows.length, 0);
+          const head = shown >= total
+            ? `Original spreadsheet · ${escapeHtml(fname)} · showing all ${total} rows`
+            : `Original spreadsheet · ${escapeHtml(fname)} · showing first ${shown} of ${total} rows`;
           preview = `<div class="doc-preview">
-            <div class="doc-preview-head">Original spreadsheet · ${escapeHtml(fname)} · showing top ${data.showing} rows <a href="${url}" download style="float:right; color:var(--c-name); text-decoration:none;">↓ Download</a></div>
-            <div style="max-height:220px; overflow:auto;">${sheetHtml}</div>
+            <div class="doc-preview-head">${head} <a href="${url}" download style="float:right; color:var(--c-name); text-decoration:none;">↓ Download</a></div>
+            <div style="max-height:340px; overflow:auto;">${sheetHtml}</div>
           </div>`;
         }
       } catch(_){

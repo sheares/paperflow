@@ -14,7 +14,7 @@ Three demo piles for the paperflow reconciler. Regenerate with:
 
 ## visual style
 
-Each PDF is rendered with a company letterhead (brand mark + wordmark + coloured accent rule), a paragraph of domain-appropriate prose, the field data in a labelled block, and a legal footer. The KYC form spans two pages. Every planted VALUE stays identical across regenerations to keep the scorer's ground-truth stable.
+Every PDF is composed from the same primitives (letterhead with a meta bar of document references, section bands, framed data panels, ruled tables, signature grids, barcodes and rubber stamps) so the pages read like real business/clinical documents rather than a stripped-down mock-up. Every planted VALUE stays identical across regenerations to keep the scorer's ground-truth stable.
 
 ## eval
 

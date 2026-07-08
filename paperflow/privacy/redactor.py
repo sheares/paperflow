@@ -28,6 +28,38 @@ LABEL_STOPWORDS = {
     "company", "address", "uen", "fax", "website", "date", "rsvp", "status",
     "doc", "id", "doc id", "subject", "sent", "from", "to", "nric", "fin",
 }
+# Words that appear as form labels or bureaucratic phrasing. When a
+# spaCy ORG/PERSON span is entirely built out of these, it is a label
+# scrape, not an entity — registering it pollutes the subword map so
+# words like "previous" (from "Previous Address") start substituting
+# into unrelated text ("IGNORE ALL PREVIOUS INSTRUCTIONS").
+LABEL_GENERIC = {
+    "previous", "current", "next", "address", "statement", "date", "period",
+    "amount", "due", "national", "identity", "card", "identification",
+    "applicant", "party", "beneficial", "owner", "signature", "signed",
+    "declaration", "section", "particulars", "reference", "policy",
+    "consent", "form", "residential", "employment", "employer",
+    "clinician", "referring", "referral", "insurance", "cardholder",
+    "photostat", "scan", "verified", "receipt", "invoice", "id",
+    "of", "the", "and", "for", "to", "in", "at", "by", "from",
+    "part", "premier", "standard", "extended", "attached", "attachment",
+    "chief", "complaint", "reason", "primary", "secondary", "on", "into",
+    "notice", "clause", "term", "terms", "authority", "authorised",
+    "record", "records", "medical", "clinical", "details", "detail",
+    "history", "review", "confirmed", "tentative", "pending",
+    "series", "generation", "version", "issue", "expiry", "expires",
+    "acknowledged", "returned", "canceled", "cancelled", "purposes",
+    "consultation", "consultations", "requisition", "specimen",
+    "office", "office of", "department", "team",
+}
+
+
+def _all_generic(value: str) -> bool:
+    """True if every token in the value is a form-label / bureaucratic
+    word. Used to reject spurious ORG detections like 'Previous Address',
+    'Statement Date', 'National ID' before they enter the subword map."""
+    words = [w for w in re.findall(r"[A-Za-z]+", value) if len(w) > 1]
+    return bool(words) and all(w.lower() in LABEL_GENERIC for w in words)
 
 # Labelled form fields: these documents ARE forms, so the label is signal.
 # Group 1 captures the value; a post-filter rejects non-name-like captures.
@@ -61,10 +93,15 @@ def scan_labelled_fields(text: str) -> list[tuple[str, str]]:
     found = []
     for m in _PERSON_LABELS.finditer(text):
         v = m.group(1).strip().rstrip("|").strip()
+        # pdftotext -layout uses runs of many spaces as column separators
+        # in two-column forms; the label regex can otherwise greedily
+        # slurp the next column ("Rajesh Kumar    Date of Birth")
+        v = re.split(r"\s{3,}", v, maxsplit=1)[0].strip()
         if _name_like(v):
             found.append((v, "PERSON"))
     for m in _ORG_LABELS.finditer(text):
         v = m.group(1).strip().rstrip("|").strip()
+        v = re.split(r"\s{3,}", v, maxsplit=1)[0].strip()
         if _name_like(v) or _ORG_SUFFIX.search(v or ""):
             found.append((v, "ORG"))
     for m in _ORG_SUFFIX.finditer(text):
@@ -104,8 +141,24 @@ class PrivacyRoundTrip:
                 # newline-spanning NER spans are label bleed, not entities
                 if "\n" in value:
                     continue
-                if len(value) >= 2 and value.lower() not in LABEL_STOPWORDS:
-                    entity_map.add(value, r.entity_type)
+                # pdftotext -layout uses runs of many spaces as column
+                # separators. spaCy NER spans routinely stretch across
+                # those gaps and grab the neighbouring label as if it
+                # were part of the name ("Rajesh Kumar        Date of
+                # Birth"), which destroys alias merging. Truncate any
+                # detection on the first triple-space, which no genuine
+                # entity contains.
+                value = re.split(r"\s{3,}", value, maxsplit=1)[0].strip()
+                if len(value) < 2 or value.lower() in LABEL_STOPWORDS:
+                    continue
+                # every-word-generic ORG/PERSON detections are label
+                # scrapes (e.g. "Previous Address", "Statement Date").
+                # Skip them so their subwords don't leak into unrelated
+                # documents.
+                if r.entity_type in {"ORG", "ORGANIZATION", "PERSON"} \
+                        and _all_generic(value):
+                    continue
+                entity_map.add(value, r.entity_type)
             # labelled form fields catch what NER misses on non-Western names
             for value, etype in scan_labelled_fields(text):
                 entity_map.add(value, etype)

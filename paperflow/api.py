@@ -141,7 +141,7 @@ def get_doc(pile: str, filename: str):
 
 
 @app.get("/api/xlsx_preview/{pile}/{filename}")
-def xlsx_preview(pile: str, filename: str, n: int = 5):
+def xlsx_preview(pile: str, filename: str, n: int = 24):
     if pile not in PILES or "/" in filename or ".." in filename:
         raise HTTPException(404, "not found")
     path = ROOT / "synthetic" / pile / filename

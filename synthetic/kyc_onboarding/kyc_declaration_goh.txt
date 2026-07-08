@@ -1,7 +1,9 @@
 From: yvonne.goh@example.com
 To: kyc@bank.sg
-Subject: KYC Declaration
-Date: 2026-05-24 14:12 SGT
+Cc: aloysius.tan@dbs.com
+Sent: 2026-05-24 14:12 SGT
+Subject: KYC Declaration — Y Goh (Ref KYC/2026/05/00219)
+X-Priority: Normal
 
 Doc ID: doc_003
 
@@ -18,9 +20,16 @@ Residential Address: 8 Marina Boulevard #30-01, Singapore 018981
 Beneficial Owner: Self
 Source of Funds: Employment income
 
-Note: I'll pop by the branch on Monday to sign the paper form.
+Note: I'll pop by the branch on Monday morning to sign the paper
+form. Kindly reach out if any of the above needs additional
+supporting documentation.
 
 Regards,
 Yvonne Goh
 Senior Product Manager, Fintech Practice
 8 Marina Boulevard #30-01, Singapore 018981
++65 9123 4567
+
+--
+This email and any attachments are confidential. If you have received
+this in error please notify the sender and delete the message.

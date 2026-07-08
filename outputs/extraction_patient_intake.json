@@ -1,205 +1,515 @@
 {
- "pile": "patient_intake",
- "docs": [
-  {
-   "doc": "insurance_ng.pdf",
-   "kind": "vision",
-   "latency_s": 3.94,
-   "fields": [
+  "pile": "patient_intake",
+  "docs": [
     {
-     "label": "Doc ID",
-     "value": "doc_005",
-     "confidence": 1.0
+      "doc": "insurance_ng.pdf",
+      "kind": "vision",
+      "latency_s": 26.14,
+      "fields": [
+        {
+          "label": "patient_name",
+          "value": "Chloe Ng",
+          "confidence": 1.0
+        },
+        {
+          "label": "policy_number",
+          "value": "AIA-553120",
+          "confidence": 1.0
+        },
+        {
+          "label": "plan",
+          "value": "Health Shield Gold Max A",
+          "confidence": 1.0
+        },
+        {
+          "label": "effective_from",
+          "value": "2024-01-01",
+          "confidence": 1.0
+        },
+        {
+          "label": "group",
+          "value": "IND-STD-A",
+          "confidence": 1.0
+        },
+        {
+          "label": "card_number",
+          "value": "AIA-CARD-4451-9932",
+          "confidence": 1.0
+        },
+        {
+          "label": "doc_id",
+          "value": "doc_005",
+          "confidence": 1.0
+        }
+      ],
+      "error": null
     },
     {
-     "label": "patient_name",
-     "value": "Chloe Ng",
-     "confidence": 1.0
+      "doc": "intake_kumar.pdf",
+      "kind": "vision",
+      "latency_s": 37.92,
+      "fields": [
+        {
+          "label": "patient_name",
+          "value": "Rajesh Kumar",
+          "confidence": 1.0
+        },
+        {
+          "label": "date_of_birth",
+          "value": "1986-03-14",
+          "confidence": 1.0
+        },
+        {
+          "label": "nric_fin",
+          "value": "S8612345Z",
+          "confidence": 1.0
+        },
+        {
+          "label": "policy_number",
+          "value": "PRU-009281",
+          "confidence": 1.0
+        },
+        {
+          "label": "allergies",
+          "value": "Penicillin",
+          "confidence": 1.0
+        },
+        {
+          "label": "consent_signed",
+          "value": "Not specified",
+          "confidence": 0.9
+        },
+        {
+          "label": "Doc ID",
+          "value": "doc_001",
+          "confidence": 1.0
+        },
+        {
+          "label": "MRN",
+          "value": "NHC-8829471",
+          "confidence": 1.0
+        },
+        {
+          "label": "Sex",
+          "value": "Male",
+          "confidence": 1.0
+        },
+        {
+          "label": "Nationality",
+          "value": "Singaporean",
+          "confidence": 1.0
+        },
+        {
+          "label": "Race",
+          "value": "Indian",
+          "confidence": 1.0
+        },
+        {
+          "label": "Contact",
+          "value": "+65 9821 3345",
+          "confidence": 1.0
+        },
+        {
+          "label": "Language",
+          "value": "English, Tamil",
+          "confidence": 1.0
+        },
+        {
+          "label": "Chief Complaint",
+          "value": "Occasional chest discomfort; on treatment for HTN",
+          "confidence": 1.0
+        },
+        {
+          "label": "Referring Clinician",
+          "value": "Dr Lee Wai Meng (MCR 32194B)",
+          "confidence": 1.0
+        },
+        {
+          "label": "Referring Clinic",
+          "value": "Clinic ABC, 218 East Coast Road #02-33",
+          "confidence": 1.0
+        },
+        {
+          "label": "Reason for Referral",
+          "value": "Further cardiology assessment",
+          "confidence": 1.0
+        },
+        {
+          "label": "Insurance",
+          "value": "Prudential PRUShield",
+          "confidence": 1.0
+        },
+        {
+          "label": "Effective From",
+          "value": "2022-01-01",
+          "confidence": 1.0
+        },
+        {
+          "label": "Plan",
+          "value": "Premier",
+          "confidence": 1.0
+        },
+        {
+          "label": "Reference",
+          "value": "NHC-ZAKE-KUMAR-88",
+          "confidence": 0.9
+        },
+        {
+          "label": "Appointment Date",
+          "value": "2026-06-15",
+          "confidence": 1.0
+        },
+        {
+          "label": "Appointment Location",
+          "value": "Cardiology OP - Room B/2",
+          "confidence": 1.0
+        },
+        {
+          "label": "Consultation Date/Time",
+          "value": "2026-07-02, 10:30",
+          "confidence": 1.0
+        },
+        {
+          "label": "Staff ID",
+          "value": "NHC-RC-4412",
+          "confidence": 1.0
+        },
+        {
+          "label": "Staff Name",
+          "value": "Farah Nshba bte Iskandar",
+          "confidence": 1.0
+        }
+      ],
+      "error": null
     },
     {
-     "label": "policy_number",
-     "value": "AIA-553120",
-     "confidence": 1.0
+      "doc": "intake_ng.pdf",
+      "kind": "vision",
+      "latency_s": 36.39,
+      "fields": [
+        {
+          "label": "patient_name",
+          "value": "Chloe Ng",
+          "confidence": 1.0
+        },
+        {
+          "label": "date_of_birth",
+          "value": "1994-11-02",
+          "confidence": 1.0
+        },
+        {
+          "label": "nric_fin",
+          "value": "S9456781D",
+          "confidence": 1.0
+        },
+        {
+          "label": "policy_number",
+          "value": "AIA-553102",
+          "confidence": 1.0
+        },
+        {
+          "label": "allergies",
+          "value": "None",
+          "confidence": 1.0
+        },
+        {
+          "label": "consent_signed",
+          "value": "Yes (2026-06-10)",
+          "confidence": 1.0
+        },
+        {
+          "label": "Doc Id",
+          "value": "doc_004",
+          "confidence": 1.0
+        },
+        {
+          "label": "MRN",
+          "value": "NHC-8829504",
+          "confidence": 1.0
+        },
+        {
+          "label": "Nationality",
+          "value": "Singaporean",
+          "confidence": 1.0
+        },
+        {
+          "label": "Sex",
+          "value": "Female",
+          "confidence": 1.0
+        },
+        {
+          "label": "Race",
+          "value": "Chinese",
+          "confidence": 1.0
+        },
+        {
+          "label": "Contact",
+          "value": "+65 9662 8114",
+          "confidence": 1.0
+        },
+        {
+          "label": "Language",
+          "value": "English, Mandarin",
+          "confidence": 1.0
+        },
+        {
+          "label": "Chief Complaint",
+          "value": "Palpitations on exertion x 6 weeks",
+          "confidence": 1.0
+        },
+        {
+          "label": "Referring Clinician",
+          "value": "Dr Kavitha S (MCR 40821E)",
+          "confidence": 1.0
+        },
+        {
+          "label": "Referring Clinic",
+          "value": "Novena Cardiology Clinic, 10 Sinaran Drive",
+          "confidence": 1.0
+        },
+        {
+          "label": "Reason for Referral",
+          "value": "Palpitation workup",
+          "confidence": 1.0
+        },
+        {
+          "label": "Insurance",
+          "value": "AIA HealthShield Gold Max",
+          "confidence": 1.0
+        },
+        {
+          "label": "Effective From",
+          "value": "2024-01-01",
+          "confidence": 1.0
+        },
+        {
+          "label": "Plan",
+          "value": "Standard",
+          "confidence": 1.0
+        },
+        {
+          "label": "Consent Date",
+          "value": "2026-06-10",
+          "confidence": 1.0
+        },
+        {
+          "label": "Staff ID",
+          "value": "NHC-RC-4412",
+          "confidence": 1.0
+        },
+        {
+          "label": "Staff Name",
+          "value": "Farah Nisha bte Iskandar",
+          "confidence": 1.0
+        },
+        {
+          "label": "Consultation Date",
+          "value": "2026-06-28",
+          "confidence": 1.0
+        },
+        {
+          "label": "Consultation Time",
+          "value": "09:15",
+          "confidence": 1.0
+        }
+      ],
+      "error": null
+    },
+    {
+      "doc": "lab_kumar.pdf",
+      "kind": "vision",
+      "latency_s": 37.18,
+      "fields": [
+        {
+          "label": "patient_name",
+          "value": "Rajesh Kumar",
+          "confidence": 1.0
+        },
+        {
+          "label": "date_of_birth",
+          "value": "1986-03-14",
+          "confidence": 1.0
+        },
+        {
+          "label": "nric_fin",
+          "value": "S8612345Z",
+          "confidence": 1.0
+        },
+        {
+          "label": "Doc Id",
+          "value": "doc_003",
+          "confidence": 1.0
+        },
+        {
+          "label": "Sex",
+          "value": "Male",
+          "confidence": 1.0
+        },
+        {
+          "label": "Age",
+          "value": "40 y",
+          "confidence": 1.0
+        },
+        {
+          "label": "Clinician",
+          "value": "Dr Lee Wai Meng",
+          "confidence": 1.0
+        },
+        {
+          "label": "MCR",
+          "value": "32194B",
+          "confidence": 1.0
+        },
+        {
+          "label": "Clinic",
+          "value": "Clinic ABC",
+          "confidence": 1.0
+        },
+        {
+          "label": "Address",
+          "value": "218 East Coast Rd #02-33",
+          "confidence": 1.0
+        },
+        {
+          "label": "Tel",
+          "value": "+65 6440 2211",
+          "confidence": 1.0
+        },
+        {
+          "label": "Fax",
+          "value": "+65 6440 2212",
+          "confidence": 1.0
+        },
+        {
+          "label": "Clinical details",
+          "value": "40M with treated hypertension. ECG shows occasional lateral-lead T-wave inversions. Requesting a lipid panel, CRP and HbA1c as part of cardiovascular risk stratification prior to specialist review. Fasting required for the lipid panel.",
+          "confidence": 1.0
+        },
+        {
+          "label": "Lab ID",
+          "value": "IQ-DESK-07",
+          "confidence": 1.0
+        },
+        {
+          "label": "Collection Date",
+          "value": "2026-06-16 08:12",
+          "confidence": 1.0
+        },
+        {
+          "label": "Priority",
+          "value": "Routine",
+          "confidence": 1.0
+        },
+        {
+          "label": "Container",
+          "value": "5ST \u00b7 Purple \u00b7 Grey",
+          "confidence": 1.0
+        },
+        {
+          "label": "Requesting Clinician Signature Date",
+          "value": "2026-06-15",
+          "confidence": 1.0
+        },
+        {
+          "label": "Specimen Desk Received Date",
+          "value": "2026-06-16 08:12",
+          "confidence": 1.0
+        }
+      ],
+      "error": null
+    },
+    {
+      "doc": "referral_kumar.txt",
+      "kind": "text",
+      "latency_s": 15.01,
+      "fields": [
+        {
+          "label": "patient_name",
+          "value": "R. Kumar",
+          "confidence": 1.0
+        },
+        {
+          "label": "date_of_birth",
+          "value": "1986-04-14",
+          "confidence": 1.0
+        },
+        {
+          "label": "nric_fin",
+          "value": "S8612345Z",
+          "confidence": 1.0
+        },
+        {
+          "label": "from_email",
+          "value": "drlee@clinicabc.sg",
+          "confidence": 1.0
+        },
+        {
+          "label": "to_email",
+          "value": "cardiology@bighospital.sg",
+          "confidence": 1.0
+        },
+        {
+          "label": "cc_email",
+          "value": "patient_records@bighospital.sg",
+          "confidence": 1.0
+        },
+        {
+          "label": "sent_date",
+          "value": "2026-06-15 10:32 SGT",
+          "confidence": 1.0
+        },
+        {
+          "label": "subject",
+          "value": "Referral \u2014 R. Kumar \u00b7 further cardiology assessment",
+          "confidence": 1.0
+        },
+        {
+          "label": "attachments",
+          "value": "ecg_2026-06-10.pdf, lab_2026-06-12.pdf",
+          "confidence": 1.0
+        },
+        {
+          "label": "doc_id",
+          "value": "doc_002",
+          "confidence": 1.0
+        },
+        {
+          "label": "current_medication",
+          "value": "Losartan 50mg daily",
+          "confidence": 1.0
+        },
+        {
+          "label": "referring_clinician",
+          "value": "Dr Lee Wai Meng",
+          "confidence": 1.0
+        },
+        {
+          "label": "mcr",
+          "value": "32194B",
+          "confidence": 1.0
+        },
+        {
+          "label": "reason",
+          "value": "Further cardiology assessment",
+          "confidence": 1.0
+        },
+        {
+          "label": "clinic_name",
+          "value": "Clinic ABC",
+          "confidence": 1.0
+        },
+        {
+          "label": "clinic_address",
+          "value": "218 East Coast Road #02-33, Singapore 428917",
+          "confidence": 1.0
+        },
+        {
+          "label": "clinic_tel",
+          "value": "+65 6440 2211",
+          "confidence": 1.0
+        }
+      ],
+      "error": null
     }
-   ],
-   "error": null
-  },
-  {
-   "doc": "intake_kumar.pdf",
-   "kind": "vision",
-   "latency_s": 6.96,
-   "fields": [
-    {
-     "label": "Doc ID",
-     "value": "doc_001",
-     "confidence": 1.0
-    },
-    {
-     "label": "patient_name",
-     "value": "Rajesh Kumar",
-     "confidence": 1.0
-    },
-    {
-     "label": "date_of_birth",
-     "value": "1986-03-14",
-     "confidence": 1.0
-    },
-    {
-     "label": "nric_fin",
-     "value": "S8612345Z",
-     "confidence": 1.0
-    },
-    {
-     "label": "policy_number",
-     "value": "PRU-009281",
-     "confidence": 1.0
-    },
-    {
-     "label": "allergies",
-     "value": "Penicillin",
-     "confidence": 1.0
-    },
-    {
-     "label": "consent_signed",
-     "value": "(pending)",
-     "confidence": 1.0
-    }
-   ],
-   "error": null
-  },
-  {
-   "doc": "intake_ng.pdf",
-   "kind": "vision",
-   "latency_s": 7.13,
-   "fields": [
-    {
-     "label": "Doc ID",
-     "value": "doc_004",
-     "confidence": 1.0
-    },
-    {
-     "label": "patient_name",
-     "value": "Chloe Ng",
-     "confidence": 1.0
-    },
-    {
-     "label": "date_of_birth",
-     "value": "1994-11-02",
-     "confidence": 1.0
-    },
-    {
-     "label": "nric_fin",
-     "value": "S9456781D",
-     "confidence": 1.0
-    },
-    {
-     "label": "policy_number",
-     "value": "AIA-553102",
-     "confidence": 1.0
-    },
-    {
-     "label": "allergies",
-     "value": "None",
-     "confidence": 1.0
-    },
-    {
-     "label": "consent_signed",
-     "value": "Yes (2026-06-10)",
-     "confidence": 1.0
-    }
-   ],
-   "error": null
-  },
-  {
-   "doc": "lab_kumar.pdf",
-   "kind": "vision",
-   "latency_s": 5.42,
-   "fields": [
-    {
-     "label": "Doc ID",
-     "value": "doc_003",
-     "confidence": 1.0
-    },
-    {
-     "label": "patient_name",
-     "value": "Rajesh Kumar",
-     "confidence": 1.0
-    },
-    {
-     "label": "nric_fin",
-     "value": "S8612345Z",
-     "confidence": 1.0
-    },
-    {
-     "label": "Lab Serial",
-     "value": "LABREQ-44120",
-     "confidence": 1.0
-    },
-    {
-     "label": "Tests Requested",
-     "value": "Lipid panel, CRP, HbA1c",
-     "confidence": 1.0
-    }
-   ],
-   "error": null
-  },
-  {
-   "doc": "referral_kumar.txt",
-   "kind": "text",
-   "latency_s": 7.78,
-   "fields": [
-    {
-     "label": "patient_name",
-     "value": "R. Kumar",
-     "confidence": 1.0
-    },
-    {
-     "label": "date_of_birth",
-     "value": "1986-04-14",
-     "confidence": 1.0
-    },
-    {
-     "label": "nric_fin",
-     "value": "S8612345Z",
-     "confidence": 1.0
-    },
-    {
-     "label": "from_email",
-     "value": "drlee@clinicabc.sg",
-     "confidence": 1.0
-    },
-    {
-     "label": "to_email",
-     "value": "cardiology@bighospital.sg",
-     "confidence": 1.0
-    },
-    {
-     "label": "sent_date",
-     "value": "2026-06-15",
-     "confidence": 1.0
-    },
-    {
-     "label": "subject",
-     "value": "Referral - R. Kumar",
-     "confidence": 1.0
-    },
-    {
-     "label": "doc_id",
-     "value": "doc_002",
-     "confidence": 1.0
-    },
-    {
-     "label": "referring_clinician",
-     "value": "Dr Lee Wai Meng",
-     "confidence": 1.0
-    },
-    {
-     "label": "reason",
-     "value": "Further cardiology assessment",
-     "confidence": 1.0
-    }
-   ],
-   "error": null
-  }
- ]
+  ]
 }

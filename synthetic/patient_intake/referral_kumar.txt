@@ -1,27 +1,33 @@
 From: drlee@clinicabc.sg
 To: cardiology@bighospital.sg
+Cc: patient_records@bighospital.sg
 Sent: 2026-06-15 10:32 SGT
-Subject: Referral - R. Kumar
+Subject: Referral — R. Kumar · further cardiology assessment
+Attachments: ecg_2026-06-10.pdf, lab_2026-06-12.pdf
 
 Doc ID: doc_002
 
 Dear colleague,
 
 Please see the following patient for further cardiology assessment.
-He has been on my books for eighteen months for hypertension. At
-his recent review, his ECG showed occasional T-wave inversions in
-the lateral leads that I would like a specialist opinion on.
+He has been on my books for eighteen months for hypertension,
+currently on Losartan 50mg daily. At his recent review, his ECG
+showed occasional T-wave inversions in the lateral leads that I
+would like a specialist opinion on.
 
 Patient: R. Kumar
 Date of Birth: 1986-04-14
 NRIC / FIN: S8612345Z
 
 Referring Clinician: Dr Lee Wai Meng
+MCR: 32194B
 Reason: Further cardiology assessment
 
 I am attaching his most recent lab requisition and ECG report
-separately for your reference.
+separately for your reference. Kindly copy the reception team on
+the appointment confirmation so I can update the patient.
 
 Regards,
 Dr Lee Wai Meng, MBBS (Sing), FRACGP
 Clinic ABC, 218 East Coast Road #02-33, Singapore 428917
+Tel +65 6440 2211  ·  MCR 32194B

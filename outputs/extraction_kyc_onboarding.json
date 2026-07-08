@@ -1,147 +1,302 @@
 {
- "pile": "kyc_onboarding",
- "docs": [
-  {
-   "doc": "kyc_declaration_goh.txt",
-   "kind": "text",
-   "latency_s": 7.11,
-   "fields": [
+  "pile": "kyc_onboarding",
+  "docs": [
     {
-     "label": "Doc ID",
-     "value": "doc_003",
-     "confidence": 1.0
+      "doc": "kyc_declaration_goh.txt",
+      "kind": "text",
+      "latency_s": 18.37,
+      "fields": [
+        {
+          "label": "full_name",
+          "value": "Yvonne Goh",
+          "confidence": 1.0
+        },
+        {
+          "label": "national_id",
+          "value": "K3098551",
+          "confidence": 1.0
+        },
+        {
+          "label": "residential_address",
+          "value": "8 Marina Boulevard #30-01, Singapore 018981",
+          "confidence": 1.0
+        },
+        {
+          "label": "declaration_date",
+          "value": "2026-05-24",
+          "confidence": 0.9
+        },
+        {
+          "label": "source_of_funds",
+          "value": "Employment income",
+          "confidence": 1.0
+        },
+        {
+          "label": "beneficial_owner",
+          "value": "Self",
+          "confidence": 1.0
+        },
+        {
+          "label": "email_address",
+          "value": "yvonne.goh@example.com",
+          "confidence": 1.0
+        },
+        {
+          "label": "reference_number",
+          "value": "KYC/2026/05/00219",
+          "confidence": 1.0
+        },
+        {
+          "label": "doc_id",
+          "value": "doc_003",
+          "confidence": 1.0
+        },
+        {
+          "label": "job_title",
+          "value": "Senior Product Manager, Fintech Practice",
+          "confidence": 1.0
+        },
+        {
+          "label": "phone_number",
+          "value": "+65 9123 4567",
+          "confidence": 1.0
+        }
+      ],
+      "error": null
     },
     {
-     "label": "full_name",
-     "value": "Yvonne Goh",
-     "confidence": 1.0
+      "doc": "kyc_form_hassan.pdf",
+      "kind": "vision",
+      "latency_s": 36.54,
+      "fields": [
+        {
+          "label": "Reference No.",
+          "value": "KYC/2026/05/00218",
+          "confidence": 1.0
+        },
+        {
+          "label": "Case ID",
+          "value": "CS-4471-2026",
+          "confidence": 1.0
+        },
+        {
+          "label": "RM Office",
+          "value": "Marina Bay Financial Centre",
+          "confidence": 1.0
+        },
+        {
+          "label": "RM Officer",
+          "value": "Aloysius Tan (RM-2841)",
+          "confidence": 1.0
+        },
+        {
+          "label": "Received Date",
+          "value": "2026-05-22 - 10:14 SGT",
+          "confidence": 1.0
+        },
+        {
+          "label": "Doc Id",
+          "value": "doc_001",
+          "confidence": 1.0
+        },
+        {
+          "label": "Nationality",
+          "value": "Singaporean",
+          "confidence": 1.0
+        },
+        {
+          "label": "full_name",
+          "value": "Mohammed Farid bin Hassan",
+          "confidence": 1.0
+        },
+        {
+          "label": "Date of Birth",
+          "value": "1978-04-11",
+          "confidence": 1.0
+        },
+        {
+          "label": "national_id",
+          "value": "K7741209",
+          "confidence": 1.0
+        },
+        {
+          "label": "Sex",
+          "value": "Male",
+          "confidence": 1.0
+        },
+        {
+          "label": "Marital Status",
+          "value": "Married",
+          "confidence": 1.0
+        },
+        {
+          "label": "Occupation",
+          "value": "Managing Partner",
+          "confidence": 1.0
+        },
+        {
+          "label": "residential_address",
+          "value": "Blk 210 Bishan St 23 #11-04 Singapore 570210",
+          "confidence": 1.0
+        },
+        {
+          "label": "Length of Stay",
+          "value": "8 years, 3 months",
+          "confidence": 1.0
+        },
+        {
+          "label": "Previous Address",
+          "value": "Blk 44 Toa Payoh Lor 5 #08-217, Singapore 310044",
+          "confidence": 1.0
+        },
+        {
+          "label": "beneficial_owner",
+          "value": "Self",
+          "confidence": 1.0
+        },
+        {
+          "label": "Employer",
+          "value": "Farid & Partners LLP",
+          "confidence": 1.0
+        },
+        {
+          "label": "source_of_funds",
+          "value": "Self",
+          "confidence": 0.8
+        },
+        {
+          "label": "Monthly Income",
+          "value": "SGD 32,000",
+          "confidence": 1.0
+        },
+        {
+          "label": "declaration_date",
+          "value": "2026-05-22",
+          "confidence": 1.0
+        },
+        {
+          "label": "Employment Since",
+          "value": "2011-08-01",
+          "confidence": 1.0
+        },
+        {
+          "label": "PEP Status",
+          "value": "No",
+          "confidence": 1.0
+        }
+      ],
+      "error": null
     },
     {
-     "label": "national_id",
-     "value": "K3098551",
-     "confidence": 1.0
+      "doc": "nric_scan_goh.pdf",
+      "kind": "vision",
+      "latency_s": 16.92,
+      "fields": [
+        {
+          "label": "full_name",
+          "value": "Yvonne Goh",
+          "confidence": 1.0
+        },
+        {
+          "label": "national_id",
+          "value": "K3098S51",
+          "confidence": 1.0
+        },
+        {
+          "label": "date_of_birth",
+          "value": "15 Sep 1988",
+          "confidence": 1.0
+        },
+        {
+          "label": "doc_id",
+          "value": "doc_004",
+          "confidence": 1.0
+        },
+        {
+          "label": "date_of_issue",
+          "value": "2018-11-22",
+          "confidence": 1.0
+        },
+        {
+          "label": "card_version",
+          "value": "3rd generation polycarbonate",
+          "confidence": 1.0
+        },
+        {
+          "label": "case_ref",
+          "value": "KYC/2026/05/00219",
+          "confidence": 1.0
+        },
+        {
+          "label": "attached_file",
+          "value": "kyc_declaration_goh.txt",
+          "confidence": 1.0
+        },
+        {
+          "label": "scanning_entity",
+          "value": "DBS Wealth Onboarding",
+          "confidence": 1.0
+        }
+      ],
+      "error": null
     },
     {
-     "label": "residential_address",
-     "value": "8 Marina Boulevard #30-01, Singapore 018981",
-     "confidence": 1.0
-    },
-    {
-     "label": "beneficial_owner",
-     "value": "Self",
-     "confidence": 1.0
-    },
-    {
-     "label": "source_of_funds",
-     "value": "Employment income",
-     "confidence": 1.0
+      "doc": "utility_bill_hassan.pdf",
+      "kind": "vision",
+      "latency_s": 19.78,
+      "fields": [
+        {
+          "label": "full_name",
+          "value": "Farid Hassan",
+          "confidence": 1.0
+        },
+        {
+          "label": "national_id",
+          "value": "K7741209",
+          "confidence": 1.0
+        },
+        {
+          "label": "residential_address",
+          "value": "Blk 88 Tampines Ave 4 #05-12 Singapore 521088",
+          "confidence": 1.0
+        },
+        {
+          "label": "invoice_number",
+          "value": "SPG-INV-M4172-HASSAN",
+          "confidence": 1.0
+        },
+        {
+          "label": "statement_date",
+          "value": "2026-05-02",
+          "confidence": 1.0
+        },
+        {
+          "label": "due_date",
+          "value": "2026-05-22",
+          "confidence": 1.0
+        },
+        {
+          "label": "account_no",
+          "value": "03-124-5502-1",
+          "confidence": 1.0
+        },
+        {
+          "label": "doc_id",
+          "value": "doc_002",
+          "confidence": 1.0
+        },
+        {
+          "label": "billing_period",
+          "value": "2026-04-01 to 2026-04-30",
+          "confidence": 1.0
+        },
+        {
+          "label": "amount_due",
+          "value": "SGD 84.30",
+          "confidence": 1.0
+        }
+      ],
+      "error": null
     }
-   ],
-   "error": null
-  },
-  {
-   "doc": "kyc_form_hassan.pdf",
-   "kind": "vision",
-   "latency_s": 8.08,
-   "fields": [
-    {
-     "label": "Doc ID",
-     "value": "doc_001",
-     "confidence": 1.0
-    },
-    {
-     "label": "full_name",
-     "value": "Mohammed Farid bin Hassan",
-     "confidence": 1.0
-    },
-    {
-     "label": "national_id",
-     "value": "K7741209",
-     "confidence": 1.0
-    },
-    {
-     "label": "residential_address",
-     "value": "Blk 210 Bishan St 23 #11-04 Singapore 570210",
-     "confidence": 1.0
-    },
-    {
-     "label": "beneficial_owner",
-     "value": "Self",
-     "confidence": 1.0
-    },
-    {
-     "label": "source_of_funds",
-     "value": "None",
-     "confidence": 1.0
-    },
-    {
-     "label": "declaration_date",
-     "value": "2026-05-22",
-     "confidence": 1.0
-    }
-   ],
-   "error": null
-  },
-  {
-   "doc": "nric_scan_goh.pdf",
-   "kind": "vision",
-   "latency_s": 4.72,
-   "fields": [
-    {
-     "label": "Doc ID",
-     "value": "doc_004",
-     "confidence": 1.0
-    },
-    {
-     "label": "full_name",
-     "value": "Yvonne Goh",
-     "confidence": 1.0
-    },
-    {
-     "label": "national_id",
-     "value": "K3098S51",
-     "confidence": 1.0
-    }
-   ],
-   "error": null
-  },
-  {
-   "doc": "utility_bill_hassan.pdf",
-   "kind": "vision",
-   "latency_s": 7.5,
-   "fields": [
-    {
-     "label": "Doc ID",
-     "value": "doc_002",
-     "confidence": 1.0
-    },
-    {
-     "label": "full_name",
-     "value": "Farid Hassan",
-     "confidence": 1.0
-    },
-    {
-     "label": "residential_address",
-     "value": "Blk 88 Tampines Ave 4 #05-12 Singapore 521088",
-     "confidence": 1.0
-    },
-    {
-     "label": "national_id",
-     "value": "K7741209",
-     "confidence": 1.0
-    },
-    {
-     "label": "Billing Period",
-     "value": "2026-04-01 to 2026-04-30",
-     "confidence": 1.0
-    },
-    {
-     "label": "Amount Due",
-     "value": "SGD 84.30",
-     "confidence": 1.0
-    }
-   ],
-   "error": null
-  }
- ]
+  ]
 }
