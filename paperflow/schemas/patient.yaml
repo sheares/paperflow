@@ -1,6 +1,6 @@
 pile_type: patient_intake
-display_name: Patient intake
-entity_noun: patient
+display_name: Case records
+entity_noun: record
 required_fields:
   - key: patient_name
     label: Patient name

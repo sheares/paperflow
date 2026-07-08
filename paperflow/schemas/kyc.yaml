@@ -1,6 +1,6 @@
 pile_type: kyc_onboarding
-display_name: KYC onboarding
-entity_noun: client
+display_name: Individual identity
+entity_noun: individual
 required_fields:
   - key: full_name
     label: Full name

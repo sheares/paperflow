@@ -1,6 +1,6 @@
 pile_type: partner_collation
-display_name: Partner collation
-entity_noun: partner
+display_name: Corporate identity
+entity_noun: organisation
 required_fields:
   - key: organisation
     label: Organisation

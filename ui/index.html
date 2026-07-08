@@ -1112,9 +1112,9 @@ main{ display: contents; }
     <button class="tab pile-btn" data-pile="real" onclick="loadPile('real')" data-tooltip="Upload your own documents (PDF, TXT, MD, XLSX). The same pipeline that ran the demo piles will extract, redact and reconcile them, fully local. Session-scoped, cleared when you refresh.">📁 Your pile <span class="tab-count" id="real-tab-count">upload to start</span></button>
     <span style="width:1px; height:22px; background:var(--line); margin:0 6px;"></span>
     <span class="tabs-label">Demo pile</span>
-    <button class="tab pile-btn active" data-pile="kyc"     onclick="loadPile('kyc')">KYC onboarding <span class="tab-count">4 docs · 2 clients</span></button>
-    <button class="tab pile-btn"        data-pile="partner" onclick="loadPile('partner')">Partner collation <span class="tab-count">6 docs · 3 partners</span></button>
-    <button class="tab pile-btn"        data-pile="patient" onclick="loadPile('patient')">Patient intake <span class="tab-count">5 docs · 2 patients</span></button>
+    <button class="tab pile-btn active" data-pile="kyc"     onclick="loadPile('kyc')">Individual identity <span class="tab-count">4 docs · 2 individuals</span></button>
+    <button class="tab pile-btn"        data-pile="partner" onclick="loadPile('partner')">Corporate identity <span class="tab-count">6 docs · 3 organisations</span></button>
+    <button class="tab pile-btn"        data-pile="patient" onclick="loadPile('patient')">Case records <span class="tab-count">5 docs · 2 records</span></button>
     <span style="flex:1;"></span>
     <span class="tabs-label" style="opacity:0.6;">Demo</span>
     <button class="tab" onclick="openSandbox()" data-tooltip="Paste anything with names, IDs, emails or addresses. See the redaction round-trip live on your own text. Nothing is stored or logged.">🧪 Redaction sandbox</button>
@@ -1320,7 +1320,7 @@ main{ display: contents; }
 const piles = {
 
   kyc: {
-    domain: 'synthetic KYC onboarding',
+    domain: 'synthetic individual identity',
     assistantRole: 'compliance reconciler',
     sidebarNote: '9 entities found by Presidio across the pile · every detected value redacted before any cloud call.',
     stats: [
@@ -1355,7 +1355,7 @@ const piles = {
         ]},
     ],
     initial: {
-      user: 'Reconcile this pile for KYC onboarding.',
+      user: 'Reconcile this pile for individual identity.',
       receipt: `<code class="token token-name">[PERSON_1]</code> appears in <code class="token token-doc">[DOC_001]</code> and <code class="token token-doc">[DOC_002]</code> · <code class="token token-address">[ADDR_1]</code> vs <code class="token token-address">[ADDR_2]</code> · <code class="token token-id">[ID_1]</code> · <code class="token token-date">[DATE_1]</code><br><code class="token token-name">[PERSON_2]</code> appears in <code class="token token-doc">[DOC_003]</code> and <code class="token token-doc">[DOC_004]</code> · <code class="token token-id">[ID_2]</code> vs <code class="token token-id">[ID_3]</code> · <code class="token token-funds">[FUNDS_1]</code>`,
       ai: `I identified <b>two clients</b> across the 4 documents.<br><br><b>Client 1</b> appears as <code class="chip chip-name">Mohammed Farid bin Hassan</code> (doc_001) and as the alias <code class="chip chip-name">Farid Hassan</code> (doc_002). Same person: matching ID and overlapping address fragments. There is an <b>address conflict</b> between the two documents and <b>source of funds is missing</b>.<br><br><b>Client 2</b> appears as <code class="chip chip-name">Yvonne Goh</code> across doc_003 and doc_004. There is an <b>ID number conflict</b> (likely OCR), and <b>declaration date is missing</b>.<br><br>Both client records are in the panel below.`,
       sources: 'doc_001, doc_002, doc_003, doc_004'
@@ -1433,7 +1433,7 @@ const piles = {
 
 
   partner: {
-    domain: 'synthetic partner collation · event coordination',
+    domain: 'synthetic corporate identity · event coordination',
     assistantRole: 'partnerships reconciler',
     sidebarNote: '8 entities across 6 documents · redacted via consistent map before any cloud call.',
     stats: [
@@ -1572,7 +1572,7 @@ const piles = {
 
 
   patient: {
-    domain: 'synthetic patient intake · clinic records',
+    domain: 'synthetic case records · clinic records',
     assistantRole: 'clinical reconciler',
     sidebarNote: '6 entities across 5 documents · detected healthcare PII redacted before any cloud call.',
     stats: [
@@ -1883,10 +1883,10 @@ function loadPile(key){
   const hint = document.getElementById('record-caption-hint');
   if(hint){
     const dom = (p.domain || '').toLowerCase();
-    hint.textContent = dom.includes('kyc')     ? 'This pile is grouped by client (KYC schema).'
-                     : dom.includes('patient') ? 'This pile is grouped by patient (Patient schema).'
-                     : dom.includes('partner') ? 'This pile is grouped by organisation (Partner schema).'
-                     : dom.includes('generic') ? 'Paperflow auto-detected the entity most-shared across docs and grouped by that. Open "Advanced" on the pile toolbar to switch to a specialised schema for extra conflict detectors.'
+    hint.textContent = dom.includes('individual') ? 'This pile is grouped by individual (Individual identity schema).'
+                     : dom.includes('case')       ? 'This pile is grouped by record (Case records schema).'
+                     : dom.includes('corporate')  ? 'This pile is grouped by organisation (Corporate identity schema).'
+                     : dom.includes('generic')    ? 'Paperflow auto-detected the entity most-shared across docs and grouped by that. Open "Advanced" on the pile toolbar to switch to a specialised schema for extra conflict detectors.'
                      : '';
   }
 
@@ -1931,9 +1931,9 @@ function loadPile(key){
       p.domain.includes('partner') ? 'partner' : 'generic')) || 'generic';
     const opt = (v, lbl) => `<option value="${v}"${v === currentSchema ? ' selected' : ''}>${lbl}</option>`;
     const schemaLabel = {generic:'Auto (grouped by shared entity)',
-                          kyc:'KYC onboarding',
-                          patient:'Patient intake',
-                          partner:'Partner collation'}[currentSchema] || currentSchema;
+                          kyc:'Individual identity',
+                          patient:'Case records',
+                          partner:'Corporate identity'}[currentSchema] || currentSchema;
     const toolbar = `<div class="real-pile-injected" style="margin-top:14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
       <span style="font-size:11.5px; color:var(--muted);">
         <b style="color:var(--ink);">Grouped by shared entity</b>
@@ -1948,7 +1948,7 @@ function loadPile(key){
       <div style="margin-top:8px; display:flex; gap:8px; align-items:center;">
         <span style="font-size:11px; color:var(--muted2);">Treat as</span>
         <select id="real-schema-live" onchange="changeRealSchema(this.value)" style="padding:5px 8px; background:rgba(255,255,255,0.03); color:var(--ink); border:1px solid var(--line); border-radius:6px; font-size:11.5px;">
-          ${opt('generic', 'Auto (default)')}${opt('kyc', 'KYC onboarding')}${opt('patient', 'Patient intake')}${opt('partner', 'Partner collation')}
+          ${opt('generic', 'Auto (default)')}${opt('kyc', 'Individual identity')}${opt('patient', 'Case records')}${opt('partner', 'Corporate identity')}
         </select>
       </div>
     </div>`;
