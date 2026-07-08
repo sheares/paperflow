@@ -2946,6 +2946,71 @@ function quickAsk(text){
   sendMessage();
 }
 
+// Optimistic append: user bubble + a pending "thinking" placeholder that
+// carries the routing chip we predicted at send time. Returns the DOM node
+// of the placeholder so callers can replace it once the real receipt +
+// answer land. Meanwhile the user's own message lands on-screen instantly.
+function appendPending(user, predictedRoute){
+  const chat = document.getElementById('chat');
+  const wrap = document.createElement('div');
+  wrap.className = 'pending-turn';
+  const routing = predictedRoute || 'local';
+  const chip = routingChipHTML(routing);
+  wrap.innerHTML = `
+    <div class="bubble user">${highlightEntities(user, piles[currentPile].entities)}</div>
+    <div class="receipt receipt-pending">
+      <div class="receipt-head">
+        <span>Privacy receipt</span>${chip}
+      </div>
+      <div class="routing-reason ${routing}">
+        <span class="rr-label">Routing…</span>
+        <span class="rr-why">${routing === 'hybrid'
+          ? 'redacting your message · sending only tokens to the remote model'
+          : 'answering from local artefacts · nothing will cross the network'}</span>
+      </div>
+      <div class="receipt-body" style="display:flex; align-items:center; gap:10px; color:var(--muted);">
+        <span class="pending-dot" style="width:9px; height:9px; border:2px solid rgba(255,255,255,0.15); border-top-color:var(--c-name); border-radius:50%; display:inline-block; animation: ro-rot 0.9s linear infinite;"></span>
+        <span style="font-size:11.5px;">Waiting for the reconciler…</span>
+      </div>
+    </div>
+    <div class="bubble ai pending-ai" style="opacity:0.7;">
+      <span class="pending-dots" style="display:inline-flex; gap:4px;">
+        <span style="width:6px; height:6px; border-radius:50%; background:var(--muted); animation: pd 1.2s ease-in-out infinite;"></span>
+        <span style="width:6px; height:6px; border-radius:50%; background:var(--muted); animation: pd 1.2s ease-in-out 0.15s infinite;"></span>
+        <span style="width:6px; height:6px; border-radius:50%; background:var(--muted); animation: pd 1.2s ease-in-out 0.3s infinite;"></span>
+      </span>
+      <span style="margin-left:10px; color:var(--muted); font-size:12px;">${routing === 'hybrid' ? 'DeepSeek V4 Pro is reasoning over the redacted tokens…' : 'Answering from stored artefacts on the MI300X…'}</span>
+    </div>`;
+  chat.appendChild(wrap);
+  scrollChat();
+  if(!document.getElementById('pending-style')){
+    const st = document.createElement('style');
+    st.id = 'pending-style';
+    st.textContent = '@keyframes pd { 0%,80%,100% { opacity: 0.25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-2px); } }';
+    document.head.appendChild(st);
+  }
+  return wrap;
+}
+
+function resolvePending(node, receipt, ai, sources){
+  if(!node) return;
+  if(fullLocal){
+    const m = String(sources).match(/doc_.*/);
+    sources = 'Full-local · MI300X only' + (m ? ' · ' + m[0] : '');
+    receipt = 'Full-local mode · all reasoning ran on the MI300X · <b>nothing crossed the network</b>.';
+  }
+  const html = `
+    <div class="bubble user">${node.querySelector('.bubble.user').innerHTML}</div>
+    ${receiptBlockHTML(receipt, sources)}
+    <div class="bubble ai">${ai}<div class="sources">↳ Sources: <b>${escapeHtml(sources)}</b></div></div>`;
+  const rep = document.createElement('div');
+  rep.innerHTML = html;
+  node.replaceWith(...rep.childNodes);
+  if(detectRouting(sources) === 'hybrid') flashRemote();
+  tagTokensForLinking();
+  scrollChat();
+}
+
 function appendExchange(user, receipt, ai, sources){
   // Full-local mode overrides the route: nothing crosses, and the receipt
   // says so. Doc references are kept from the original sources string.
@@ -3215,21 +3280,30 @@ setInterval(refreshStatus, 15000);
 async function liveAsk(text){
   const pileArg = (currentPile === 'real' && REAL_SESSION)
     ? `real:${REAL_SESSION}` : LIVE_PILES[currentPile];
-  const r = await fetch('/api/ask', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ pile: pileArg, question: text, full_local: fullLocal })
-  });
-  if(!r.ok) throw new Error('ask failed');
-  const d = await r.json();
-  const rc = d.receipt;
-  const receiptHtml = (rc.route === 'hybrid'
-    ? rc.tokens_shown.slice(0, 10).map(tokenChip).join(' ') + ' · ' : '')
-    + `<b>${rc.crossed}</b>`;
-  const sources = (rc.route === 'hybrid'
-    ? 'Local + remote (redacted)' : 'Local resolver · no remote call')
-    + ` · live · ${rc.latency_s}s`;
-  appendExchange(text, receiptHtml, escapeHtml(d.answer), sources);
-  scrollChat();
+  const predicted = predictRouting(text);
+  const pending = appendPending(text, predicted);
+  try{
+    const r = await fetch('/api/ask', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pile: pileArg, question: text, full_local: fullLocal })
+    });
+    if(!r.ok) throw new Error('ask failed');
+    const d = await r.json();
+    const rc = d.receipt;
+    const receiptHtml = (rc.route === 'hybrid'
+      ? rc.tokens_shown.slice(0, 10).map(tokenChip).join(' ') + ' · ' : '')
+      + `<b>${rc.crossed}</b>`;
+    const sources = (rc.route === 'hybrid'
+      ? 'Local + remote (redacted)' : 'Local resolver · no remote call')
+      + ` · live · ${rc.latency_s}s`;
+    resolvePending(pending, receiptHtml, escapeHtml(d.answer), sources);
+  } catch(err){
+    resolvePending(pending,
+      'Local-only check. No cloud call for this exchange.',
+      `The live backend errored (${err && err.message || 'network error'}). If you opened this UI as a file, start it via docker compose up.`,
+      'Mockup mode · no live model');
+    throw err;
+  }
 }
 </script>
 
