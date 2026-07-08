@@ -1126,8 +1126,8 @@ main{ display: contents; }
   <div class="header-inner">
     <div class="logo">paper<span class="dot">·</span>flow</div>
     <div class="header-right">
-      <button class="mode-toggle" id="mode-toggle" onclick="toggleFullLocal()" data-tooltip="Max-security mode: every agent runs on the MI300X and nothing leaves the machine, at some cost to reasoning depth. Zero-egress claims are true by construction in this mode.">
-        <span class="mt-dot"></span>Full-local mode
+      <button class="mode-toggle" id="mode-toggle" onclick="toggleFullLocal()" data-tooltip="Air-gapped mode: every stage runs on the MI300X + paperflow container. Fireworks is never called, so the zero-egress claim is true by construction. Trade-off: cross-doc reasoning falls back to deterministic local rules (less depth than the cloud model).">
+        <span class="mt-dot"></span>Air-gapped mode
       </button>
       <div class="amd-badge">
         <span class="pulse" id="amd-pulse-local"></span>
@@ -2058,8 +2058,8 @@ function routingChipHTML(routing){
 
 function routingReason(sources){
   const s = sources.toLowerCase();
-  if(s.includes('full-local')){
-    return 'full-local mode · remote reasoning disabled by the operator';
+  if(s.includes('full-local') || s.includes('air-gapped')){
+    return 'air-gapped mode · remote reasoning disabled by the operator';
   }
   if(s.includes('no remote call') || s.startsWith('local resolver')){
     return 'entity match by deterministic signals · no cross-doc reasoning needed';
@@ -2121,8 +2121,8 @@ function renderChat(p){
   let iReceipt = p.initial.receipt, iSources = p.initial.sources;
   if(fullLocal){
     const m = String(iSources).match(/doc_.*/);
-    iSources = 'Full-local · MI300X only' + (m ? ' · ' + m[0] : '');
-    iReceipt = 'Full-local mode · all reasoning ran on the MI300X · <b>nothing crossed the network</b>.';
+    iSources = 'Air-gapped · MI300X + paperflow container only' + (m ? ' · ' + m[0] : '');
+    iReceipt = 'Air-gapped mode · all reasoning ran on the MI300X + container · <b>nothing crossed the network</b>.';
   }
   const chat = document.getElementById('chat');
   chat.innerHTML = `
@@ -2439,7 +2439,7 @@ const REAL_EMPTY_HTML = `
     <b style="color:var(--ink); display:block; margin-bottom:4px; font-size:12.5px;">What crosses the boundary, honestly</b>
     <span style="color:var(--conf-good);">•</span> Files stay in <b style="color:var(--ink);">this paperflow container</b>. Presidio + Gemma vision run here on your AMD MI300X. Nothing goes to a third-party OCR / vision API.<br>
     <span style="color:var(--c-name);">•</span> Only <b style="color:var(--ink);">redacted tokens</b> (like <code style="color:var(--c-name);">[PERSON_1]</code>) reach Fireworks for cross-doc reasoning. Real identifiers never do.<br>
-    <span style="color:var(--conf-good);">•</span> Toggle <b style="color:var(--ink);">Full-local</b> in the header and even the tokens stay local. Session clears on refresh.
+    <span style="color:var(--conf-good);">•</span> Toggle <b style="color:var(--ink);">Air-gapped mode</b> in the header and even the tokens stay local. Session clears on refresh.
   </div>
 
   <div style="max-width:640px; margin:14px auto 8px; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.6px; text-align:left; padding-left:2px;">Load a sample</div>
@@ -3187,8 +3187,8 @@ function toggleFullLocal(){
   clearTimeout(amdTimer);
   renderStatusBadge();   // honest badge, reflects actual endpoint state
   document.getElementById('chat').insertAdjacentHTML('beforeend', `<div class="sysnote">${fullLocal
-    ? 'Full-local mode on · remote reasoning disabled · re-running reconciliation entirely on the MI300X'
-    : 'Full-local mode off · heavy cross-document reasoning may use one redacted cloud call per exchange'}</div>`);
+    ? 'Air-gapped mode on · Fireworks disabled · reconciliation runs entirely on the MI300X + paperflow container'
+    : 'Air-gapped mode off · heavy cross-document reasoning may use one redacted cloud call per exchange'}</div>`);
   if(fullLocal) playPipeline(true);   // the zero-egress re-run, on screen
   resetSendGate();
   updateInputDetection();
@@ -3317,8 +3317,8 @@ function resolvePending(node, receipt, ai, sources){
   if(!node) return;
   if(fullLocal){
     const m = String(sources).match(/doc_.*/);
-    sources = 'Full-local · MI300X only' + (m ? ' · ' + m[0] : '');
-    receipt = 'Full-local mode · all reasoning ran on the MI300X · <b>nothing crossed the network</b>.';
+    sources = 'Air-gapped · MI300X + paperflow container only' + (m ? ' · ' + m[0] : '');
+    receipt = 'Air-gapped mode · all reasoning ran on the MI300X + container · <b>nothing crossed the network</b>.';
   }
   const html = `
     <div class="bubble user">${node.querySelector('.bubble.user').innerHTML}</div>
@@ -3337,8 +3337,8 @@ function appendExchange(user, receipt, ai, sources){
   // says so. Doc references are kept from the original sources string.
   if(fullLocal){
     const m = String(sources).match(/doc_.*/);
-    sources = 'Full-local · MI300X only' + (m ? ' · ' + m[0] : '');
-    receipt = 'Full-local mode · all reasoning ran on the MI300X · <b>nothing crossed the network</b>.';
+    sources = 'Air-gapped · MI300X + paperflow container only' + (m ? ' · ' + m[0] : '');
+    receipt = 'Air-gapped mode · all reasoning ran on the MI300X + container · <b>nothing crossed the network</b>.';
   }
   const chat = document.getElementById('chat');
   chat.insertAdjacentHTML('beforeend', `
@@ -3376,7 +3376,7 @@ function playPipeline(atEnd){
     ['Extract', 'MI300X', false],
     ['Resolve entities', 'MI300X', false],
     ['Redact', 'Presidio · local', false],
-    ['Reconcile', fullLocal ? 'MI300X · full-local' : 'Fireworks · redacted', !fullLocal],
+    ['Reconcile', fullLocal ? 'MI300X · air-gapped' : 'Fireworks · redacted', !fullLocal],
     ['Audit', 'MI300X', false],
     ['Emit', 'MI300X', false],
   ];
@@ -3465,7 +3465,7 @@ function updateInputDetection(){
   if(!text.trim()){ indicator.innerHTML = ''; return; }
 
   if(fullLocal){
-    indicator.innerHTML = '<span class="routing-chip local" data-tooltip="Full-local mode: every agent runs on the MI300X. No cloud calls in this mode, so no redaction round-trip is needed."><span class="dot"></span>Full-local · 0 cloud calls</span>'
+    indicator.innerHTML = '<span class="routing-chip local" data-tooltip="Air-gapped mode: every stage runs on the MI300X + paperflow container. No cloud calls in this mode, so no redaction round-trip is needed."><span class="dot"></span>Air-gapped · 0 cloud calls</span>'
       + '<span class="label" style="color:var(--muted2)">Nothing leaves the machine in this mode</span>';
     return;
   }
@@ -3633,7 +3633,7 @@ function renderStatusBadge(){
   if(fullLocal){
     // Fireworks never called in full-local — dim the dot to say so
     pRemote.style.background = 'var(--muted2)';
-    bRemote.innerHTML = `<b>Remote:</b> <span style="color:var(--muted);">Fireworks · disabled in full-local</span>`;
+    bRemote.innerHTML = `<b>Remote:</b> <span style="color:var(--muted);">Fireworks · disabled (air-gapped)</span>`;
   } else if(remoteOK){
     pRemote.style.background = 'var(--conf-good)';
     bRemote.innerHTML = `<b>Remote:</b> Fireworks <span style="color:var(--muted2);">·</span> ${modelLabel}`;
