@@ -298,12 +298,22 @@ def real_load_sample(name: str):
             continue
         (sess_dir / f.name).write_bytes(f.read_bytes())
         copied.append(f.name)
+    # If a cached extraction exists at outputs/extraction_<folder>.json,
+    # copy it into the session too. real_run will see the file and skip
+    # the live Gemma call — samples then work even with the MI300X
+    # asleep. Filenames in the cached JSON match what we just copied
+    # (both come from synthetic/<folder>/), so the pipeline treats it
+    # as a normal cached run.
+    cached_extraction = ROOT / "outputs" / f"extraction_{SAMPLE_PILES[name]['folder']}.json"
+    if cached_extraction.exists():
+        (sess_dir / "extraction.json").write_bytes(cached_extraction.read_bytes())
     _real_sessions[session_id] = {"dir": sess_dir,
                                   "schema": SAMPLE_PILES[name]["schema"]}
     return {"session_id": session_id,
             "sample": name,
             "label": SAMPLE_PILES[name]["label"],
             "schema": SAMPLE_PILES[name]["schema"],
+            "cached": cached_extraction.exists(),
             "files": copied}
 
 
@@ -383,17 +393,23 @@ def real_run(body: RealRunBody):
     full_local = (body.full_local if body.full_local is not None
                   else "FIREWORKS_API_KEY" not in os.environ)
 
-    # extract via live Gemma if reachable; cache the JSON for the pile view
+    # extract via live Gemma if reachable; cache the JSON for the pile view.
+    # If extraction.json is already present (samples pre-fill it from
+    # outputs/extraction_<folder>.json so demos work with Gemma asleep),
+    # skip the live call and use the cached artefact.
     extraction_path = sess["dir"] / "extraction.json"
-    try:
-        result = asyncio.run(extract_pile(sess["dir"], schema_path))
-        extraction_path.write_text(json.dumps(result.to_dict(), indent=1))
-    except Exception as e:  # noqa: BLE001 - remote unavailable: keep text
-        extraction_path.write_text(json.dumps(
-            {"pile": sess["dir"].name, "docs": [], "error": str(e)}))
-        raise HTTPException(502, f"extractor unavailable: {type(e).__name__}. "
-                                 f"Start a Gemma/vLLM endpoint and set "
-                                 f"VLLM_URL, or try text-only files.")
+    if extraction_path.exists() and extraction_path.stat().st_size > 0:
+        pass  # cached: samples ship with a pre-parsed extraction
+    else:
+        try:
+            result = asyncio.run(extract_pile(sess["dir"], schema_path))
+            extraction_path.write_text(json.dumps(result.to_dict(), indent=1))
+        except Exception as e:  # noqa: BLE001 - remote unavailable: keep text
+            extraction_path.write_text(json.dumps(
+                {"pile": sess["dir"].name, "docs": [], "error": str(e)}))
+            raise HTTPException(502, f"extractor unavailable: {type(e).__name__}. "
+                                     f"Start a Gemma/vLLM endpoint and set "
+                                     f"VLLM_URL, or try text-only files.")
 
     run_pile(sess["dir"], schema_path, extraction_path, full_local,
              out_root=sess["dir"] / "runs")
