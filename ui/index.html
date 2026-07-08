@@ -2365,19 +2365,19 @@ function showRunOverlay(){
     ov.id = 'run-overlay';
     ov.style.cssText = 'position:fixed; inset:0; z-index:1000; background:rgba(10,10,10,0.72); backdrop-filter:blur(3px); display:flex; align-items:center; justify-content:center;';
     ov.innerHTML = `
-      <div style="width:min(560px, 92vw); padding:22px 26px; border-radius:14px; border:1px solid var(--line); background:var(--paper); box-shadow:0 24px 60px rgba(0,0,0,0.5);">
-        <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
-          <div class="ro-spin" style="width:22px; height:22px; border:2.5px solid rgba(255,255,255,0.12); border-top-color:var(--c-name); border-radius:50%; animation: ro-rot 0.9s linear infinite;"></div>
-          <div id="run-overlay-title" style="font-size:13.5px; font-weight:600; color:var(--ink);">Running the paperflow pipeline…</div>
+      <div style="width:min(720px, 92vw); padding:28px 34px; border-radius:16px; border:1px solid var(--line); background:var(--paper); box-shadow:0 24px 60px rgba(0,0,0,0.5);">
+        <div style="display:flex; align-items:center; gap:14px; margin-bottom:18px;">
+          <div class="ro-spin" style="width:26px; height:26px; border:2.8px solid rgba(255,255,255,0.12); border-top-color:var(--c-name); border-radius:50%; animation: ro-rot 0.9s linear infinite;"></div>
+          <div id="run-overlay-title" style="font-size:15.5px; font-weight:600; color:var(--ink);">Running the paperflow pipeline…</div>
           <button id="run-overlay-cancel" onclick="cancelRun()"
-                  style="margin-left:auto; padding:5px 12px; font-size:11px;
+                  style="margin-left:auto; padding:7px 14px; font-size:12px;
                          border:1px solid var(--line); background:transparent;
-                         color:var(--muted); border-radius:6px; cursor:pointer;">
+                         color:var(--muted); border-radius:7px; cursor:pointer;">
             Cancel
           </button>
         </div>
-        <div id="run-overlay-stages" style="display:flex; flex-direction:column; gap:7px; font-size:11.5px; color:var(--muted); line-height:1.4;"></div>
-        <div id="run-overlay-note" style="margin-top:14px; padding-top:12px; border-top:1px solid var(--line); font-size:10.5px; color:var(--muted2); line-height:1.5;"></div>
+        <div id="run-overlay-stages" style="display:flex; flex-direction:column; gap:9px; font-size:13px; color:var(--muted); line-height:1.5;"></div>
+        <div id="run-overlay-note" style="margin-top:18px; padding-top:14px; border-top:1px solid var(--line); font-size:12px; color:var(--muted2); line-height:1.6;"></div>
       </div>
       <style>@keyframes ro-rot { to { transform: rotate(360deg); } }</style>`;
     document.body.appendChild(ov);
@@ -2417,13 +2417,13 @@ function setRunStages(stages, current, note){
     const done = i < current;
     const active = i === current;
     const dot = done
-      ? '<span style="width:10px; height:10px; border-radius:50%; background:var(--conf-good); display:inline-block;"></span>'
+      ? '<span style="width:12px; height:12px; border-radius:50%; background:var(--conf-good); display:inline-block;"></span>'
       : active
-        ? '<span class="ro-spin" style="width:10px; height:10px; border:1.6px solid rgba(255,255,255,0.15); border-top-color:var(--c-name); border-radius:50%; display:inline-block; animation: ro-rot 0.9s linear infinite;"></span>'
-        : '<span style="width:10px; height:10px; border-radius:50%; border:1.5px solid var(--muted2); display:inline-block; box-sizing:border-box;"></span>';
+        ? '<span class="ro-spin" style="width:12px; height:12px; border:1.8px solid rgba(255,255,255,0.15); border-top-color:var(--c-name); border-radius:50%; display:inline-block; animation: ro-rot 0.9s linear infinite;"></span>'
+        : '<span style="width:12px; height:12px; border-radius:50%; border:1.7px solid var(--muted2); display:inline-block; box-sizing:border-box;"></span>';
     const colour = done ? 'var(--conf-good)' : active ? 'var(--ink)' : 'var(--muted2)';
     const weight = active ? '600' : '400';
-    return `<div style="display:flex; align-items:center; gap:10px; color:${colour}; font-weight:${weight};">${dot}<span>${label}</span></div>`;
+    return `<div style="display:flex; align-items:center; gap:12px; color:${colour}; font-weight:${weight};">${dot}<span>${label}</span></div>`;
   }).join('');
   if(note !== undefined) document.getElementById('run-overlay-note').innerHTML = note;
 }
