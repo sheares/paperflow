@@ -342,15 +342,27 @@ _KW_FAMILY = [
     (("policy",), "POLICY_NUMBER"),
     (("dob", "date of birth", "birthday"), "ISO_DATE"),
     (("date", "issued", "expires", "expiry", "deadline", "closes",
-      "signed on"), "ISO_DATE"),
+      "signed on", "effective"), "ISO_DATE"),
     (("address", "residence", "residing", "block", "street", "postal"), "SG_ADDRESS"),
     (("postcode", "zip"), "SG_POSTCODE"),
+    # PERSON keywords must come before ORG because "clinician" contains
+    # the "clinic" substring — otherwise "referring_clinician" would
+    # false-match ORG. Adding clinician/doctor/physician/receptionist
+    # here catches the doctor's name on a referral, the reception staff
+    # name on an intake form, etc.
     (("name", "holder", "applicant", "customer", "cardholder", "patient",
-      "contact", "primary contact"), "PERSON"),
+      "contact", "primary contact", "clinician", "doctor", "physician",
+      "practitioner", "receptionist"), "PERSON"),
+    # ORG keywords: clinic/hospital/insurer cover the referring clinic,
+    # the insurance provider, the diagnostic lab, etc.
     (("organisation", "organization", "company", "employer", "firm",
-      "corporation", "vendor", "supplier", "brand"), "ORG"),
+      "corporation", "vendor", "supplier", "brand",
+      "clinic", "hospital", "centre", "institution", "provider",
+      "insurance", "insurer", "bank", "issuer"), "ORG"),
     (("serial", "reference", "ref no", "req no", "id number", "id no",
-      "account number", "account no", "lab serial"), "SERIAL"),
+      "account number", "account no", "lab serial",
+      "staff id", "employee id", "member id", "card id", "mrn",
+      "mcr", "registration no", "case ref"), "SERIAL"),
 ]
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 _PHONE_RE = re.compile(r"^\+?\d[\d\s\-()]{6,}$")

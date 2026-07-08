@@ -6,6 +6,13 @@ services:
       dockerfile: docker/Dockerfile
     ports:
       - "8080:8080"
+    environment:
+      # Fireworks model for cross-doc reasoning. Alias resolves via
+      # paperflow/models.py. 'minimax' -> Minimax M3 (~5.8x cheaper on
+      # output than DeepSeek V4 Pro at the same reasoning depth for
+      # our small tokenised prompts). Override with a full slug for
+      # anything else Fireworks catalogues.
+      FIREWORKS_MODEL: minimax
     env_file:
       - path: .env
         required: false
