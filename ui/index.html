@@ -3547,6 +3547,12 @@ async function hydrateLive(){
   }
 }
 hydrateLive();
+// Force the empty-state render of Your pile at boot. Without this, the
+// pane content stays whatever was baked into the HTML at load time
+// (the canned KYC layout), even though the top-of-file default is
+// currentPile='real'. Now that the demo tabs are gone we always want
+// to land on the sample-cards + drop-zone empty state.
+loadPile('real');
 
 // ============================================================
 // LIVE STATUS BADGE — the header dot + text reflect actual endpoint
