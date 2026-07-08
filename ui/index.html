@@ -582,6 +582,12 @@ main{ display: contents; }
    THE ASSISTANT — bubbles + receipts
    ============================================================ */
 .chat{ display: flex; flex-direction: column; gap: 14px; }
+/* Pending turn wrap. appendPending groups the user bubble + receipt +
+   AI bubble inside a single wrap element so resolvePending can swap
+   the whole turn atomically. The wrap has to be a flex-column so the
+   inner .bubble.user still picks up align-self: flex-end (right side).
+   Without this, thinking-state user messages leak to the left. */
+.pending-turn, .chat-turn{ display: flex; flex-direction: column; gap: 8px; }
 .bubble{
   border-radius: 12px; padding: 11px 15px;
   font-size: 13.5px; line-height: 1.6;
@@ -1124,8 +1130,11 @@ main{ display: contents; }
         <span class="mt-dot"></span>Full-local mode
       </button>
       <div class="amd-badge">
-        <span class="pulse" id="amd-pulse"></span>
-        <span id="amd-badge-text"><b>Local:</b> AMD MI300X <span class="sep">·</span> <b>Remote:</b> Fireworks AI</span>
+        <span class="pulse" id="amd-pulse-local"></span>
+        <span id="amd-badge-local"><b>Local:</b> AMD MI300X</span>
+        <span class="sep">·</span>
+        <span class="pulse" id="amd-pulse-remote"></span>
+        <span id="amd-badge-remote"><b>Remote:</b> Fireworks</span>
       </div>
     </div>
   </div>
@@ -3346,18 +3355,15 @@ function appendExchange(user, receipt, ai, sources){
 let amdTimer = null;
 function flashRemote(){
   if(fullLocal) return;   // nothing ever crosses in full-local mode
-  const t = document.getElementById('amd-badge-text');
-  const pulse = document.getElementById('amd-pulse');
-  if(!t || !pulse) return;
+  // Flash the Fireworks side only: dot pulses amber, label swaps to
+  // "sending tokenised payload…". The MI300X side stays steady.
+  const pRemote = document.getElementById('amd-pulse-remote');
+  const bRemote = document.getElementById('amd-badge-remote');
+  if(!pRemote || !bRemote) return;
   clearTimeout(amdTimer);
-  t.innerHTML = 'Sending tokenised payload to <b>Fireworks</b>…';
-  pulse.style.background = 'var(--conf-review)';
-  amdTimer = setTimeout(() => {
-    // Reset via the same source of truth as the periodic status poll,
-    // so if FIREWORKS_MODEL was changed on the server the badge picks
-    // up the new label instead of falling back to 'Fireworks AI'.
-    refreshStatus();
-  }, 1600);
+  pRemote.style.background = 'var(--conf-review)';
+  bRemote.innerHTML = '<b>Remote:</b> sending tokenised payload…';
+  amdTimer = setTimeout(() => refreshStatus(), 1600);
 }
 
 // Pipeline progress strip — plays at the top of the chat when a pile
@@ -3597,31 +3603,44 @@ function updateDropZoneGate(){
     });
 }
 function renderStatusBadge(){
-  const t = document.getElementById('amd-badge-text');
-  const pulse = document.getElementById('amd-pulse');
-  if(!t || !pulse) return;
+  // Two independent dots + labels: MI300X (local vision) and Fireworks
+  // (remote reasoning). Each dot reflects its own service status so a
+  // reader can see at a glance which side is up. In full-local mode the
+  // Fireworks dot dims because Reconciliation never touches it.
+  const pLocal  = document.getElementById('amd-pulse-local');
+  const pRemote = document.getElementById('amd-pulse-remote');
+  const bLocal  = document.getElementById('amd-badge-local');
+  const bRemote = document.getElementById('amd-badge-remote');
+  if(!pLocal || !pRemote || !bLocal || !bRemote) return;
   const s = LIVE_STATUS || {};
-  const localOK = !!s.local_reachable;
+  const localOK  = !!s.local_reachable;
   const remoteOK = !!s.remote_configured;
+
+  // ---- Local (MI300X) dot ----
+  pLocal.style.background = localOK ? 'var(--conf-good)' : 'var(--conf-block)';
   if(fullLocal){
-    t.innerHTML = '<b>Local:</b> AMD MI300X ' + (localOK
-      ? '<span class="sep">·</span> <b>zero egress</b>'
-      : '<span class="sep">·</span> <span style="color:var(--conf-block);">offline</span>');
-    pulse.style.background = localOK ? 'var(--conf-good)' : 'var(--conf-block)';
-    return;
+    bLocal.innerHTML = '<b>Local:</b> AMD MI300X ' + (localOK
+      ? '<span style="color:var(--conf-good);">· zero egress</span>'
+      : '<span style="color:var(--conf-block);">· offline</span>');
+  } else {
+    bLocal.innerHTML = localOK
+      ? '<b>Local:</b> AMD MI300X'
+      : '<b>Local:</b> <span style="color:var(--conf-block);">MI300X offline</span>';
   }
-  const localStr = localOK
-    ? '<b>Local:</b> AMD MI300X'
-    : '<b>Local:</b> <span style="color:var(--conf-block);">MI300X offline</span>';
+
+  // ---- Remote (Fireworks) dot ----
   const modelLabel = s.remote_model_label || 'Fireworks AI';
-  const remoteStr = remoteOK
-    ? `<b>Remote:</b> Fireworks <span style="color:var(--muted2);">·</span> ${modelLabel}`
-    : '<b>Remote:</b> <span style="color:var(--conf-block);">not configured</span>';
-  t.innerHTML = localStr + ' <span class="sep">·</span> ' + remoteStr;
-  const bothOK = localOK && remoteOK;
-  const anyOK = localOK || remoteOK;
-  pulse.style.background = bothOK ? 'var(--conf-good)'
-    : anyOK ? 'var(--conf-review)' : 'var(--conf-block)';
+  if(fullLocal){
+    // Fireworks never called in full-local — dim the dot to say so
+    pRemote.style.background = 'var(--muted2)';
+    bRemote.innerHTML = `<b>Remote:</b> <span style="color:var(--muted);">Fireworks · disabled in full-local</span>`;
+  } else if(remoteOK){
+    pRemote.style.background = 'var(--conf-good)';
+    bRemote.innerHTML = `<b>Remote:</b> Fireworks <span style="color:var(--muted2);">·</span> ${modelLabel}`;
+  } else {
+    pRemote.style.background = 'var(--conf-block)';
+    bRemote.innerHTML = '<b>Remote:</b> <span style="color:var(--conf-block);">Fireworks not configured</span>';
+  }
 }
 refreshStatus();
 setInterval(refreshStatus, 15000);
