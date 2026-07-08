@@ -1858,8 +1858,6 @@ function loadPile(key){
       p.domain.includes('partner') ? 'partner' : 'generic')) || 'generic';
     const opt = (v, lbl) => `<option value="${v}"${v === currentSchema ? ' selected' : ''}>${lbl}</option>`;
     const toolbar = `<div style="margin-top:14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-      <input type="file" id="real-file-input-add" multiple accept=".pdf,.txt,.md,.xlsx" style="display:none;" onchange="uploadRealFiles(event, {append:true})">
-      <button class="btn" onclick="document.getElementById('real-file-input-add').click()" style="padding:6px 12px; font-size:11.5px;">+ Add more documents</button>
       <span style="font-size:11px; color:var(--muted);">Treat as</span>
       <select id="real-schema-live" onchange="changeRealSchema(this.value)" style="padding:5px 8px; background:rgba(255,255,255,0.03); color:var(--ink); border:1px solid var(--line); border-radius:6px; font-size:11.5px;">
         ${opt('generic', 'Generic')}${opt('kyc', 'KYC onboarding')}${opt('patient', 'Patient intake')}${opt('partner', 'Partner collation')}
@@ -1867,7 +1865,21 @@ function loadPile(key){
       <span style="flex:1;"></span>
       <button class="btn ghost" onclick="resetRealPile()" style="padding:6px 12px; font-size:11.5px;" data-tooltip="Clear the current pile and start over.">↺ Reset</button>
     </div>`;
-    grid.insertAdjacentHTML('afterend', banner + toolbar);
+    const addMore = `<input type="file" id="real-file-input-add" multiple accept=".pdf,.txt,.md,.xlsx" style="display:none;" onchange="uploadRealFiles(event, {append:true})">
+      <div id="real-dropzone-add" class="drop-zone" style="margin-top:14px; cursor:pointer; transition:border-color 0.18s, background 0.18s;"
+           onclick="document.getElementById('real-file-input-add').click()"
+           ondragover="event.preventDefault(); this.style.borderColor='var(--c-name)'; this.style.background='rgba(129,140,248,0.05)';"
+           ondragleave="this.style.borderColor=''; this.style.background='';"
+           ondrop="handleRealDropAdd(event)">
+        <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        <div class="drop-title">Add more documents</div>
+        <div class="drop-hint">Drag files here, or click to browse. Same pile · same schema.</div>
+      </div>`;
+    grid.insertAdjacentHTML('afterend', banner + toolbar + addMore);
   }
 
   // Pile data changed: disarm the confirm gate and re-run detection so the
@@ -2297,6 +2309,19 @@ function handleRealDrop(evt){
   files.forEach(f => dt.items.add(f));
   input.files = dt.files;
   uploadRealFiles({target: input});
+}
+
+function handleRealDropAdd(evt){
+  evt.preventDefault();
+  const dz = document.getElementById('real-dropzone-add');
+  if(dz){ dz.style.borderColor=''; dz.style.background=''; }
+  const files = Array.from(evt.dataTransfer.files || []);
+  if(!files.length) return;
+  const input = document.getElementById('real-file-input-add');
+  const dt = new DataTransfer();
+  files.forEach(f => dt.items.add(f));
+  input.files = dt.files;
+  uploadRealFiles({target: input}, {append: true});
 }
 
 async function uploadRealFiles(evt, opts = {}){
