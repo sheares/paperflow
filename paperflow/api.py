@@ -19,6 +19,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from .extractor import extract_pile
+from .models import resolve as _resolve_model
 from .pipeline import run_pile
 from .router import Router
 from .uiview import build_pile_view
@@ -101,8 +102,8 @@ def status():
         "local_model": vllm_model,
         "local_url": vllm_url,
         "remote_configured": "FIREWORKS_API_KEY" in os.environ,
-        "remote_model": os.environ.get("FIREWORKS_MODEL",
-            "accounts/fireworks/models/deepseek-v4-pro"),
+        "remote_model": _resolve_model(
+            os.environ.get("FIREWORKS_MODEL", "deepseek")),
     }
 
 

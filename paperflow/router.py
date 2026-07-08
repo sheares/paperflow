@@ -18,11 +18,13 @@ from pathlib import Path
 
 import httpx
 
+from .models import resolve as _resolve_model
 from .privacy.entity_map import EntityMap
 
 FIREWORKS_URL = "https://api.fireworks.ai/inference/v1/chat/completions"
-FIREWORKS_MODEL = os.environ.get(
-    "FIREWORKS_MODEL", "accounts/fireworks/models/deepseek-v4-pro")
+# FIREWORKS_MODEL accepts an alias ("minimax", "qwen", "deepseek", "glm")
+# or a full Fireworks model slug. See paperflow/models.py.
+FIREWORKS_MODEL = _resolve_model(os.environ.get("FIREWORKS_MODEL", "deepseek"))
 
 LOCAL_TRIGGERS = re.compile(
     r"\b(merge|merged|alias|aliases|dedup|resolve[d]?|same\s+(person|org|"

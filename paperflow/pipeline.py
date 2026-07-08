@@ -66,6 +66,11 @@ def run_pile(pile_dir: Path, schema_path: Path, cached_extraction: Path | None,
     # analysis may phrase differently), then group fields by entity
     generic = not schema_keys       # generic mode: no required fields at all
     records_raw: dict[str, dict[str, list]] = {}
+    # DOC token counter — filenames themselves may carry PII
+    # ("chloe_ng_nric.pdf"), so in generic mode we bucket per-doc records
+    # under a sequential [DOC_N] identifier and keep the filename-to-token
+    # map internal for the UI's source-citation column.
+    doc_token_of: dict[str, str] = {}
     for doc in extraction["docs"]:
         fields = {}
         for f in doc["fields"]:
@@ -101,8 +106,12 @@ def run_pile(pile_dir: Path, schema_path: Path, cached_extraction: Path | None,
             if m:
                 etoken = m.group(0)
             elif generic:
-                # one record per document keyed by the doc's filename
-                etoken = f"[DOC_{doc['doc']}]"
+                # one record per document, keyed by a SEQUENTIAL DOC token
+                # so the filename itself never rides on the cloud-side
+                # payload (filenames may embed PII, e.g. chloe_ng_nric.pdf)
+                if doc["doc"] not in doc_token_of:
+                    doc_token_of[doc["doc"]] = f"[DOC_{len(doc_token_of) + 1}]"
+                etoken = doc_token_of[doc["doc"]]
             else:
                 etoken = "[UNASSIGNED]"
         bucket = records_raw.setdefault(etoken, {})

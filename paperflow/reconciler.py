@@ -20,9 +20,12 @@ from dataclasses import dataclass, field, asdict
 
 import httpx
 
+from .models import resolve as _resolve_model
+
 FIREWORKS_URL = "https://api.fireworks.ai/inference/v1/chat/completions"
-FIREWORKS_MODEL = os.environ.get(
-    "FIREWORKS_MODEL", "accounts/fireworks/models/deepseek-v4-pro")
+# FIREWORKS_MODEL accepts an alias ("minimax", "qwen", "deepseek", "glm")
+# or a full slug. See paperflow/models.py.
+FIREWORKS_MODEL = _resolve_model(os.environ.get("FIREWORKS_MODEL", "deepseek"))
 
 STRICT_FORMATS = {
     "national_id": re.compile(r"^[A-Z]\d{7}$|^[STFGM]\d{7}[A-Z]$"),
