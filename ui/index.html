@@ -2968,7 +2968,24 @@ Bishan St 23 #11-04 Singapore 570210 to 8 Marina Boulevard
 His alias "Farid Hassan" appears on the utility bill; treat
 as the same person for the client record.`;
 
-const SB_ENT_COLOUR = FAMILY_COLOUR;   // was a duplicate map; now aliased to the single source
+// Token family -> chip colour class. Single source of truth on the
+// client. Seeded off /api/config.family_types at boot so the server's
+// FAMILY_TYPES stays authoritative; the fallback keeps the app
+// functional if the config fetch fails. SB_ENT_COLOUR + TOKEN_TYPES
+// are aliases so callers can keep their old names. Declared HERE (not
+// alongside LIVE_PILES/REAL_SESSION further down) because SB_ENT_COLOUR
+// used to be a top-level const initialised BEFORE FAMILY_COLOUR — the
+// temporal-dead-zone ReferenceError killed all subsequent script
+// execution, which meant loadPile / refreshStatus / everything else
+// silently never ran.
+let FAMILY_COLOUR = {
+  PERSON: 'name', ORG: 'org',
+  ID: 'id', UEN: 'id', POLICY: 'id', SERIAL: 'id',
+  ADDR: 'address', POSTCODE: 'address',
+  DATE: 'date', EMAIL: 'email', PHONE: 'phone',
+};
+const TOKEN_TYPES = FAMILY_COLOUR;
+const SB_ENT_COLOUR = FAMILY_COLOUR;
 
 function openSandbox(){
   document.getElementById('sandbox-overlay').classList.add('open');
@@ -3782,20 +3799,9 @@ document.getElementById('chat-input').addEventListener('input', () => {
 // ============================================================
 const LIVE_PILES = { kyc: 'kyc_onboarding', patient: 'patient_intake', partner: 'partner_collation' };
 let REAL_SESSION = null;   // session_id for the currently loaded real pile
-
-// Token family -> chip colour class. This is the SINGLE source of
-// truth on the client; SB_ENT_COLOUR (sidebar chip lookup) and
-// TOKEN_TYPES (receipt token chips) both point here now. The values
-// are seeded off /api/config.family_types at boot so the server's
-// FAMILY_TYPES stays authoritative; the fallback keeps the app
-// functional if the config fetch fails.
-let FAMILY_COLOUR = {
-  PERSON: 'name', ORG: 'org',
-  ID: 'id', UEN: 'id', POLICY: 'id', SERIAL: 'id',
-  ADDR: 'address', POSTCODE: 'address',
-  DATE: 'date', EMAIL: 'email', PHONE: 'phone',
-};
-const TOKEN_TYPES = FAMILY_COLOUR;   // legacy alias
+// (FAMILY_COLOUR + TOKEN_TYPES hoisted higher up — earlier `const
+//  SB_ENT_COLOUR = FAMILY_COLOUR` referenced them before initialization
+//  and threw ReferenceError, killing all subsequent script execution.)
 
 function tokenChip(t){
   // Token strings come from the server's redaction log via receipt.
