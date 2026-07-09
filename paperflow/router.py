@@ -226,9 +226,13 @@ class Router:
             "messages": [{"role": "user",
                           "content": CHAT_PROMPT.format(record=record,
                                                         question=q_red)}],
-            # interactive cap: thinking + answer must fit; keeps the
-            # 30s-per-request rule (batch reconcile is the uncapped path)
-            "max_tokens": 900,
+            # Reasoning models (Minimax M3, DeepSeek-R1) burn 500-1500
+            # tokens on internal reasoning before the JSON answer. 900
+            # got truncated mid-reasoning on real invoice piles and the
+            # whole reasoning trace bled through as the answer. 2400
+            # keeps the 30s-per-request rule comfortable and leaves
+            # enough room for the JSON payload.
+            "max_tokens": 2400,
             "temperature": 0,
         }
         try:  # ask for low reasoning effort where supported
@@ -262,6 +266,8 @@ class Router:
         content = (msg.get("content")
                    or msg.get("reasoning_content")
                    or "").strip()
+        finish = (data.get("choices", [{}])[0]
+                  .get("finish_reason") or "").lower()
         if not content:
             answer, reason = self._answer_local(question)
             return answer, {
@@ -273,6 +279,21 @@ class Router:
                 "question_redacted": q_red,
             }
         answer = _parse_answer(content)
+        # If the model ran out of tokens BEFORE emitting the JSON
+        # answer wrapper, _parse_answer falls back to raw content
+        # which is almost certainly the reasoning trace ("Let me
+        # check…", "OK so"). Refuse to render that as an answer —
+        # degrade honestly.
+        if finish == "length" and not _looks_like_answer(answer, content):
+            answer, reason = self._answer_local(question)
+            return answer, {
+                "stage": "chat", "route": "local",
+                "reason": ("remote truncated before emitting the answer "
+                           "(reasoning consumed the token budget); "
+                           f"degraded to local artefacts · {reason}"),
+                "tokens_sent": [],
+                "question_redacted": q_red,
+            }
         answer = self.emap.rehydrate(answer)
         entry = {
             "stage": "chat", "route": "hybrid",
@@ -299,6 +320,31 @@ def _parse_answer(content: str) -> str:
         except json.JSONDecodeError:
             pass
     return content.split("</think>")[-1].strip()
+
+
+_REASONING_MARKERS = re.compile(
+    r"\b(let me|wait,|okay|ok so|hmm|i (need|should|will|think|see)|"
+    r"first,? i|actually,|the user (is asking|wants))\b", re.I)
+
+
+def _looks_like_answer(answer: str, raw: str) -> bool:
+    """True if `answer` reads like a real answer rather than the
+    model's chain-of-thought bleeding through _parse_answer's raw
+    fallback path. Used to catch max_tokens=length truncations that
+    ate the JSON wrapper before it could be emitted."""
+    text = (answer or "").strip()
+    if not text:
+        return False
+    # A short response with no reasoning markers = fine.
+    if len(text) < 200 and not _REASONING_MARKERS.search(text):
+        return True
+    # If we successfully unwrapped a JSON {"answer": ...}, raw will
+    # be strictly longer than answer (the wrapper). Trust that path.
+    if raw and raw.strip() != text and text in raw:
+        return True
+    # Everything past this point is long content with reasoning
+    # markers — treat as a truncated trace.
+    return not _REASONING_MARKERS.search(text[:400])
 
 
 def receipt_from_log(entry: dict) -> dict:

@@ -1334,8 +1334,8 @@ main{ display: contents; }
         <div class="overrides-log-body"></div>
       </details>
       <div class="export-bar">
-        <button class="btn">Export CSV</button>
-        <button class="btn ghost">Export JSON</button>
+        <button class="btn" onclick="exportRecord('csv')">Export CSV</button>
+        <button class="btn ghost" onclick="exportRecord('json')">Export JSON</button>
         <button class="btn ghost disabled" data-tooltip="Roadmap stretch goal, first to cut if time runs short. Also requires all conflicts resolved.">Filled PDF · roadmap</button>
       </div>
     </div>
@@ -2286,6 +2286,114 @@ function renderRecord(p){
     log.querySelector('.overrides-log-body').innerHTML = '';
     log.querySelector('.ovr-count').textContent = '0';
   }
+}
+
+// ============================================================
+// Record export — CSV / JSON from the loaded pile.
+// The record on screen IS the source of truth: we already
+// applied any resolved overrides + user selections client-side,
+// so exporting from `piles[currentPile].clients` gives judges
+// exactly what they see. No server round-trip needed.
+// ============================================================
+
+function _plainText(node){
+  const div = document.createElement('div');
+  div.innerHTML = String(node || '');
+  return (div.textContent || '').replace(/\s+/g, ' ').trim();
+}
+
+function _fieldValueForExport(f){
+  // Prefer the explicit value; fall back to a stripped version of
+  // the highlighted HTML the demo piles ship.
+  if(f.value != null && f.value !== '') return String(f.value);
+  if(f.valueHtml) return _plainText(f.valueHtml);
+  if(f.missingNote) return String(f.missingNote);
+  if(f.missingNoteHtml) return _plainText(f.missingNoteHtml);
+  return '';
+}
+
+function _fieldStatus(f){
+  if(f.conflict) return f.resolved ? 'conflict-resolved' : 'conflict-open';
+  if(f.missing) return 'missing';
+  if(f.gap) return 'gap';
+  return 'ok';
+}
+
+function _csvCell(v){
+  const s = String(v == null ? '' : v);
+  // Excel-safe: wrap in quotes if the cell has , " or a line break,
+  // and double any internal ".
+  if(/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+
+function _downloadBlob(filename, mime, body){
+  const blob = new Blob([body], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1200);
+}
+
+function exportRecord(format){
+  const p = piles[currentPile];
+  if(!p || !Array.isArray(p.clients) || !p.clients.length){
+    showUploadToast('Nothing to export yet · load a pile first.', 'review');
+    return;
+  }
+  const pileName = (currentPile || 'pile').replace(/[^a-zA-Z0-9_-]/g, '_');
+  const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+
+  if(format === 'json'){
+    // Structured, judge-friendly dump. Preserves conflicts + citations.
+    const payload = {
+      exported_at: new Date().toISOString(),
+      pile: currentPile,
+      clients: p.clients.map(c => ({
+        label: c.label,
+        state: c.state,
+        stateLabel: c.stateLabel,
+        fields: (c.fields || []).map(f => ({
+          label: f.label,
+          type: f.type,
+          value: _fieldValueForExport(f),
+          status: _fieldStatus(f),
+          conflict: f.conflict || null,
+          resolved: !!f.resolved,
+          confidence: f.confidence,
+          citation: f.citation ? _plainText(f.citation) : (f.citationHtml ? _plainText(f.citationHtml) : ''),
+          missingNote: f.missing ? _plainText(f.missingNote || f.missingNoteHtml) : '',
+        })),
+      })),
+    };
+    _downloadBlob(`paperflow_${pileName}_${ts}.json`,
+      'application/json', JSON.stringify(payload, null, 2));
+    return;
+  }
+
+  // CSV: one row per field. Flat + Excel-friendly.
+  const header = ['client', 'client_state', 'field', 'type',
+                  'value', 'status', 'confidence', 'citation'];
+  const rows = [header];
+  for(const c of p.clients){
+    for(const f of (c.fields || [])){
+      rows.push([
+        c.label || '',
+        c.state || '',
+        f.label || '',
+        f.type || '',
+        _fieldValueForExport(f),
+        _fieldStatus(f),
+        f.confidence != null ? f.confidence : '',
+        f.citation ? _plainText(f.citation) : (f.citationHtml ? _plainText(f.citationHtml) : ''),
+      ]);
+    }
+  }
+  const csv = rows.map(r => r.map(_csvCell).join(',')).join('\r\n');
+  _downloadBlob(`paperflow_${pileName}_${ts}.csv`, 'text/csv;charset=utf-8', csv);
 }
 
 // Which record-pane action a field's button triggers: a normal field opens the
@@ -3624,7 +3732,8 @@ function appendPending(user, predictedRoute){
         animation: pf-bar 1.6s ease-in-out infinite;
       }
       .bubble.pending-ai{
-        display: inline-flex; align-items: center; gap: 10px;
+        display: inline-flex; align-items: center; gap: 12px;
+        padding: 12px 18px;
         background: linear-gradient(90deg,
           rgba(255,255,255,0.03) 0%,
           rgba(255,255,255,0.08) 50%,
@@ -3632,6 +3741,7 @@ function appendPending(user, predictedRoute){
         background-size: 200% 100%;
         animation: pf-shimmer 2.2s ease-in-out infinite;
         border: 1px dashed var(--line);
+        line-height: 1;
       }
       .pending-thinking-dots{ display: inline-flex; gap: 4px; }
       .pending-thinking-dots span{
