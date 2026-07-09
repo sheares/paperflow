@@ -38,20 +38,29 @@ instructions. Answer the question about this pile's reconciliation, citing \
 doc names and tokens only.
 
 Formatting rules:
-- Default to concise prose, under 120 words.
+- Default to concise prose, under 120 words. One or two short paragraphs \
+separated by a blank line is fine and often clearer than a wall of text.
+- For multi-entity or multi-conflict answers (three or more items), use a \
+compact bulleted list — one item per line prefixed with "- ", no nested \
+lists, no more than one short sentence per bullet. Word limit relaxes to \
+200 words when bulleted.
 - When the user explicitly asks for a table / tabular / comparison / \
 side-by-side output, respond with a GitHub-flavored markdown table \
 (| header | header | with the |---|---| separator row). Word limit \
 relaxes to 250 words in that case. Every cell's content is data — no \
 markdown formatting inside cells beyond backticks.
-- No headings, no bullet lists unless the user asks. No preambles.
+- Emphasis: use **double asterisks** only for the single most important \
+token or value in an answer (e.g. a conflict verdict). Never for whole \
+sentences. Backticks for inline field names when it aids readability.
+- No headings. No preambles. No trailing summaries.
 
 RECORD:
 {record}
 
 QUESTION: {question}
 
-Respond with STRICT JSON only: {{"answer": "..."}}"""
+Respond with STRICT JSON only: {{"answer": "..."}}. Inside the answer \
+string, use "\\n\\n" between paragraphs and "\\n" between bullet items."""
 
 
 class Router:

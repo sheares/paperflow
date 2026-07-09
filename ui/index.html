@@ -697,6 +697,39 @@ main{ display: contents; }
   max-width: 96%;
 }
 .bubble.ai b{ color: var(--ink); font-weight: 500; }
+/* Markdown-lite output from formatAnswer(). Paragraph rhythm, tight
+   bullets, small tables that don't overflow the pane. */
+.bubble.ai p{ margin: 0 0 10px 0; }
+.bubble.ai p:last-child{ margin-bottom: 0; }
+.bubble.ai .ai-md-ul{
+  margin: 4px 0 10px 0; padding-left: 20px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.bubble.ai .ai-md-ul li{ padding-left: 4px; }
+.bubble.ai .ai-md-ul li::marker{ color: var(--muted2); }
+.bubble.ai code{
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 11.5px;
+  padding: 1px 5px; border-radius: 4px;
+  background: rgba(255,255,255,0.05);
+  color: var(--ink);
+  border: 1px solid var(--line2);
+}
+.bubble.ai .ai-md-table{
+  border-collapse: collapse; margin: 6px 0 10px 0;
+  font-size: 12.5px; max-width: 100%;
+}
+.bubble.ai .ai-md-table th,
+.bubble.ai .ai-md-table td{
+  padding: 6px 10px; border: 1px solid var(--line);
+  text-align: left; vertical-align: top;
+  color: var(--ink-soft);
+}
+.bubble.ai .ai-md-table th{
+  background: rgba(255,255,255,0.03);
+  color: var(--muted); font-weight: 500;
+  font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em;
+}
 .bubble .sources{
   margin-top: 10px; font-size: 11.5px; color: var(--muted2);
   border-top: 1px solid var(--line2);
@@ -4098,6 +4131,67 @@ function escapeHtml(text){
   return String(text).replace(/[&<>"']/g, m => map[m]);
 }
 
+// Render an LLM-emitted answer safely with paragraph / bullet / table /
+// inline-emphasis structure. Every text run passes through escapeHtml
+// FIRST; only the small allowlist of markdown-lite constructs below
+// gets promoted into HTML afterwards. No <a>, no <img>, no raw HTML
+// pass-through — a malicious model can't inject markup.
+function formatAnswer(raw){
+  const text = String(raw == null ? '' : raw).trim();
+  if(!text) return '';
+
+  const inline = s => {
+    // Escape first, then upgrade `**bold**` and `code` spans in place.
+    let out = escapeHtml(s);
+    out = out.replace(/`([^`]+)`/g, (_, code) => `<code>${code}</code>`);
+    out = out.replace(/\*\*([^*]+)\*\*/g, (_, bold) => `<b>${bold}</b>`);
+    return out;
+  };
+
+  const isTable = block => {
+    const lines = block.split('\n').map(l => l.trim());
+    if(lines.length < 2) return false;
+    const looksHeader = lines[0].startsWith('|') && lines[0].endsWith('|');
+    const looksSep = /^\|(?:\s*:?-{2,}:?\s*\|)+$/.test(lines[1]);
+    return looksHeader && looksSep;
+  };
+
+  const renderTable = block => {
+    const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
+    const cells = row => row.slice(1, -1).split('|').map(c => c.trim());
+    const head = cells(lines[0]);
+    const body = lines.slice(2).map(cells);
+    const th = head.map(h => `<th>${inline(h)}</th>`).join('');
+    const trs = body.map(r =>
+      `<tr>${r.map(c => `<td>${inline(c)}</td>`).join('')}</tr>`).join('');
+    return `<table class="ai-md-table"><thead><tr>${th}</tr></thead>`
+         + `<tbody>${trs}</tbody></table>`;
+  };
+
+  const renderBullets = block => {
+    const items = block.split('\n')
+      .map(l => l.replace(/^\s*[-*]\s+/, ''))
+      .filter(Boolean);
+    return `<ul class="ai-md-ul">${
+      items.map(li => `<li>${inline(li)}</li>`).join('')}</ul>`;
+  };
+
+  const isBulletBlock = block => {
+    const lines = block.split('\n').filter(l => l.trim());
+    return lines.length > 0 && lines.every(l => /^\s*[-*]\s+/.test(l));
+  };
+
+  const blocks = text.split(/\n{2,}/).map(b => b.replace(/\r/g, ''));
+  return blocks.map(b => {
+    const trimmed = b.trim();
+    if(!trimmed) return '';
+    if(isTable(trimmed)) return renderTable(trimmed);
+    if(isBulletBlock(trimmed)) return renderBullets(trimmed);
+    // Single-line breaks inside a prose paragraph render as <br>.
+    return `<p>${trimmed.split('\n').map(inline).join('<br>')}</p>`;
+  }).join('');
+}
+
 // keydown (not deprecated keypress) with IME composition guard: Enter
 // during Chinese/Japanese/Korean composition should confirm the IME
 // candidate, not send the message. Also allows a Shift+Enter escape
@@ -4404,7 +4498,7 @@ async function liveAsk(text){
     // == 'Local only · 0 cloud calls' the server has already vouched
     // for it. The audit's critique: paperflow's trust story only holds
     // if the receipt is a pure projection of the server's log.
-    resolvePending(pending, d.receipt, escapeHtml(d.answer));
+    resolvePending(pending, d.receipt, formatAnswer(d.answer));
   } catch(err){
     resolvePending(pending,
       'Local-only check. No cloud call for this exchange.',
