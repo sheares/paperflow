@@ -155,12 +155,14 @@ def classify_route(q: str = ""):
 # from an uploaded doc can't fetch/execute external scripts. Inline
 # scripts + styles are still allowed because the app is a single-file
 # HTML with heavy inline CSS/JS; connect-src stays 'self' so any
-# cloud call has to route through /api/*.
+# cloud call has to route through /api/*. Fonts are self-hosted at
+# /fonts/ so the entire zero-egress claim holds from page load —
+# no fonts.googleapis.com or fonts.gstatic.com in the allowlist.
 _CSP = (
     "default-src 'self'; "
     "script-src 'self' 'unsafe-inline'; "
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-    "font-src 'self' https://fonts.gstatic.com; "
+    "style-src 'self' 'unsafe-inline'; "
+    "font-src 'self'; "
     "img-src 'self' data:; "
     "frame-src 'self' blob:; "
     "connect-src 'self'; "
@@ -178,6 +180,24 @@ def index():
                                  "Content-Security-Policy": _CSP,
                                  "X-Content-Type-Options": "nosniff",
                                  "Referrer-Policy": "no-referrer"})
+
+
+@app.get("/fonts/{filename}")
+def font_asset(filename: str):
+    """Serve self-hosted font files at /fonts/*. Contained to
+    ui/fonts/ with a strict allowlist so no path traversal or wild
+    filename hits — only the two .woff2 files and the fonts.css
+    manifest referenced by ui/index.html."""
+    allowed = {"Inter.woff2", "JetBrainsMono.woff2", "fonts.css"}
+    if filename not in allowed:
+        raise HTTPException(404, "not found")
+    path = ROOT / "ui" / "fonts" / filename
+    if not path.exists():
+        raise HTTPException(404, "not found")
+    mime = ("font/woff2" if filename.endswith(".woff2")
+            else "text/css")
+    return FileResponse(path, media_type=mime,
+                        headers={"Cache-Control": "public, max-age=31536000, immutable"})
 
 
 @app.get("/api/piles")

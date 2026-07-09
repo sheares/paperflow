@@ -4,9 +4,13 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>paperflow · UI mockup V10</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- Self-hosted variable fonts, served by the FastAPI backend at /fonts/.
+     Same shapes as the Google Fonts CDN builds of Inter + JetBrains Mono,
+     but the page never phones home — the zero-egress trust story stays
+     true from the moment the doc loads (CSP now allows only 'self' for
+     font-src / style-src). Fallback stack is the OS UI + monospace, so
+     even before the .woff2 lands there's no FOIT. -->
+<link rel="stylesheet" href="/fonts/fonts.css">
 <style>
 :root{
   /* Dark theme — NotebookLM-inspired */

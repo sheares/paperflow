@@ -1,0 +1,27 @@
+/* Locally-hosted variable fonts. Ships in ui/fonts/ + served by
+ * FastAPI at /fonts/ so the paperflow UI never phones home to
+ * fonts.googleapis.com or fonts.gstatic.com — the zero-egress trust
+ * story stays intact from the moment the page loads.
+ *
+ * These are Google Fonts' variable-font builds, one .woff2 per family
+ * covering every weight we use (400, 500, 600, 700 for Inter;
+ * 400, 500 for JetBrains Mono).
+ */
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/Inter.woff2') format('woff2-variations'),
+       url('/fonts/Inter.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url('/fonts/JetBrainsMono.woff2') format('woff2-variations'),
+       url('/fonts/JetBrainsMono.woff2') format('woff2');
+}
