@@ -3591,6 +3591,9 @@ function playPipeline(atEnd){
 function scrollChat(){
   setTimeout(() => {
     const chat = document.getElementById('chat');
+    // Null-guard: called from resolvePending which fires on error too,
+    // and if the pending turn was aborted the chat might be empty.
+    if(!chat || !chat.lastElementChild) return;
     chat.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, 50);
 }
@@ -3631,13 +3634,16 @@ function escapeHtml(text){
   return String(text).replace(/[&<>"']/g, m => map[m]);
 }
 
-document.getElementById('chat-input').addEventListener('keypress', e => {
-  if(e.key === 'Enter'){ sendMessage(); }
+// keydown (not deprecated keypress) with IME composition guard: Enter
+// during Chinese/Japanese/Korean composition should confirm the IME
+// candidate, not send the message. Also allows a Shift+Enter escape
+// for future multi-line support without any hoisted flag state.
+document.getElementById('chat-input').addEventListener('keydown', e => {
+  if(e.key !== 'Enter' || e.isComposing || e.keyCode === 229) return;
+  if(e.shiftKey) return;
+  e.preventDefault();
+  sendMessage();
 });
-// Live entity + routing detection as the user types. Without this
-// listener the input-detect strip never populates because keypress
-// alone doesn't cover paste, backspace, IME composition, etc.
-document.getElementById('chat-input').addEventListener('input', updateInputDetection);
 
 // Predict routing from the message text alone. The pattern comes from
 // /api/config so JS and Python (paperflow/router.py:LOCAL_TRIGGERS) are
@@ -3700,8 +3706,10 @@ document.getElementById('chat-input').addEventListener('input', () => {
   resetSendGate();          // editing the message disarms the confirm state
   updateInputDetection();
 });
-
-loadPile('kyc');
+// Note: the boot loadPile('real') at end-of-file (post-hydrateLive) is
+// the authoritative first-render call. There was an orphan loadPile('kyc')
+// here from before the demo tabs were dropped — removed so we don't
+// render the canned KYC pane for one frame on every load.
 
 // ============================================================
 // LIVE BACKEND BRIDGE. When served by the FastAPI backend, pile
