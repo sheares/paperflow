@@ -1952,7 +1952,14 @@ function loadPile(key){
   }
 
   // Real pile in empty state: replace the pane content with an upload screen.
-  if(p.real && p.empty){
+  // Resilient guard: any of these three signals means empty:
+  //   1. explicit p.empty flag (canonical)
+  //   2. no docs at all (safety net if flags drift)
+  //   3. currently on the 'real' tab (so demo piles never accidentally
+  //      render the empty state)
+  const isRealEmpty = (key === 'real' || p.real) &&
+                      (p.empty || !p.docs || p.docs.length === 0);
+  if(isRealEmpty){
     document.getElementById('pile-grid').innerHTML = REAL_EMPTY_HTML;
     // Apply the vision-offline gate to the freshly-injected zone.
     setTimeout(() => updateDropZoneGate && updateDropZoneGate(), 0);
