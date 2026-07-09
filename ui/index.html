@@ -2543,10 +2543,13 @@ async function cancelRun(){
       } catch(_){}
     }
   } else if(REAL_SESSION){
-    // Fresh upload: whole-session reset.
+    // Fresh upload: whole-session reset. real:true is CRITICAL —
+    // without it, loadPile's `if(p.real && p.empty)` fails and the
+    // empty-state HTML never gets injected, so the pane blanks out
+    // and there's no way to upload again.
     try{ await fetch('/api/real/reset/' + REAL_SESSION, {method:'POST'}); } catch(_){}
     REAL_SESSION = null;
-    piles.real = {docs: [], clients: [], entities: [], empty: true,
+    piles.real = {docs: [], clients: [], entities: [], real: true, empty: true,
                   stats: [[0,'documents'],[0,'entities'],[0,'conflicts']],
                   domain: 'your pile · empty', assistantRole: 'reconciler'};
     const rc = document.getElementById('real-tab-count');
@@ -2900,7 +2903,10 @@ async function uploadRealFiles(evt, opts = {}){
 async function resetRealPile(){
   if(REAL_SESSION){ try{ await fetch(`/api/real/reset/${REAL_SESSION}`, {method:'POST'}); }catch(_){} }
   REAL_SESSION = null;
-  piles.real = Object.assign({}, piles.real, {docs:[], clients:[], entities:[], stats:[], empty:true});
+  // real:true belongs on every real-pile assignment: loadPile's
+  // empty-state branch (`p.real && p.empty`) skips its render if the
+  // flag drops off, so the pane blanks out and the user can't upload.
+  piles.real = Object.assign({}, piles.real, {docs:[], clients:[], entities:[], stats:[], real:true, empty:true});
   document.getElementById('real-tab-count').textContent = 'upload to start';
   loadPile('real');
 }
