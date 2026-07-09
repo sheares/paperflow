@@ -10,7 +10,8 @@ fields checklist, and emits a clean, verified record. Sensitive identifiers
 are redacted with a consistent entity map before any cloud call and restored
 afterwards; **air-gapped mode** runs the whole thing with zero egress.
 
-📽️ **Demo video**: [`docs/paperflow-demo.mp4`](docs/paperflow-demo.mp4) (2:43)
+🎬 **Explainer** (why paperflow): [`docs/paperflow-explainer.mp4`](docs/paperflow-explainer.mp4) (1:45)
+📽️ **Demo video** (live UI walk-through): [`docs/paperflow-demo.mp4`](docs/paperflow-demo.mp4) (1:24)
 📊 **Deck** (PDF): [`docs/paperflow-pitch.pdf`](docs/paperflow-pitch.pdf) · source: [`docs/paperflow-pitch.html`](docs/paperflow-pitch.html)
 
 ## Why this exists
