@@ -3876,6 +3876,12 @@ async function hydrateLive(){
   } catch(_){ /* offline preview: fallbacks stay */ }
 })();
 
+// LIVE_STATUS declared here so it's initialised BEFORE loadPile('real')
+// runs below (which reaches into assistantLiveTag -> LIVE_STATUS). Kept
+// as `let` so refreshStatus() can reassign; the assistantLiveTag guard
+// still uses typeof for extra safety.
+let LIVE_STATUS = null;
+
 hydrateLive();
 // Force the empty-state render of Your pile at boot. Without this, the
 // pane content stays whatever was baked into the HTML at load time
@@ -3889,11 +3895,14 @@ loadPile('real');
 // reachability, not a decorative animation. Polls /api/status every
 // ~15s and immediately after route-changing UI actions.
 // ============================================================
-let LIVE_STATUS = null;
 // Rewrite '· live' in the assistant meta so the header never overclaims
-// when part of the trust boundary is actually down.
+// when part of the trust boundary is actually down. Reads LIVE_STATUS
+// via `typeof` so the initial boot loadPile('real') at line 3885 works
+// even before LIVE_STATUS is declared/initialised below (same TDZ
+// hazard as FAMILY_COLOUR — a `let` further down the file plus a call
+// from earlier code).
 function assistantLiveTag(){
-  const s = LIVE_STATUS || {};
+  const s = (typeof LIVE_STATUS !== 'undefined' && LIVE_STATUS) || {};
   if(fullLocal) return 'air-gapped';
   const local = !!s.local_reachable;
   const remote = !!s.remote_configured;
