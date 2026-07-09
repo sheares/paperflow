@@ -1463,7 +1463,7 @@ const piles = {
             opts:[
               {value:'Blk 210 Bishan St 23 #11-04 SG 570210', doc:'doc_001 (KYC form)', selected:true},
               {value:'Blk 88 Tampines Ave 4 #05-12 SG 521088', doc:'doc_002 (Proof of addr)', selected:false}
-            ], action:'Escalate'},
+            ], action:'Flag for compliance'},
           {label:'National ID', type:'id', value:'K7741209', citation:'Source: doc_001 · ✓ verified format', action:'✏'},
           {label:'Beneficial owner', type:'org', value:'Self', citation:'Source: doc_001', action:'✏'},
           {label:'Declaration date', type:'date', value:'2026-05-22', citation:'Source: doc_001', action:'✏'},
@@ -1479,7 +1479,7 @@ const piles = {
             opts:[
               {value:'K3098551', doc:'doc_003 (KYC declaration)', selected:true},
               {valueHtml:'K3098<b style="color:var(--conf-block)">S</b>51', doc:'doc_004 (ID copy) · suspected OCR substitution of 5 → S', selected:false}
-            ], action:'Escalate'},
+            ], action:'Flag for compliance'},
           {label:'Source of funds', type:'funds', value:'Employment income', citation:'Source: doc_003', action:'✏'},
           {label:'Beneficial owner', type:'org', value:'Self', citation:'Source: doc_003', action:'✏'},
           {label:'Declaration date', type:'date', missing:true, missingNote:'⚠ REQUIRED · missing from all documents in this client', missingDetail:'Cannot finalise onboarding without declaration date. Request signed declaration.', action:'Request'}
@@ -1594,7 +1594,7 @@ const piles = {
             opts:[
               {value:'weijie.lim@acmerobotics.sg', doc:'doc_001 (registration)', selected:true},
               {value:'wjlim@acme.com.sg', doc:'doc_002 (business card)', selected:false}
-            ], action:'Escalate'},
+            ], action:'Flag for compliance'},
           {label:'Phone', type:'phone', value:'+65 6123 4567', citation:'Source: doc_001, doc_002 · matched', action:'✏'},
           {label:'UEN', type:'id', value:'201912345A', citation:'Source: doc_001', action:'✏'},
           {label:'RSVP status', type:'date', value:'Confirmed', citation:'Source: doc_001', action:'✏'},
@@ -1621,7 +1621,7 @@ const piles = {
             opts:[
               {value:'+65 6555 2020', doc:'doc_006 (email sig)', selected:true},
               {value:'+65 6555 2021', doc:'doc_005 (registration) · likely transcription typo', selected:false}
-            ], action:'Escalate'},
+            ], action:'Flag for compliance'},
           {label:'UEN', type:'id', value:'53210987B', citation:'Source: doc_005', action:'✏'},
           {label:'RSVP status', type:'date', value:'Tentative', citation:'Source: doc_005', action:'✏'},
         ]
@@ -1723,7 +1723,7 @@ const piles = {
             opts:[
               {value:'1986-03-14', doc:'doc_001 (intake form, signed)', selected:true},
               {value:'1986-04-14', doc:'doc_002 (referral email)', selected:false}
-            ], action:'Escalate'},
+            ], action:'Flag for compliance'},
           {label:'NRIC / FIN', type:'id', value:'S8612345Z', citation:'Source: doc_001, doc_002, doc_003 · matched', action:'✏'},
           {label:'Policy number', type:'id', value:'PRU-009281', citation:'Source: doc_001', action:'✏'},
           {label:'Allergies', type:'funds', value:'Penicillin', citation:'Source: doc_001', action:'✏'},
@@ -1740,7 +1740,7 @@ const piles = {
             opts:[
               {value:'AIA-553102', doc:'doc_004 (intake form, signed)', selected:true},
               {valueHtml:'AIA-5531<b style="color:var(--conf-block)">20</b>', doc:'doc_005 (insurance card)', selected:false}
-            ], action:'Escalate'},
+            ], action:'Flag for compliance'},
           {label:'Allergies', type:'funds', missing:true, missingNote:'⚠ MISSING · not recorded on intake', missingDetail:'Clinical safety requires explicit allergy capture, including "none known".', action:'Capture'},
           {label:'Consent signed', type:'date', value:'Yes (2026-06-10)', citation:'Source: doc_004', action:'✏'}
         ]
@@ -2319,6 +2319,19 @@ function _fieldStatus(f){
   return 'ok';
 }
 
+function _isFieldFlagged(clientLabel, fieldLabel){
+  // Bridge from the pile-data record to the DOM's escalation state.
+  // Used by CSV export to overlay flagged rows.
+  const cards = Array.from(document.querySelectorAll('.client-card'));
+  for(const card of cards){
+    const cid = _plainText(card.querySelector('.client-id'));
+    if(cid !== clientLabel) continue;
+    const fields = Array.from(card.querySelectorAll('.field-conflict[data-escalated="true"]'));
+    if(fields.some(f => (f.dataset.label || '') === fieldLabel)) return true;
+  }
+  return false;
+}
+
 function _csvCell(v){
   const s = String(v == null ? '' : v);
   // Excel-safe: wrap in quotes if the cell has , " or a line break,
@@ -2338,6 +2351,34 @@ function _downloadBlob(filename, mime, body){
   setTimeout(() => URL.revokeObjectURL(url), 1200);
 }
 
+function _collectComplianceFlags(){
+  // MVP-honest compliance flow: the "Flag for compliance" button in
+  // the record pane sets data-escalated="true" on the .field-conflict
+  // element. Walk the live DOM to pull out those fields with enough
+  // context that a downstream compliance reviewer can act on them,
+  // and include the section in the JSON export.
+  const flagged = [];
+  document.querySelectorAll('.field-conflict[data-escalated="true"]').forEach(field => {
+    const card = field.closest('.client-card');
+    const client = card ? _plainText(card.querySelector('.client-id')) : '';
+    const label = field.dataset.label || _plainText(field.querySelector('.label'));
+    const type = field.dataset.type || '';
+    const conflictNote = _plainText(field.querySelector('.conflict-note[data-original]')
+      && field.querySelector('.conflict-note[data-original]').dataset.original);
+    const options = Array.from(field.querySelectorAll('.conflict-row .opt')).map(o => ({
+      value: _plainText(o.querySelector('.chip')),
+      source: _plainText(o.querySelector('.doc')),
+      selected: o.classList.contains('selected'),
+    }));
+    flagged.push({
+      client, field: label, type, conflict_note: conflictNote,
+      options,
+      flagged_at: field.dataset.escalatedAt || null,
+    });
+  });
+  return flagged;
+}
+
 function exportRecord(format){
   const p = piles[currentPile];
   if(!p || !Array.isArray(p.clients) || !p.clients.length){
@@ -2349,6 +2390,7 @@ function exportRecord(format){
 
   if(format === 'json'){
     // Structured, judge-friendly dump. Preserves conflicts + citations.
+    const escalations = _collectComplianceFlags();
     const payload = {
       exported_at: new Date().toISOString(),
       pile: currentPile,
@@ -2368,6 +2410,13 @@ function exportRecord(format){
           missingNote: f.missing ? _plainText(f.missingNote || f.missingNoteHtml) : '',
         })),
       })),
+      compliance_review: {
+        pending: escalations.length,
+        note: escalations.length
+          ? 'The following fields were flagged for compliance review from the paperflow record pane. paperflow does not auto-route these — a reviewer picks them up from this export.'
+          : 'No fields were flagged for compliance review during this session.',
+        escalations,
+      },
     };
     _downloadBlob(`paperflow_${pileName}_${ts}.json`,
       'application/json', JSON.stringify(payload, null, 2));
@@ -2376,17 +2425,22 @@ function exportRecord(format){
 
   // CSV: one row per field. Flat + Excel-friendly.
   const header = ['client', 'client_state', 'field', 'type',
-                  'value', 'status', 'confidence', 'citation'];
+                  'value', 'status', 'compliance_flagged',
+                  'confidence', 'citation'];
   const rows = [header];
   for(const c of p.clients){
     for(const f of (c.fields || [])){
+      const flagged = _isFieldFlagged(c.label || '', f.label || '');
+      let status = _fieldStatus(f);
+      if(flagged) status = 'flagged-for-compliance';
       rows.push([
         c.label || '',
         c.state || '',
         f.label || '',
         f.type || '',
         _fieldValueForExport(f),
-        _fieldStatus(f),
+        status,
+        flagged ? 'yes' : '',
         f.confidence != null ? f.confidence : '',
         f.citation ? _plainText(f.citation) : (f.citationHtml ? _plainText(f.citationHtml) : ''),
       ]);
@@ -2401,7 +2455,10 @@ function exportRecord(format){
 // the client. Driven by the action label the pile data already supplies.
 function overrideAction(action){
   const a = (action || '').toLowerCase();
-  if(a.indexOf('escalate') !== -1) return 'escalateField(this)';
+  // MVP-honest compliance flow: 'Flag for compliance' is the current
+  // shipped label; 'Escalate' still supported for any older canned
+  // pile data (or future callers) that hasn't migrated yet.
+  if(a.indexOf('flag') !== -1 || a.indexOf('escalate') !== -1) return 'escalateField(this)';
   // "Capture" gaps (e.g. allergies) behave like requests so the state pill counts them.
   if(a.indexOf('request') !== -1 || a.indexOf('capture') !== -1) return 'requestField(this)';
   return 'openOverride(this)';
@@ -2638,6 +2695,8 @@ function showRunOverlay(){
             Cancel
           </button>
         </div>
+        <div id="run-overlay-files" style="display:none; margin-bottom:18px;"></div>
+        <div class="ro-section-label" style="display:none; font-size:10.5px; text-transform:uppercase; letter-spacing:0.09em; color:var(--muted2); margin-bottom:10px; font-weight:600;">Pipeline</div>
         <div id="run-overlay-stages" style="display:flex; flex-direction:column; gap:9px; font-size:13px; color:var(--muted); line-height:1.5;"></div>
         <div id="run-overlay-note" style="margin-top:18px; padding-top:14px; border-top:1px solid var(--line); font-size:12px; color:var(--muted2); line-height:1.6;"></div>
       </div>
@@ -2647,8 +2706,83 @@ function showRunOverlay(){
   // Reset the cancel button visibility each open (some flows hide it).
   const cb = document.getElementById('run-overlay-cancel');
   if(cb) cb.style.display = '';
+  // Hide the files pane by default; upload flows call setRunFiles to
+  // show it. Prevents stale rows from a previous run bleeding into
+  // sample-load / schema-change flows.
+  const fb = document.getElementById('run-overlay-files');
+  if(fb){ fb.style.display = 'none'; fb.innerHTML = ''; }
+  const sl = document.querySelector('#run-overlay .ro-section-label');
+  if(sl) sl.style.display = 'none';
   ov.style.display = 'flex';
   return ov;
+}
+
+// Per-file rows in the run overlay. Renders once at the start of a
+// batch; setRunStages then updates each row's status pill in place
+// as the global pipeline stage advances. Since extraction runs via
+// asyncio.gather on the server, all files transition together —
+// showing them as individual rows is still worth it so the user can
+// see WHICH files are being processed, not just a count.
+function _fileTypeLabel(name){
+  const ext = (String(name || '').split('.').pop() || '').toLowerCase();
+  if(ext === 'pdf') return 'PDF';
+  if(ext === 'xlsx' || ext === 'xls') return 'XLS';
+  if(ext === 'md') return 'MD';
+  if(ext === 'txt') return 'TXT';
+  if(['png', 'jpg', 'jpeg', 'webp'].includes(ext)) return 'IMG';
+  return (ext || '?').toUpperCase().slice(0, 4);
+}
+
+function setRunFiles(files){
+  const box = document.getElementById('run-overlay-files');
+  const sectionLabel = document.querySelector('#run-overlay .ro-section-label');
+  if(!box) return;
+  if(!files || !files.length){
+    box.style.display = 'none';
+    if(sectionLabel) sectionLabel.style.display = 'none';
+    return;
+  }
+  box.style.display = '';
+  if(sectionLabel) sectionLabel.style.display = '';
+  const rowH = 32, gap = 6;
+  const maxRows = 5;
+  const listMax = Math.min(files.length, maxRows) * rowH + (Math.min(files.length, maxRows) - 1) * gap + 4;
+  box.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px;">
+      <div style="font-size:10.5px; text-transform:uppercase; letter-spacing:0.09em; color:var(--muted2); font-weight:600;">Files</div>
+      <div style="font-size:10.5px; color:var(--muted); font-family:'JetBrains Mono', ui-monospace, monospace;">${files.length}</div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:${gap}px; max-height:${listMax}px; overflow-y:auto; padding-right:4px;">
+      ${files.map((f, i) => `
+        <div class="rop-file" data-file-index="${i}" style="display:flex; align-items:center; gap:10px; padding:6px 10px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,0.02); height:${rowH}px; box-sizing:border-box;">
+          <span style="width:36px; height:20px; display:inline-flex; align-items:center; justify-content:center; border-radius:4px; background:rgba(148,163,184,0.14); color:var(--muted); font-size:9.5px; font-weight:600; letter-spacing:0.03em; flex-shrink:0; font-family:'JetBrains Mono', ui-monospace, monospace;">${escapeHtml(_fileTypeLabel(f.name))}</span>
+          <span style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; color:var(--ink);" title="${escapeHtml(f.name)}">${escapeHtml(f.name)}</span>
+          <span class="rop-file-status" style="font-size:10px; padding:2px 9px; border-radius:999px; border:1px solid var(--line); color:var(--muted); flex-shrink:0; font-family:'JetBrains Mono', ui-monospace, monospace; letter-spacing:0.02em;">Queued</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function _syncFileStatusesToStage(stagesLen, current){
+  // Map the global pipeline stage to a per-file status pill. Once
+  // extraction is past, the per-file work is done — later stages
+  // work on the extracted JSON, not the raw files.
+  const box = document.getElementById('run-overlay-files');
+  if(!box || box.style.display === 'none') return;
+  const pills = box.querySelectorAll('.rop-file-status');
+  if(!pills.length) return;
+  let label, colour, border;
+  if(current < 0){ label = '⚠ Failed'; colour = 'var(--conf-block)'; border = 'var(--conf-block-border)'; }
+  else if(current >= stagesLen){ label = '✓ Done'; colour = 'var(--conf-good)'; border = 'var(--conf-good-border)'; }
+  else if(current === 0){ label = 'Uploading'; colour = 'var(--muted)'; border = 'var(--line)'; }
+  else if(current === 1){ label = 'Extracting…'; colour = 'var(--c-name)'; border = 'var(--c-name-border)'; }
+  else { label = '✓ Extracted'; colour = 'var(--conf-good)'; border = 'var(--conf-good-border)'; }
+  pills.forEach(pill => {
+    pill.textContent = label;
+    pill.style.color = colour;
+    pill.style.borderColor = border;
+  });
 }
 
 async function cancelRun(){
@@ -2721,6 +2855,7 @@ function setRunStages(stages, current, note){
     return `<div style="display:flex; align-items:center; gap:12px; color:${colour}; font-weight:${weight};">${dot}<span>${label}</span></div>`;
   }).join('');
   if(note !== undefined) document.getElementById('run-overlay-note').innerHTML = note;
+  _syncFileStatusesToStage(stages.length, current);
 }
 function setRunTitle(text){
   const t = document.getElementById('run-overlay-title');
@@ -2952,20 +3087,21 @@ async function uploadRealFiles(evt, opts = {}){
   if(nTxt) parts.push(`${nTxt} text doc${nTxt !== 1 ? 's' : ''}`);
   const kinds = parts.join(' · ') +
     (nPdf ? ' · Gemma on the MI300X reads each page in parallel' : ' · no vision extraction needed');
-  // filename preview (up to 4)
-  const nameList = filesArr.slice(0, 4).map(f => f.name).join(', ') +
-    (filesArr.length > 4 ? `, +${filesArr.length - 4} more` : '');
+  const remoteLabel = (LIVE_STATUS && LIVE_STATUS.remote_model_label) || 'the remote reconciler';
 
   showRunOverlay();
   setRunTitle(opts.append
     ? `Adding ${files.length} file${files.length !== 1 ? 's' : ''} to your pile`
     : `Running the paperflow pipeline on ${files.length} file${files.length !== 1 ? 's' : ''}`);
+  // Per-file rows: type icon + name + a status pill that setRunStages
+  // will update in place as the pipeline advances.
+  setRunFiles(filesArr);
   const stages = ['Upload', 'Extract fields (vision, concurrent)',
                   'Redact + build entity map (on this paperflow server)',
                   'Reconcile (only redacted tokens leave paperflow)',
                   'Emit reconciled record'];
   setRunStages(stages, 0,
-    `<b>Files:</b> ${nameList}<br>${kinds}<br><br><b style="color:var(--conf-good);">Trust boundary:</b> redaction runs on this paperflow server, not on the LLM side. Only redacted tokens — never raw names, IDs, addresses or phones — reach Fireworks / DeepSeek.`);
+    `${escapeHtml(kinds)}<br><br><b style="color:var(--conf-good);">Trust boundary:</b> redaction runs on this paperflow server, not on the LLM side. Only redacted tokens — never raw names, IDs, addresses or phones — reach ${escapeHtml(remoteLabel)}.`);
 
   const fd = new FormData();
   fd.append('schema', schema);
@@ -3288,12 +3424,12 @@ function resolveConflict(el){
   const field = el.closest('.field-conflict');
   field.dataset.resolved = 'true';
 
-  // A later resolution supersedes an earlier escalation.
+  // A later resolution supersedes an earlier compliance flag.
   if(field.dataset.escalated === 'true'){
     field.dataset.escalated = 'false';
     const escBtn = field.querySelector('button.override');
     if(escBtn){
-      escBtn.textContent = 'Escalate';
+      escBtn.textContent = 'Flag for compliance';
       escBtn.classList.remove('done');
       escBtn.disabled = false;
     }
@@ -3331,7 +3467,7 @@ function updateClientState(card){
   if(openConflicts > 0) openParts.push(`${openConflicts} conflict${openConflicts === 1 ? '' : 's'}`);
   if(openGaps > 0) openParts.push(`${openGaps} gap${openGaps === 1 ? '' : 's'}`);
   const pendParts = [];
-  if(escalated > 0) pendParts.push(`${escalated} escalated`);
+  if(escalated > 0) pendParts.push(`${escalated} flagged`);
   if(requested > 0) pendParts.push(`${requested} requested`);
 
   pill.className = 'state conflict';
@@ -3469,13 +3605,17 @@ function escalateField(btn){
   const field = btn.closest('.field');
   if(!field || field.dataset.escalated === 'true') return;
   field.dataset.escalated = 'true';
+  // Record the moment for the compliance export. UI never surfaces
+  // this to the user directly — it lands in the JSON export under
+  // `escalations[]` so a compliance reviewer can pick it up.
+  field.dataset.escalatedAt = new Date().toISOString();
   const note = field.querySelector('.conflict-note');
   if(note){
     note.classList.remove('missing-review');
     note.classList.add('escalated-note');
-    note.innerHTML = '↑ Escalated to compliance';
+    note.innerHTML = '⚑ Flagged for compliance review';
   }
-  btn.textContent = '↑ escalated';
+  btn.textContent = '⚑ flagged';
   btn.classList.add('done');
   btn.disabled = true;
   updateClientState(field.closest('.client-card'));
