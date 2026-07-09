@@ -28,3 +28,7 @@ docs/paperflow-demo-live.webm
 docs/_vo/
 docs/paperflow-demo-vo.mp4
 docs/_padded.mp4
+
+# Local drop for the lablab.ai submission form (curated copies of the
+# tracked docs/ files + SUBMISSION_INFO.md). Not the source of truth.
+submission/
