@@ -170,3 +170,27 @@ class PrivacyRoundTrip:
         redacted = {name: entity_map.redact(text) for name, text in docs.items()}
         return RedactionResult(redacted=redacted, entity_map=entity_map,
                                detections=detections)
+
+    def register_text_into(self, text: str, entity_map) -> None:
+        """Run the analyzer on `text` and register any newly-detected
+        values into an existing EntityMap. Same filters as process_pile
+        (newline bleed, triple-space column bleed, LABEL_STOPWORDS,
+        _all_generic ORG/PERSON rejection, labelled-field scan) so an
+        outgoing chat question gets the exact same redaction quality
+        the pile ingest gets. Nothing is returned; callers redact
+        against the mutated map."""
+        results = self.analyzer.analyze(text=text, language="en",
+                                        entities=self.entities)
+        for r in sorted(results, key=lambda r: -r.score):
+            value = text[r.start:r.end].strip()
+            if "\n" in value:
+                continue
+            value = re.split(r"\s{3,}", value, maxsplit=1)[0].strip()
+            if len(value) < 2 or value.lower() in LABEL_STOPWORDS:
+                continue
+            if r.entity_type in {"ORG", "ORGANIZATION", "PERSON"} \
+                    and _all_generic(value):
+                continue
+            entity_map.add(value, r.entity_type)
+        for value, etype in scan_labelled_fields(text):
+            entity_map.add(value, etype)
