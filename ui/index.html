@@ -1827,7 +1827,13 @@ function highlightEntities(text, entities){
     const re = new RegExp(`(${escapedValue})`, 'gi');
     result = result.replace(re, (match) => {
       const placeholder = `\u0000${replacements.length}\u0000`;
-      replacements.push(`<span class="hl hl-${e.type}" data-token="${e.token}">${match}</span>`);
+      // e.type flows into class + e.token into an attribute; both come
+      // from server-side entity_map projections. Sanitise the type,
+      // escape the token, leave 'match' alone (it's the escapeHtml'd
+      // result of the outer replace loop).
+      const tCls = _sanitiseTypeClass(e.type);
+      const tokAttr = escapeHtml(e.token || '');
+      replacements.push(`<span class="hl hl-${tCls}" data-token="${tokAttr}">${match}</span>`);
       return placeholder;
     });
   }
@@ -2222,15 +2228,22 @@ function renderChat(p){
 
 function renderRecord(p){
   const body = document.getElementById('record-body');
-  body.innerHTML = p.clients.map(c => `
+  // c.state is the server-emitted status ('complete' / 'conflict' etc.);
+  // c.stateLabel is a display string that could carry data. Constrain
+  // the class to a safe alphabet + escape the label to be safe on live
+  // pile data.
+  body.innerHTML = p.clients.map(c => {
+    const stateCls = String(c.state || '').replace(/[^a-zA-Z-]/g, '').slice(0, 24);
+    return `
     <div class="client-card">
       <div class="client-head">
         <div class="client-id">${escapeHtml(c.label)}</div>
-        <div class="state ${c.state}">${c.stateLabel}</div>
+        <div class="state ${stateCls}">${escapeHtml(c.stateLabel || '')}</div>
       </div>
       ${c.fields.map(f => renderField(f)).join('')}
     </div>
-  `).join('');
+  `;
+  }).join('');
 
   // Overrides log is session-scoped to the loaded pile: clear it on re-render.
   const log = document.getElementById('overrides-log');
