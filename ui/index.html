@@ -1833,10 +1833,23 @@ function highlightEntities(text, entities){
   const expanded = expandEntities(entities);
 
   const replacements = [];
-  for(const e of expanded){
-    const escapedValue = escapeHtml(e.value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  // Sort longest-first so a value like "Zero1 Pte Ltd" wins over any
+  // shorter substring alias that would otherwise fire first inside it.
+  const sortedExpanded = expanded.slice().sort(
+    (a, b) => (b.value || '').length - (a.value || '').length);
+  for(const e of sortedExpanded){
+    const raw = (e.value || '').trim();
+    // Two-char aliases like "Co" or "Ai" used to match "co" inside
+    // "reconciled" and every "AI" in the copy — treat as noise.
+    if(raw.length < 3) continue;
+    const escapedValue = escapeHtml(raw).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     if(!escapedValue) continue;
-    const re = new RegExp(`(${escapedValue})`, 'gi');
+    // Word-boundary anchor stops mid-word matches ("co" in "reconciled",
+    // "AI" in "obtain"). Anchors are only added when the value starts /
+    // ends with a word character so weird values like "Ltd." still match.
+    const left = /^\w/.test(raw) ? '\\b' : '';
+    const right = /\w$/.test(raw) ? '\\b' : '';
+    const re = new RegExp(`(${left}${escapedValue}${right})`, 'gi');
     result = result.replace(re, (match) => {
       const placeholder = `\u0000${replacements.length}\u0000`;
       // e.type flows into class + e.token into an attribute; both come
