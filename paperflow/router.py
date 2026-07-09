@@ -250,7 +250,28 @@ class Router:
                 "question_redacted": q_red,
             }
         data = r.json()
-        content = data["choices"][0]["message"]["content"]
+        # Reasoning models (Minimax M3, DeepSeek-R1 etc.) sometimes emit
+        # the whole message in `reasoning_content` and leave `content`
+        # empty or missing when the reasoning budget consumed the
+        # answer slot. Fall back through the shape, and degrade to
+        # local artefacts if nothing usable comes back.
+        try:
+            msg = data["choices"][0]["message"]
+        except (KeyError, IndexError, TypeError):
+            msg = {}
+        content = (msg.get("content")
+                   or msg.get("reasoning_content")
+                   or "").strip()
+        if not content:
+            answer, reason = self._answer_local(question)
+            return answer, {
+                "stage": "chat", "route": "local",
+                "reason": (f"remote returned no answer text "
+                           f"(reasoning-only response); "
+                           f"degraded to local artefacts · {reason}"),
+                "tokens_sent": [],
+                "question_redacted": q_red,
+            }
         answer = _parse_answer(content)
         answer = self.emap.rehydrate(answer)
         entry = {

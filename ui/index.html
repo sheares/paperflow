@@ -756,6 +756,9 @@ main{ display: contents; }
   padding: 1px 6px; border-radius: 4px;
   font-size: 12px; font-weight: 500;
   margin: 1px;
+  /* Company / entity names must never break mid-word; a narrow parent
+     used to squeeze "Zero1 Pte Ltd" onto three vertical lines. */
+  white-space: nowrap;
 }
 .token{ border-bottom-style: dashed; }
 
@@ -812,7 +815,7 @@ main{ display: contents; }
 .state.blocked{ background: var(--conf-block-bg); color: var(--conf-block); border-color: var(--conf-block-border); }
 
 .field{
-  display: grid; grid-template-columns: 130px 1fr auto;
+  display: grid; grid-template-columns: 130px minmax(0, 1fr) auto;
   gap: 10px; align-items: start;
   padding: 10px 0;
   margin-bottom: 8px;
@@ -836,16 +839,23 @@ main{ display: contents; }
 }
 .field .override:hover{ border-color: var(--muted2); color: var(--ink); background: rgba(255,255,255,0.03); }
 
-.conflict-row{ margin-top: 5px; display: flex; gap: 6px; flex-wrap: wrap; }
+.conflict-row{ margin-top: 5px; display: flex; flex-direction: column; gap: 6px; }
 .conflict-row .opt{
   border: 1px solid var(--line); border-radius: 6px;
   padding: 5px 8px; font-size: 11.5px; cursor: pointer;
   display: flex; gap: 6px; align-items: center;
   background: transparent;
   transition: all .12s;
+  max-width: 100%; min-width: 0;
 }
 .conflict-row .opt:hover{ border-color: var(--muted2); }
-.conflict-row .opt .doc{ font-size: 10.5px; color: var(--muted2); }
+.conflict-row .opt .doc{
+  font-size: 10.5px; color: var(--muted2);
+  /* Long PDF names ("INVOICE__70005224_60222109_1010000001277634…") used to
+     overflow the record column. Truncate mid-string instead. */
+  min-width: 0; flex: 1 1 auto;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 .conflict-row .opt.selected{ border-color: var(--conf-good); background: var(--conf-good-bg); }
 
 .missing{ color: var(--conf-block); font-weight: 500; font-size: 12px; }
