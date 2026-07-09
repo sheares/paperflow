@@ -1,0 +1,14 @@
+{
+  "name": "paperflow-demo-recorder",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local-only Playwright deps for scripts/record_demo.mjs. Not shipped in the container.",
+  "type": "module",
+  "scripts": {
+    "record": "node scripts/record_demo.mjs",
+    "stitch": "bash scripts/stitch_demo.sh"
+  },
+  "dependencies": {
+    "playwright": "^1.60.0"
+  }
+}

@@ -55,22 +55,22 @@ setsar=1,fps=25" \
   -c:a aac -b:a 128k \
   "$LIVE_MP4" 2>&1 | tail -8
 
-echo "2/3  Rendering 5s outro title card…"
-# Three-line title: matches the deck close.
-ffmpeg -y -f lavfi -i "color=c=0x0b0b0b:s=1920x1080:d=5:r=25" \
-  -f lavfi -i anullsrc=channel_layout=stereo:sample_rate=48000 \
-  -vf "\
-drawtext=text='paperflow':fontcolor=0xf5f5f5:fontsize=96:\
-x=(w-text_w)/2:y=(h/2)-160:font='Helvetica',\
-drawtext=text='Extraction on the AMD MI300X.':fontcolor=0xb8b8b8:fontsize=44:\
-x=(w-text_w)/2:y=(h/2)-40:font='Helvetica',\
-drawtext=text='Reasoning on redacted tokens.':fontcolor=0xb8b8b8:fontsize=44:\
-x=(w-text_w)/2:y=(h/2)+20:font='Helvetica',\
-drawtext=text='Zero-egress mode by construction.':fontcolor=0x83c58f:fontsize=44:\
-x=(w-text_w)/2:y=(h/2)+80:font='Helvetica'\
-" \
-  -c:v libx264 -preset medium -crf 20 -pix_fmt yuv420p -t 5 \
-  -c:a aac -b:a 128k -t 5 \
+echo "2/3  Rendering 5s outro from paperflow-cover_V10.png…"
+# Homebrew ffmpeg on this system doesn't include libfreetype, so
+# drawtext is unavailable. Loop the branded cover PNG (from the pitch
+# assets) as a 5s title card instead — better on-brand anyway.
+COVER_PNG="$HACK/paperflow-cover_V10.png"
+if [ ! -f "$COVER_PNG" ]; then
+  echo "Missing cover image: $COVER_PNG" >&2
+  exit 1
+fi
+ffmpeg -y -loop 1 -t 5 -i "$COVER_PNG" \
+  -f lavfi -t 5 -i anullsrc=channel_layout=stereo:sample_rate=48000 \
+  -vf "scale=1920:1080:force_original_aspect_ratio=decrease,\
+pad=1920:1080:(ow-iw)/2:(oh-ih)/2:color=black,\
+setsar=1,fps=25" \
+  -c:v libx264 -preset medium -crf 20 -pix_fmt yuv420p \
+  -c:a aac -b:a 128k \
   "$OUTRO_MP4" 2>&1 | tail -8
 
 echo "3/3  Concatenating intro → live → outro…"

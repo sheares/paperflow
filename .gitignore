@@ -14,3 +14,14 @@ outputs/run_*/
 outputs/_pages/
 *.log
 .DS_Store
+
+# node (Playwright recorder deps live here; not shipped in the container)
+node_modules/
+package-lock.json
+
+# demo capture intermediates (final .mp4 IS tracked)
+docs/_demo_capture/
+docs/_outro.mp4
+docs/_live.mp4
+docs/_concat.txt
+docs/paperflow-demo-live.webm

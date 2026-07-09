@@ -96,24 +96,40 @@ async function pause(label, ms) {
 async function beatEmpty(page) {
   console.log('BEAT 1 — Empty pile → load sample (0:00-0:10)');
   await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
+  // Fit-to-viewport at 1920x1080 needs a subtle zoom-out — the paperflow
+  // UI is designed for 1400+ wide but three vertically-stacked panes of
+  // content run taller than 1080 without a nudge. 0.9 keeps text
+  // readable while fitting the full app in-frame without cropping.
   await page.evaluate(() => {
+    document.documentElement.style.zoom = '0.9';
     try { window.REAL_SESSION = null; } catch (_) {}
     try { window.loadPile && window.loadPile('real'); } catch (_) {}
+    window.scrollTo(0, 0);
   });
   await pause('empty state settles + user reads the sample cards', 3200);
-  // Slow drift to the KYC sample card so the recording has motion.
   await slowMove(page, 500, 620, 24);
-  await pause('cursor lands over KYC card', 1200);
+  await pause('cursor drifts to a sample card', 1200);
 }
 
 async function beatPipelineRuns(page) {
   console.log('BEAT 2 — Pipeline runs on the sample (0:10-0:25)');
-  // The sample buttons render inside the empty-state HTML; target by text.
-  const kyc = page.getByText(/Load .*KYC|KYC onboarding sample|Load KYC/i).first();
-  await safeClick(kyc);
+  // Sample cards are rendered by REAL_EMPTY_HTML with class .sample-card
+  // and titles "Individual identity" / "Corporate identity" / "Case
+  // records". Use the individual pile (2 people, alias merge + address
+  // conflict — the storyboard's demo scenario) and fall back to any
+  // sample card if the label ever changes.
+  let sampleCard = page.locator('.sample-card').filter({ hasText: /Individual identity/i }).first();
+  if (!(await sampleCard.count())) sampleCard = page.locator('.sample-card').first();
+  await sampleCard.waitFor({ state: 'visible', timeout: 15000 });
+  await safeClick(sampleCard);
   await pause('run overlay appears — files panel + stages', 3000);
-  await pause('Extract / Redact stages advance', 5000);
-  await pause('Reconcile + Emit + overlay dismisses', 5000);
+  // Wait for the pipeline to actually finish before proceeding.
+  await page.waitForFunction(
+    () => !document.getElementById('run-overlay')
+        || document.getElementById('run-overlay').style.display === 'none',
+    null, { timeout: 90000 }
+  ).catch(() => console.log('   (run overlay did not close in 90s — continuing)'));
+  await pause('overlay dismissed → record renders', 2500);
 }
 
 async function beatReconciledRecord(page) {
@@ -149,17 +165,18 @@ async function beatMoneyShot(page) {
     .catch(() => console.log('   (AI bubble did not land in 25s — recording continues)'));
   await pause('reader sees formatted paragraphs', 3500);
 
-  // Click a receipt token chip → sidebar + record scroll, everything glows.
-  const tokenChip = page.locator('.receipt .chip[data-token]').first();
+  // Click a receipt token chip → sidebar + record scroll, everything
+  // glows. Receipt tokens use .token (not .chip); tagTokensForLinking
+  // stamps data-token on them after render.
+  let tokenChip = page.locator('.receipt .token[data-token^="[PERSON_"], .receipt .token[data-token^="[ADDR_"], .receipt .token[data-token^="[ID_"]').first();
+  if (!(await tokenChip.count())) {
+    tokenChip = page.locator('.receipt .token[data-token], .receipt [data-token]').first();
+  }
   if (await tokenChip.count()) {
     await safeClick(tokenChip);
     await pause('cross-panel glow', 3800);
   } else {
-    const anyTok = page.locator('[data-token]').first();
-    if (await anyTok.count()) {
-      await safeClick(anyTok);
-      await pause('cross-panel glow (fallback)', 3800);
-    }
+    console.log('   (no receipt token chip found — skipping click-glow beat)');
   }
 
   // Hover a rehydrated entity chip in the reply → tooltip shows [PERSON_1].
