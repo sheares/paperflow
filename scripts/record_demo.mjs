@@ -29,14 +29,17 @@ import { chromium } from 'playwright';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { mkdirSync, existsSync, renameSync, readdirSync, statSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = dirname(HERE);
 const DOCS = join(REPO, 'docs');
-// This is the RAW live-UI capture. scripts/stitch_demo.sh takes it,
-// prepends the pitch anim and appends a title outro, and writes the
-// final deliverable to docs/paperflow-demo.mp4.
+// Direct-to-deliverable path: the recorder is now the whole video
+// (Ben's call — the pitch anim from the other Claude session runs
+// separately). We save the raw .webm here and then transcode to
+// docs/paperflow-demo.mp4 in one step at the end of main().
 const OUT_VIDEO = join(DOCS, 'paperflow-demo-live.webm');
+const OUT_MP4 = join(DOCS, 'paperflow-demo.mp4');
 const VIDEO_DIR = join(DOCS, '_demo_capture');
 const BASE_URL = process.env.PAPERFLOW_URL || 'http://localhost:8080';
 
@@ -96,12 +99,14 @@ async function pause(label, ms) {
 async function beatEmpty(page) {
   console.log('BEAT 1 — Empty pile → load sample (0:00-0:10)');
   await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
-  // Fit-to-viewport at 1920x1080 needs a subtle zoom-out — the paperflow
-  // UI is designed for 1400+ wide but three vertically-stacked panes of
-  // content run taller than 1080 without a nudge. 0.9 keeps text
-  // readable while fitting the full app in-frame without cropping.
+  // The paperflow shell already uses height: 100vh, so a 1920x1080
+  // viewport is filled edge-to-edge without any zoom trick. Force the
+  // three panes to occupy the full viewport height in case any
+  // ancestor picked up a min-content sizing.
   await page.evaluate(() => {
-    document.documentElement.style.zoom = '0.9';
+    document.documentElement.style.height = '100%';
+    document.body.style.height = '100%';
+    document.body.style.margin = '0';
     try { window.REAL_SESSION = null; } catch (_) {}
     try { window.loadPile && window.loadPile('real'); } catch (_) {}
     window.scrollTo(0, 0);
@@ -112,24 +117,36 @@ async function beatEmpty(page) {
 }
 
 async function beatPipelineRuns(page) {
-  console.log('BEAT 2 — Pipeline runs on the sample (0:10-0:25)');
-  // Sample cards are rendered by REAL_EMPTY_HTML with class .sample-card
-  // and titles "Individual identity" / "Corporate identity" / "Case
-  // records". Use the individual pile (2 people, alias merge + address
-  // conflict — the storyboard's demo scenario) and fall back to any
-  // sample card if the label ever changes.
-  let sampleCard = page.locator('.sample-card').filter({ hasText: /Individual identity/i }).first();
-  if (!(await sampleCard.count())) sampleCard = page.locator('.sample-card').first();
-  await sampleCard.waitFor({ state: 'visible', timeout: 15000 });
-  await safeClick(sampleCard);
-  await pause('run overlay appears — files panel + stages', 3000);
-  // Wait for the pipeline to actually finish before proceeding.
+  console.log('BEAT 2 — Upload real synthetic PDFs → live MI300X extraction');
+  // Ben's ask: don't skip through a cached-sample load — do a REAL
+  // upload with real PDFs and wait for Gemma extraction to finish. The
+  // pipeline overlay's per-file "Extracting…" pill is only honest if
+  // there's actual GPU work behind it.
+  const pdfDir = join(REPO, 'synthetic', 'kyc_onboarding');
+  const files = [
+    join(pdfDir, 'kyc_form_hassan.pdf'),
+    join(pdfDir, 'nric_scan_goh.pdf'),
+    join(pdfDir, 'utility_bill_hassan.pdf'),
+    join(pdfDir, 'kyc_declaration_goh.txt'),
+  ];
+  const fileInput = page.locator('#real-file-input');
+  await fileInput.waitFor({ state: 'attached', timeout: 15000 });
+  await fileInput.setInputFiles(files);
+  await pause('upload overlay appears — files panel + stages', 3000);
+
+  // Real work: MI300X reads each PDF page in parallel via asyncio.gather.
+  // Wall time varies with page count but 3 small PDFs land in ~15-30 s.
+  // Poll every second to keep the recording lively while we wait.
+  console.log('   waiting for /api/real/run to complete on the MI300X…');
+  const t0 = Date.now();
   await page.waitForFunction(
     () => !document.getElementById('run-overlay')
         || document.getElementById('run-overlay').style.display === 'none',
-    null, { timeout: 90000 }
-  ).catch(() => console.log('   (run overlay did not close in 90s — continuing)'));
-  await pause('overlay dismissed → record renders', 2500);
+    null, { timeout: 180000, polling: 500 }
+  ).catch(() => console.log('   (overlay did not close in 180s — continuing)'));
+  const secs = ((Date.now() - t0) / 1000).toFixed(1);
+  console.log(`   extraction wall time: ${secs}s`);
+  await pause('reconciled record renders', 2500);
 }
 
 async function beatReconciledRecord(page) {
@@ -218,17 +235,18 @@ async function main() {
   if (!existsSync(DOCS)) mkdirSync(DOCS, { recursive: true });
   if (!existsSync(VIDEO_DIR)) mkdirSync(VIDEO_DIR, { recursive: true });
 
+  // Headless mode: cleaner 1920x1080 viewport with no browser chrome
+  // bleed. Chromium new-headless renders animations + WebGL as well
+  // as headed does, and gets us a pixel-exact viewport recording.
   const browser = await chromium.launch({
-    headless: false,   // headed so Chrome renders animations correctly
-    args: [`--window-size=${VIEWPORT.width},${VIEWPORT.height}`,
-           '--force-device-scale-factor=1'],
+    headless: true,
+    args: ['--force-device-scale-factor=1',
+           '--disable-blink-features=AutomationControlled'],
   });
   const context = await browser.newContext({
     viewport: VIEWPORT,
     deviceScaleFactor: 1,
     recordVideo: { dir: VIDEO_DIR, size: VIEWPORT },
-    // Small extra CSS to make the recording feel a touch smoother
-    // (disable text-caret blink, kill hover delays).
     reducedMotion: 'no-preference',
   });
   const page = await context.newPage();
@@ -262,7 +280,29 @@ async function main() {
     throw new Error(`No .webm produced in ${VIDEO_DIR}`);
   }
   renameSync(join(VIDEO_DIR, videos[0].f), OUT_VIDEO);
-  console.log(`\n✓ demo recorded: ${OUT_VIDEO}`);
+  console.log(`\n✓ demo recorded (.webm): ${OUT_VIDEO}`);
+
+  // Transcode .webm -> .mp4 in one step so the shipped deliverable is
+  // a broadly playable file. lavfi silent audio keeps the stream
+  // layout consistent with anything a compositor might chain later.
+  console.log('  transcoding to h264/aac mp4…');
+  const ff = spawnSync('ffmpeg', [
+    '-y', '-i', OUT_VIDEO,
+    '-f', 'lavfi', '-t', '999', '-i',
+    'anullsrc=channel_layout=stereo:sample_rate=48000',
+    '-map', '0:v', '-map', '1:a', '-shortest',
+    '-vf', 'scale=1920:1080:force_original_aspect_ratio=decrease,'
+         + 'pad=1920:1080:(ow-iw)/2:(oh-ih)/2:color=black,'
+         + 'setsar=1,fps=25',
+    '-c:v', 'libx264', '-preset', 'medium', '-crf', '20',
+    '-pix_fmt', 'yuv420p',
+    '-c:a', 'aac', '-b:a', '128k',
+    OUT_MP4,
+  ], { stdio: ['ignore', 'inherit', 'inherit'] });
+  if (ff.status !== 0) {
+    throw new Error(`ffmpeg transcode exited with status ${ff.status}`);
+  }
+  console.log(`✓ deliverable: ${OUT_MP4}`);
 }
 
 main().catch((err) => {
