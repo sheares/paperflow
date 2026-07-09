@@ -2904,9 +2904,7 @@ Bishan St 23 #11-04 Singapore 570210 to 8 Marina Boulevard
 His alias "Farid Hassan" appears on the utility bill; treat
 as the same person for the client record.`;
 
-const SB_ENT_COLOUR = { PERSON:'name', ORG:'org', ID:'id', UEN:'id',
-  POLICY:'id', SERIAL:'id', ADDR:'address', POSTCODE:'address',
-  DATE:'date', EMAIL:'email', PHONE:'phone' };
+const SB_ENT_COLOUR = FAMILY_COLOUR;   // was a duplicate map; now aliased to the single source
 
 function openSandbox(){
   document.getElementById('sandbox-overlay').classList.add('open');
@@ -3641,12 +3639,15 @@ document.getElementById('chat-input').addEventListener('keypress', e => {
 // alone doesn't cover paste, backspace, IME composition, etc.
 document.getElementById('chat-input').addEventListener('input', updateInputDetection);
 
-// Predict routing from the message text alone. In production this would be
-// a small local intent classifier; here it's a keyword heuristic that catches
-// the entity-resolution questions the local pipeline can answer without cloud.
+// Predict routing from the message text alone. The pattern comes from
+// /api/config so JS and Python (paperflow/router.py:LOCAL_TRIGGERS) are
+// literally the same regex — no more drift where JS misses 'aliases'
+// or 'who is' and the send-gate promises a cloud call the server
+// then routes local. Falls back to the last-known-good pattern if the
+// config hasn't loaded yet at first keystroke.
+let LOCAL_TRIGGERS_RE = /\b(merge|merged|alias|aliases|dedup|resolve[d]?|same\s+(person|org|organisation|patient|client|entity|company)|why\s+did\s+you\s+(merge|link|match|combine|group)|who\s+is)\b/i;
 function predictRouting(text){
-  const localTriggers = /\b(merge|merged|alias|dedup|resolve|resolved|same\s+(person|org|patient|client|entity|company)|why\s+did\s+you\s+(merge|link|match|combine|group))\b/i;
-  return localTriggers.test(text) ? 'local' : 'hybrid';
+  return LOCAL_TRIGGERS_RE.test(text || '') ? 'local' : 'hybrid';
 }
 
 // Live entity detection + routing prediction as the user types.
@@ -3709,7 +3710,20 @@ loadPile('kyc');
 // ============================================================
 const LIVE_PILES = { kyc: 'kyc_onboarding', patient: 'patient_intake', partner: 'partner_collation' };
 let REAL_SESSION = null;   // session_id for the currently loaded real pile
-const TOKEN_TYPES = { PERSON: 'name', ORG: 'org', ID: 'id', UEN: 'id', POLICY: 'id', SERIAL: 'id', ADDR: 'address', POSTCODE: 'address', DATE: 'date', EMAIL: 'email', PHONE: 'phone' };
+
+// Token family -> chip colour class. This is the SINGLE source of
+// truth on the client; SB_ENT_COLOUR (sidebar chip lookup) and
+// TOKEN_TYPES (receipt token chips) both point here now. The values
+// are seeded off /api/config.family_types at boot so the server's
+// FAMILY_TYPES stays authoritative; the fallback keeps the app
+// functional if the config fetch fails.
+let FAMILY_COLOUR = {
+  PERSON: 'name', ORG: 'org',
+  ID: 'id', UEN: 'id', POLICY: 'id', SERIAL: 'id',
+  ADDR: 'address', POSTCODE: 'address',
+  DATE: 'date', EMAIL: 'email', PHONE: 'phone',
+};
+const TOKEN_TYPES = FAMILY_COLOUR;   // legacy alias
 
 function tokenChip(t){
   // Token strings come from the server's redaction log via receipt.
@@ -3748,6 +3762,32 @@ async function hydrateLive(){
     }
   }
 }
+// Boot the server-emitted config first so predictRouting + the two
+// (now aliased) family-colour maps use whatever /api/router says. If
+// the fetch fails (offline preview of the file, sandbox), the fallback
+// values baked into LOCAL_TRIGGERS_RE + FAMILY_COLOUR stay in effect
+// so nothing crashes.
+(async () => {
+  try{
+    const r = await fetch('/api/config');
+    if(!r.ok) return;
+    const cfg = await r.json();
+    if(cfg.local_triggers && cfg.local_triggers.pattern){
+      try{
+        LOCAL_TRIGGERS_RE = new RegExp(
+          cfg.local_triggers.pattern,
+          cfg.local_triggers.flags || 'i');
+      } catch(e){ /* keep the baked-in fallback */ }
+    }
+    if(cfg.family_types && typeof cfg.family_types === 'object'){
+      // Mutate in place so the aliases (SB_ENT_COLOUR, TOKEN_TYPES)
+      // that hold the SAME reference also see the update.
+      for(const k of Object.keys(FAMILY_COLOUR)) delete FAMILY_COLOUR[k];
+      Object.assign(FAMILY_COLOUR, cfg.family_types);
+    }
+  } catch(_){ /* offline preview: fallbacks stay */ }
+})();
+
 hydrateLive();
 // Force the empty-state render of Your pile at boot. Without this, the
 // pane content stays whatever was baked into the HTML at load time

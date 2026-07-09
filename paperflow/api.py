@@ -117,6 +117,39 @@ def favicon():
     return Response(status_code=204)
 
 
+@app.get("/api/config")
+def config():
+    """Server-emitted config the client boots off. Single source of
+    truth for the routing regex (so JS predictRouting doesn't drift
+    from Python LOCAL_TRIGGERS) and the token-family → chip-colour
+    map (which was duplicated in three places). Cached client-side
+    once at page load."""
+    from .router import LOCAL_TRIGGERS
+    from .uiview import FAMILY_TYPES
+    return {
+        # Python re -> JS RegExp: pattern strings are portable for the
+        # constructs actually used here (word boundaries, character
+        # classes, alternation). Flag 'i' passed separately on the JS
+        # side; re.I is already baked into the compiled Python regex.
+        "local_triggers": {
+            "pattern": LOCAL_TRIGGERS.pattern,
+            "flags": "i",
+        },
+        "family_types": dict(FAMILY_TYPES),
+    }
+
+
+@app.get("/api/classify")
+def classify_route(q: str = ""):
+    """Ask the SERVER which route a question would take. Client uses
+    this on the send-gate + pending-chip path so the prediction is
+    the same code path Router.classify() runs at send time — no more
+    JS/Python drift possible."""
+    from .router import LOCAL_TRIGGERS
+    route = "local" if LOCAL_TRIGGERS.search(q or "") else "hybrid"
+    return {"route": route}
+
+
 # Content-Security-Policy backstop for the XSS escape pass. Even if a
 # renderer misses an interpolation, an <img onerror=...> or <script>
 # from an uploaded doc can't fetch/execute external scripts. Inline
