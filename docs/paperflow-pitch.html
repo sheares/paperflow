@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>paperflow — pitch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg: #0a0a0a;
+  --paper: #1a1a1a;
+  --paper-2: #222;
+  --ink: #e8e8e8;
+  --ink-soft: #c4c4c4;
+  --muted: #8a8a8a;
+  --muted2: #5e5e5e;
+  --line: rgba(255,255,255,0.08);
+  --line2: rgba(255,255,255,0.04);
+
+  --c-name: #818cf8;       --c-name-bg: rgba(129,140,248,0.12);   --c-name-border: rgba(129,140,248,0.32);
+  --c-address: #fb923c;    --c-address-bg: rgba(251,146,60,0.12); --c-address-border: rgba(251,146,60,0.32);
+  --c-id: #c084fc;         --c-id-bg: rgba(192,132,252,0.13);     --c-id-border: rgba(192,132,252,0.32);
+  --c-date: #34d399;       --c-date-bg: rgba(52,211,153,0.12);    --c-date-border: rgba(52,211,153,0.32);
+  --c-funds: #f472b6;      --c-funds-bg: rgba(244,114,182,0.12);  --c-funds-border: rgba(244,114,182,0.32);
+  --c-org: #22d3ee;        --c-org-bg: rgba(34,211,238,0.12);     --c-org-border: rgba(34,211,238,0.32);
+
+  --conf-good: #4ade80;    --conf-good-bg: rgba(74,222,128,0.10);  --conf-good-border: rgba(74,222,128,0.3);
+  --conf-review: #fbbf24;  --conf-review-bg: rgba(251,191,36,0.10);--conf-review-border: rgba(251,191,36,0.3);
+  --conf-block: #f87171;   --conf-block-bg: rgba(248,113,113,0.10);--conf-block-border: rgba(248,113,113,0.3);
+}
+*{box-sizing:border-box; margin:0; padding:0}
+html,body{
+  background:var(--bg); color:var(--ink);
+  height:100%; overflow:hidden;
+  font-family:'Inter',-apple-system,system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  letter-spacing:-0.005em;
+}
+
+/* ---- stage: fixed 16:9, scaled to viewport ---- */
+.stage{
+  position:absolute; top:50%; left:50%;
+  width:1280px; height:720px;
+  transform-origin:center center;
+  transform:translate(-50%,-50%);
+}
+.deck{ position:relative; width:100%; height:100%; }
+
+.slide{
+  position:absolute; inset:0;
+  display:flex; flex-direction:column; justify-content:center;
+  padding:78px 96px;
+  opacity:0; visibility:hidden;
+  transition:opacity .38s ease, visibility .38s ease;
+  background:
+    radial-gradient(1100px 520px at 82% -10%, rgba(129,140,248,0.10), transparent 60%),
+    radial-gradient(900px 500px at 0% 115%, rgba(34,211,238,0.055), transparent 55%),
+    var(--bg);
+}
+.slide.active{ opacity:1; visibility:visible; z-index:2; }
+.slide.active .rise{ animation:rise .5s ease both; }
+.slide.active .rise:nth-child(2){ animation-delay:.05s }
+.slide.active .rise:nth-child(3){ animation-delay:.10s }
+.slide.active .rise:nth-child(4){ animation-delay:.15s }
+.slide.active .rise:nth-child(5){ animation-delay:.20s }
+@keyframes rise{ from{opacity:0; transform:translateY(14px)} to{opacity:1; transform:none} }
+
+/* ---- typography ---- */
+.kicker{
+  font-size:13px; text-transform:uppercase; letter-spacing:0.2em;
+  color:var(--muted); font-weight:600; margin-bottom:26px;
+}
+.kicker .n{ color:var(--c-name); }
+.headline{ font-size:50px; font-weight:600; letter-spacing:-0.025em; line-height:1.06; color:#fff; }
+.headline .n{ color:var(--c-name); }
+.headline .warn{ color:var(--conf-review); }
+.lead{ font-size:23px; line-height:1.5; color:var(--ink-soft); font-weight:400; max-width:60ch; }
+.body{ font-size:19.5px; line-height:1.55; color:var(--ink-soft); max-width:64ch; }
+.small{ font-size:14px; color:var(--muted); }
+.mono{ font-family:'JetBrains Mono',monospace; }
+.sub{ margin-top:20px; }
+.dim{ color:var(--muted); }
+
+/* ---- logo / badge ---- */
+.brandmark{ font-weight:600; letter-spacing:-0.03em; color:#fff; }
+.brandmark .dot{ color:var(--c-name); }
+.amd-badge{
+  display:inline-flex; align-items:center; gap:9px;
+  font-size:13px; color:var(--muted);
+  border:1px solid var(--line); background:rgba(255,255,255,0.02);
+  padding:8px 15px; border-radius:999px;
+}
+.amd-badge b{ color:var(--ink); font-weight:500; }
+.amd-badge .sep{ color:var(--muted2); padding:0 3px; }
+.pulse{
+  width:7px; height:7px; border-radius:50%;
+  background:var(--conf-good);
+  box-shadow:0 0 0 0 rgba(74,222,128,0.55); animation:pulse 2s infinite;
+}
+@keyframes pulse{ 0%{box-shadow:0 0 0 0 rgba(74,222,128,0.5)} 70%{box-shadow:0 0 0 7px rgba(74,222,128,0)} 100%{box-shadow:0 0 0 0 rgba(74,222,128,0)} }
+
+/* ---- layout helpers ---- */
+.two-col{ display:grid; grid-template-columns:1fr 1fr; gap:26px; margin-top:34px; }
+.three-col{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; margin-top:34px; }
+.card{
+  background:var(--paper); border:1px solid var(--line); border-radius:16px;
+  padding:26px 28px;
+}
+.card h3{ font-size:19px; font-weight:600; color:var(--ink); margin-bottom:10px; letter-spacing:-0.01em; }
+.card p{ font-size:16px; line-height:1.5; color:var(--muted); }
+.card .tag{ font-size:12px; text-transform:uppercase; letter-spacing:0.14em; font-weight:600; margin-bottom:14px; display:block; }
+.card.accent{ border-color:var(--c-name-border); background:linear-gradient(180deg,var(--c-name-bg),transparent 90%),var(--paper); }
+.card.dimcard{ opacity:0.72; }
+
+.chips{ display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; }
+.tok{
+  font-family:'JetBrains Mono',monospace; font-size:15px;
+  padding:5px 12px; border-radius:8px; border:1px dashed var(--c-name-border);
+  background:var(--c-name-bg); color:var(--c-name);
+}
+.tok.addr{ border-color:var(--c-address-border); background:var(--c-address-bg); color:var(--c-address); }
+.tok.id{ border-color:var(--c-id-border); background:var(--c-id-bg); color:var(--c-id); }
+.tok.date{ border-color:var(--c-date-border); background:var(--c-date-bg); color:var(--c-date); }
+.tok.org{ border-color:var(--c-org-border); background:var(--c-org-bg); color:var(--c-org); }
+.real{
+  font-size:15px; padding:5px 12px; border-radius:8px;
+  border:1px solid var(--conf-block-border); background:var(--conf-block-bg); color:#fda4a4;
+}
+.arrow{ color:var(--muted2); font-size:18px; align-self:center; }
+
+/* flow rows */
+.flow{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-top:6px; }
+.node{
+  font-size:14px; padding:7px 13px; border-radius:9px;
+  border:1px solid var(--line); background:var(--paper-2); color:var(--ink-soft);
+}
+.node.lock{ border-color:var(--conf-good-border); color:var(--conf-good); background:var(--conf-good-bg); }
+.node.model{ border-color:var(--line); color:var(--ink); font-weight:500; }
+
+/* pipeline strip */
+.pipe{ display:flex; align-items:stretch; gap:0; margin-top:36px; border:1px solid var(--line); border-radius:14px; overflow:hidden; }
+.stage-cell{ flex:1; padding:20px 18px; border-right:1px solid var(--line); background:var(--paper); }
+.stage-cell:last-child{ border-right:0; }
+.stage-cell .st-name{ font-size:16px; font-weight:600; color:var(--ink); }
+.stage-cell .st-loc{ font-size:12px; margin-top:7px; letter-spacing:0.02em; }
+.loc-local{ color:var(--conf-good); }
+.loc-remote{ color:var(--c-org); }
+
+/* feature list */
+.flist{ margin-top:30px; display:grid; grid-template-columns:1fr 1fr; gap:22px 40px; }
+.fitem{ display:flex; gap:14px; }
+.fitem .fi-dot{ width:9px; height:9px; border-radius:50%; background:var(--c-name); margin-top:8px; flex:none; }
+.fitem h4{ font-size:17px; font-weight:600; color:var(--ink); margin-bottom:5px; }
+.fitem p{ font-size:14.5px; line-height:1.5; color:var(--muted); }
+
+/* matrix */
+table.matrix{ width:100%; border-collapse:collapse; margin-top:30px; font-size:15.5px; }
+table.matrix th, table.matrix td{ padding:13px 16px; text-align:left; border-bottom:1px solid var(--line); }
+table.matrix thead th{ font-size:12.5px; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); font-weight:600; }
+table.matrix td:first-child, table.matrix th:first-child{ color:var(--ink-soft); }
+table.matrix .col-pf{ background:var(--c-name-bg); }
+table.matrix thead .col-pf{ color:var(--c-name); }
+.mk{ font-weight:600; }
+.mk.yes{ color:var(--conf-good); }
+.mk.no{ color:var(--muted2); }
+.mk.part{ color:var(--conf-review); }
+
+/* stat row */
+.stats{ display:flex; gap:44px; margin-top:38px; }
+.stat .big{ font-size:44px; font-weight:600; color:#fff; letter-spacing:-0.02em; }
+.stat .lbl{ font-size:14.5px; color:var(--muted); margin-top:4px; max-width:20ch; }
+
+/* title slide */
+.title-slide{ justify-content:center; }
+.title-slide .brandmark{ font-size:104px; line-height:1; }
+.title-slide .oneline{ font-size:27px; color:var(--ink-soft); margin-top:30px; max-width:24ch; line-height:1.35; }
+.title-foot{ position:absolute; left:96px; right:96px; bottom:64px; display:flex; align-items:center; justify-content:space-between; }
+
+/* domain tags */
+.domains{ display:flex; gap:16px; margin-top:36px; }
+.domain{ flex:1; border:1px solid var(--line); border-radius:14px; padding:24px; background:var(--paper); }
+.domain .d-k{ font-size:12px; text-transform:uppercase; letter-spacing:0.14em; color:var(--c-name); font-weight:600; }
+.domain .d-t{ font-size:20px; font-weight:600; color:var(--ink); margin-top:10px; }
+.domain .d-s{ font-size:14px; color:var(--muted); margin-top:6px; }
+
+.caption{ margin-top:30px; font-size:17px; color:var(--muted); max-width:70ch; }
+.caption b{ color:var(--ink-soft); font-weight:500; }
+
+/* chrome */
+.progress{ position:fixed; top:0; left:0; right:0; height:3px; background:rgba(255,255,255,0.05); z-index:100; }
+.progress-fill{ height:100%; width:0; background:var(--c-name); transition:width .38s ease; }
+.counter{ position:fixed; bottom:20px; right:26px; font-size:13px; color:var(--muted2); z-index:100; font-family:'JetBrains Mono',monospace; }
+.counter b{ color:var(--muted); font-weight:500; }
+.hint{ position:fixed; bottom:20px; left:26px; font-size:12px; color:var(--muted2); z-index:100; }
+
+@media print{
+  @page{ size:1280px 720px; margin:0; }
+  html,body{ overflow:visible; height:auto; }
+  .stage{ position:static; transform:none!important; width:1280px; height:auto; }
+  .deck{ height:auto; }
+  .slide{
+    position:relative; inset:auto; opacity:1!important; visibility:visible!important;
+    width:1280px; height:720px; page-break-after:always; break-after:page;
+  }
+  .slide.active .rise{ animation:none; }
+  .progress,.counter,.hint{ display:none!important; }
+}
+</style>
+</head>
+<body>
+<div class="progress"><div class="progress-fill" id="pfill"></div></div>
+<div class="stage" id="stage">
+  <div class="deck" id="deck">
+
+    <!-- 1 · TITLE -->
+    <section class="slide title-slide">
+      <div class="kicker rise">AMD Developer Hackathon ACT II <span class="dim">·</span> Track 3 <span class="n">Unicorn</span></div>
+      <div class="brandmark rise">paperflow<span class="dot">.</span></div>
+      <div class="oneline rise">The document reconciler you can point at confidential paperwork, because nothing has to leave your hardware.</div>
+      <div class="title-foot">
+        <span class="amd-badge"><span class="pulse"></span> <b>Local:</b> AMD MI300X <span class="sep">·</span> <b>Remote:</b> Fireworks AI</span>
+        <span class="small mono">open weights only · runs in a container</span>
+      </div>
+    </section>
+
+    <!-- 2 · PROBLEM -->
+    <section class="slide">
+      <div class="kicker rise">The problem</div>
+      <h1 class="headline rise">Some paperwork legally<br>cannot go to cloud AI.</h1>
+      <p class="body sub rise">Singapore banks process tens of thousands of KYC onboarding files a year, and MAS effectively bans sending those documents to any cloud AI. So the hardest part, reconciling identity documents that disagree across a pile, stays manual, slow, and queued at every compliance team in the country.</p>
+      <div class="stats rise">
+        <div class="stat"><div class="big">10,000s</div><div class="lbl">onboarding files a year, per bank</div></div>
+        <div class="stat"><div class="big">0</div><div class="lbl">cloud document tools cleared to touch them</div></div>
+        <div class="stat"><div class="big">100%</div><div class="lbl">of the reconciliation done by hand today</div></div>
+      </div>
+    </section>
+
+    <!-- 3 · WHY NOT SOLVED -->
+    <section class="slide">
+      <div class="kicker rise">Why this isn't already solved</div>
+      <h1 class="headline rise">The two obvious answers<br>are each half a product.</h1>
+      <div class="two-col">
+        <div class="card rise">
+          <span class="tag dim">"Redact before the LLM"</span>
+          <h3>A commodity.</h3>
+          <p>Reversible redaction with consistent placeholders is already productised by Gravitee, Philter, TrueFoundry and LangChain, and free as MIT open source. But it is built for chat and agent prompts, not messy document piles.</p>
+        </div>
+        <div class="card rise">
+          <span class="tag dim">"Cloud IDP reconciliation"</span>
+          <h3>Runs in the wrong place.</h3>
+          <p>Rossum, Infrrd and Super.AI already match fields across documents. But the matching runs in the vendor's cloud, which is exactly what a privacy-blocked organisation cannot use.</p>
+        </div>
+      </div>
+      <p class="caption rise">Neither pillar alone is the wedge. <b>The intersection is the product.</b></p>
+    </section>
+
+    <!-- 4 · THE WEDGE -->
+    <section class="slide">
+      <div class="kicker rise">The wedge</div>
+      <h1 class="headline rise">Data <span class="n">minimisation</span>, not data residency.</h1>
+      <div class="two-col">
+        <div class="card dimcard rise">
+          <span class="tag" style="color:var(--muted)">Data residency · what everyone offers</span>
+          <p style="margin-bottom:16px">Bedrock, Vertex, Claude Desktop on third-party. "Bring the model to your cloud." You control <i>where</i> the endpoint runs.</p>
+          <div class="flow">
+            <span class="node">documents</span><span class="arrow">→</span>
+            <span class="real">Farid Hassan</span><span class="arrow">→</span>
+            <span class="node model">cloud model</span>
+          </div>
+          <p style="margin-top:16px; color:var(--conf-block)">The real identity still reaches the endpoint.</p>
+        </div>
+        <div class="card accent rise">
+          <span class="tag n">Data minimisation · paperflow</span>
+          <p style="margin-bottom:16px; color:var(--ink-soft)">The real identity never reaches the reasoning model at all. Presidio tokenises before anything crosses.</p>
+          <div class="flow">
+            <span class="node">documents</span><span class="arrow">→</span>
+            <span class="node lock">local map</span><span class="arrow">→</span>
+            <span class="tok">[PERSON_1]</span><span class="arrow">→</span>
+            <span class="node model">cloud model</span>
+          </div>
+          <p style="margin-top:16px; color:var(--conf-good)">Only tokens cross. The map stays on your machine.</p>
+        </div>
+      </div>
+      <p class="caption rise">Relocating the model is commodity BYO-cloud. <b>Removing the identity is the whole product.</b></p>
+    </section>
+
+    <!-- 5 · SEGMENT -->
+    <section class="slide">
+      <div class="kicker rise">Who this is for</div>
+      <h1 class="headline rise">Confidential piles that<br>cannot leave the building.</h1>
+      <p class="body sub rise">Low-volume, high-sensitivity, heterogeneous document piles in organisations banned from sending documents to any cloud at all. The buyer is compliance, or the Data Protection Officer. The driver is a hard regulatory line, not a preference.</p>
+      <div class="chips rise" style="margin-top:34px; gap:14px; align-items:center">
+        <span class="node">document-native</span>
+        <span class="arrow" style="font-size:22px">∩</span>
+        <span class="node">reconciliation with rationale</span>
+        <span class="arrow" style="font-size:22px">∩</span>
+        <span class="node lock">zero cloud egress</span>
+        <span class="arrow">=</span>
+        <span class="tok" style="border-style:solid">the cell nobody serves</span>
+      </div>
+    </section>
+
+    <!-- 6 · ARCHITECTURE -->
+    <section class="slide">
+      <div class="kicker rise">How it works</div>
+      <h1 class="headline rise">Five agents. The sensitive<br>work stays local.</h1>
+      <div class="pipe rise">
+        <div class="stage-cell"><div class="st-name">Extract</div><div class="st-loc loc-local">local VLM · MI300X</div></div>
+        <div class="stage-cell"><div class="st-name">Resolve + Redact</div><div class="st-loc loc-local">local · consistent map</div></div>
+        <div class="stage-cell"><div class="st-name">Reconcile</div><div class="st-loc loc-remote">Fireworks · redacted</div></div>
+        <div class="stage-cell"><div class="st-name">Audit</div><div class="st-loc loc-local">local · gap-check</div></div>
+        <div class="stage-cell"><div class="st-name">Emit</div><div class="st-loc loc-local">local · rehydrate</div></div>
+      </div>
+      <div class="card accent rise" style="margin-top:32px">
+        <h3>The twist: one consistent entity map across the whole pile.</h3>
+        <p style="color:var(--ink-soft); font-size:16.5px">
+          <span class="mono">Acme Corp</span>, <span class="mono">ACME Corporation</span> and <span class="mono">Acme Inc</span> all resolve to
+          <span class="tok org" style="padding:2px 8px">[ORG_1]</span> in every document. The cloud model reasons about relationships between placeholders without seeing a single real value, so redaction preserves reconciliation instead of breaking it.
+        </p>
+      </div>
+    </section>
+
+    <!-- 7 · PRODUCT -->
+    <section class="slide">
+      <div class="kicker rise">The product</div>
+      <h1 class="headline rise">Trust is the interface,<br>not a footnote.</h1>
+      <div class="flist rise">
+        <div class="fitem"><div class="fi-dot"></div><div><h4>Per-exchange privacy receipt</h4><p>Shown inline every turn, never behind a toggle. A routing chip states the route: "Local only · 0 cloud calls" or "Local + Cloud · 1 redacted call".</p></div></div>
+        <div class="fitem"><div class="fi-dot" style="background:var(--c-address)"></div><div><h4>One entity, one colour, three surfaces</h4><p>Underline on the real value in your message, a dashed token in the receipt, a solid chip in the record. Hover one and its matches light up across panes.</p></div></div>
+        <div class="fitem"><div class="fi-dot" style="background:var(--conf-review)"></div><div><h4>Pre-send review gate</h4><p>If a message would cross to the cloud with detected values, the send button arms to "Confirm · send redacted". Human consent before anything leaves.</p></div></div>
+        <div class="fitem"><div class="fi-dot" style="background:var(--c-org)"></div><div><h4>Detected-entities panel</h4><p>Every entity Presidio caught, with a "flag a missed one" control. Detection recall you can audit live, not a claim you have to trust.</p></div></div>
+      </div>
+      <div class="chips rise" style="margin-top:30px">
+        <span class="small dim" style="margin-right:6px">the cloud saw only:</span>
+        <span class="tok">[PERSON_1]</span><span class="tok addr">[ADDRESS_2]</span><span class="tok id">[ID_3]</span><span class="tok date">[DOB_4]</span><span class="tok org">[ORG_6]</span>
+      </div>
+    </section>
+
+    <!-- 8 · UI SCREENSHOT -->
+    <section class="slide">
+      <div class="kicker rise">In the product</div>
+      <h1 class="headline rise">The receipt is<br>the interface.</h1>
+      <div class="rise" style="margin-top:34px; display:grid; grid-template-columns:1fr 1fr; gap:26px; align-items:start;">
+        <!-- Left: mock chat turn -->
+        <div style="background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:22px 24px;">
+          <div style="font-size:11.5px; color:var(--muted); text-transform:uppercase; letter-spacing:0.14em; margin-bottom:14px;">The Assistant <span style="color:var(--muted2);">· reconciler · live</span></div>
+          <!-- user bubble -->
+          <div style="display:flex; justify-content:flex-end; margin-bottom:14px;">
+            <div style="max-width:88%; background:rgba(255,255,255,0.05); border:1px solid var(--line); border-radius:12px; padding:10px 14px; font-size:14.5px; color:var(--ink);">Give me a summary of what was reconciled across this pile.</div>
+          </div>
+          <!-- receipt -->
+          <div style="border:1px dashed rgba(129,140,248,0.28); border-radius:12px; padding:12px 14px; margin-bottom:14px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <span style="font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:0.14em;">Privacy receipt</span>
+              <span style="font-size:11.5px; color:var(--conf-good);"><span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--conf-good); vertical-align:middle; margin-right:5px;"></span>Local + Cloud · 1 redacted call</span>
+            </div>
+            <div style="border:1px dashed var(--line); border-radius:8px; padding:8px 12px; margin-bottom:9px;">
+              <span style="font-size:10.5px; color:var(--muted); letter-spacing:0.06em;">ROUTED HYBRID</span>
+              <span style="font-size:12.5px; color:var(--ink-soft); margin-left:8px;">cross-document comparison · benefits from a larger remote model</span>
+            </div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+              <span class="tok" style="font-size:12.5px; padding:3px 8px;">[PERSON_1]</span>
+              <span class="tok org" style="font-size:12.5px; padding:3px 8px;">[ORG_2]</span>
+              <span class="tok id" style="font-size:12.5px; padding:3px 8px;">[ID_3]</span>
+              <span class="tok addr" style="font-size:12.5px; padding:3px 8px;">[ADDR_4]</span>
+              <span class="tok date" style="font-size:12.5px; padding:3px 8px;">[DATE_5]</span>
+              <span style="font-size:12px; color:var(--muted); align-self:center; margin-left:4px;">· <b style="color:var(--ink);">5 tokens crossed · 0 detected identifiers</b></span>
+            </div>
+          </div>
+          <!-- ai bubble -->
+          <div style="font-size:14px; color:var(--ink-soft); line-height:1.55;">Two clients identified across the four docs. <b style="color:var(--ink);">Mohammed Farid bin Hassan</b> (alias <b style="color:var(--ink);">Farid Hassan</b> merged automatically) has an address conflict between the KYC form and utility bill · MAS Notice 626 says the form is authoritative. <b style="color:var(--ink);">Yvonne Goh</b> has an NRIC OCR conflict on the scan · digit-form beats letter-substitution. <span style="color:var(--muted);">Records are in the panel; every value cites its source.</span></div>
+        </div>
+        <!-- Right: annotations -->
+        <div style="padding-top:8px;">
+          <div style="display:flex; gap:14px; margin-bottom:24px;">
+            <div style="width:9px; height:9px; border-radius:50%; background:var(--c-name); margin-top:8px; flex:none;"></div>
+            <div><h4 style="font-size:17px; color:var(--ink); margin-bottom:4px;">Every turn shows the routing decision.</h4><p style="font-size:14.5px; color:var(--muted); line-height:1.5;">A chip says which path the question took. Never behind a toggle.</p></div>
+          </div>
+          <div style="display:flex; gap:14px; margin-bottom:24px;">
+            <div style="width:9px; height:9px; border-radius:50%; background:var(--c-address); margin-top:8px; flex:none;"></div>
+            <div><h4 style="font-size:17px; color:var(--ink); margin-bottom:4px;">The tokens above are what crossed to Fireworks.</h4><p style="font-size:14.5px; color:var(--muted); line-height:1.5;">The count and the token list are the projection of the router's log · not a summary of it.</p></div>
+          </div>
+          <div style="display:flex; gap:14px;">
+            <div style="width:9px; height:9px; border-radius:50%; background:var(--conf-review); margin-top:8px; flex:none;"></div>
+            <div><h4 style="font-size:17px; color:var(--ink); margin-bottom:4px;">Air-gapped mode flips the chip to <span style="font-family:'JetBrains Mono',monospace; font-size:14px;">Local only · 0 cloud calls</span>.</h4><p style="font-size:14.5px; color:var(--muted); line-height:1.5;">The token list vanishes because the receipt says nothing crossed. Zero egress, provable.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9 · MATRIX -->
+    <section class="slide">
+      <div class="kicker rise">The landscape</div>
+      <h1 class="headline rise">The empty cell is<br>the combination.</h1>
+      <table class="matrix rise">
+        <thead><tr><th>Capability</th><th>Privacy LLM gateways</th><th>Cloud IDP</th><th class="col-pf">paperflow</th></tr></thead>
+        <tbody>
+          <tr><td>Messy multi-document piles</td><td><span class="mk no">No</span></td><td><span class="mk yes">Yes</span></td><td class="col-pf"><span class="mk yes">Yes</span></td></tr>
+          <tr><td>Cross-doc reconciliation with rationale</td><td><span class="mk no">No</span></td><td><span class="mk part">Partial</span></td><td class="col-pf"><span class="mk yes">Yes</span></td></tr>
+          <tr><td>Per-field provenance</td><td><span class="mk part">Limited</span></td><td><span class="mk part">Partial</span></td><td class="col-pf"><span class="mk yes">Yes</span></td></tr>
+          <tr><td>Reversible redaction round-trip</td><td><span class="mk yes">Yes</span></td><td><span class="mk no">No</span></td><td class="col-pf"><span class="mk yes">Yes</span></td></tr>
+          <tr><td>Runs with zero cloud egress</td><td><span class="mk yes">Yes</span></td><td><span class="mk no">No</span></td><td class="col-pf"><span class="mk yes">Yes</span></td></tr>
+          <tr><td>Gap-flagging against a checklist</td><td><span class="mk no">No</span></td><td><span class="mk part">Partial</span></td><td class="col-pf"><span class="mk yes">Yes</span></td></tr>
+        </tbody>
+      </table>
+      <p class="caption rise">We don't out-redact a gateway or out-scale a cloud IDP. We're the only viable option for a confidential pile that cannot leave.</p>
+    </section>
+
+    <!-- 10 · AMD -->
+    <section class="slide">
+      <div class="kicker rise">Meaningful use of AMD</div>
+      <h1 class="headline rise">The MI300X does the<br>load-bearing confidential work.</h1>
+      <div class="three-col rise">
+        <div class="card accent">
+          <span class="tag n">Gemma-4-31B-IT · 192 GB HBM3</span>
+          <p style="color:var(--ink-soft)">Google's Gemma-4-31B-IT vision-language model, BF16 on a single MI300X via vLLM ROCm. Floor test 2026-07-07: 48/50 strict value recovery, ~5 s/page steady, sensitive extraction never leaves the box.</p>
+        </div>
+        <div class="card">
+          <span class="tag" style="color:var(--conf-good)">Raw-sensitive, local</span>
+          <p>Local extraction and local entity resolution carry every raw step. The cloud only ever sees redacted tokens.</p>
+        </div>
+        <div class="card">
+          <span class="tag" style="color:var(--conf-good)">Zero egress</span>
+          <p>Air-gapped mode: one toggle, everything on the MI300X + container, zero egress by construction, for piles that cannot even send tokens.</p>
+        </div>
+      </div>
+      <p class="caption rise">Not a garnish. <b>The sensitive work cannot happen anywhere but on local AMD hardware.</b></p>
+    </section>
+
+    <!-- 11 · REALISED -->
+    <section class="slide">
+      <div class="kicker rise">Realised and functional</div>
+      <h1 class="headline rise">It runs end to end,<br>and we score it.</h1>
+      <p class="body sub rise">Containerised from day one. A live run on a realistic pile, not slides. Four green eval suites against a known ground truth, printed with every commit:</p>
+      <div class="three-col rise" style="margin-top:28px; grid-template-columns:1fr 1fr 1fr 1fr; gap:16px">
+        <div class="card" style="padding:20px">
+          <h3 style="font-size:16px">Reconciliation</h3>
+          <div style="font-size:26px; font-weight:600; color:var(--conf-good); font-family:'JetBrains Mono',monospace; margin:8px 0 6px;">10 / 10</div>
+          <p style="font-size:13px">conflicts resolved · 1 escalated by design (owner review)</p>
+        </div>
+        <div class="card" style="padding:20px">
+          <h3 style="font-size:16px">Gap-flagging</h3>
+          <div style="font-size:26px; font-weight:600; color:var(--conf-good); font-family:'JetBrains Mono',monospace; margin:8px 0 6px;">7 / 7</div>
+          <p style="font-size:13px">required fields missing across every pile flagged</p>
+        </div>
+        <div class="card" style="padding:20px">
+          <h3 style="font-size:16px">Entity resolution</h3>
+          <div style="font-size:26px; font-weight:600; color:var(--conf-good); font-family:'JetBrains Mono',monospace; margin:8px 0 6px;">3 / 3</div>
+          <p style="font-size:13px">alias groups merged, not flagged as duplicates</p>
+        </div>
+        <div class="card" style="padding:20px">
+          <h3 style="font-size:16px">Redaction recall</h3>
+          <div style="font-size:26px; font-weight:600; color:var(--conf-good); font-family:'JetBrains Mono',monospace; margin:8px 0 6px;">38 / 38</div>
+          <p style="font-size:13px">sensitive spans masked across the three demo piles</p>
+        </div>
+      </div>
+      <p class="caption rise">Plus receipts-vs-log consistency + prompt-injection safety, both green. <span class="mono" style="color:var(--muted)">python -m eval.scorer</span> · reproducible on any fresh clone.</p>
+    </section>
+
+    <!-- 12 · HONEST LIMITS -->
+    <section class="slide">
+      <div class="kicker rise">What we don't claim</div>
+      <h1 class="headline rise">Sharply reduced exposure,<br><span class="warn">not</span> zero leakage.</h1>
+      <p class="body sub rise">Security rests on detection recall. Structured identifiers are high-recall; person and company names rely on NER and will miss edge cases. So the UI says "0 detected identifiers crossed", never "zero leakage". The pre-send gate and the detected-entities panel are that caveat rendered as features.</p>
+      <p class="caption rise">For un-patternable free text, <b>full-local mode is the honest answer</b>, and there the absolute claim is true by construction. We frame paperflow for environments where cloud document AI is off-limits, not as a certified compliance product.</p>
+    </section>
+
+    <!-- 13 · VISION -->
+    <section class="slide">
+      <div class="kicker rise">Where it goes</div>
+      <h1 class="headline rise">Same engine, any pile<br>that cannot leave.</h1>
+      <div class="domains rise">
+        <div class="domain"><div class="d-k">Finance · live demo</div><div class="d-t">KYC / AML onboarding</div><div class="d-s">The sector that banned cloud LLMs first and hardest.</div></div>
+        <div class="domain"><div class="d-k">Healthcare</div><div class="d-t">Patient intake</div><div class="d-s">Records that disagree across referrals and forms.</div></div>
+        <div class="domain"><div class="d-k">Enterprise</div><div class="d-t">Partner collation</div><div class="d-s">Confidential counterparties across a deal pile.</div></div>
+      </div>
+      <p class="caption rise">A tab switch in the demo, and the on-screen proof it generalises. Wherever cloud document AI is off-limits, paperflow is the reconciler that can still run.</p>
+    </section>
+
+    <!-- 14 · CLOSE -->
+    <section class="slide title-slide">
+      <div class="brandmark rise" style="font-size:88px">paperflow<span class="dot">.</span></div>
+      <div class="oneline rise" style="max-width:30ch; font-size:29px">Reconciliation for paperwork that legally cannot leave the building.</div>
+      <div class="rise sub"><span class="dim" style="font-size:20px">On your own AMD hardware.</span></div>
+      <div class="title-foot">
+        <span class="amd-badge"><span class="pulse"></span> <b>AMD MI300X</b> <span class="sep">·</span> Fireworks AI <span class="sep">·</span> Microsoft Presidio</span>
+        <span class="small mono">original · MIT-licensed · open weights only</span>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<div class="counter"><span id="cur">1</span> <b>/</b> <span id="tot">13</span></div>
+<div class="hint">← → space to navigate · P to print</div>
+
+<script>
+(function(){
+  var stage = document.getElementById('stage');
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var tot = slides.length, i = 0;
+  document.getElementById('tot').textContent = tot;
+
+  function fit(){
+    var s = Math.min(window.innerWidth/1280, window.innerHeight/720);
+    stage.style.transform = 'translate(-50%,-50%) scale(' + s + ')';
+  }
+  window.addEventListener('resize', fit); fit();
+
+  function show(n){
+    i = Math.max(0, Math.min(tot-1, n));
+    for(var k=0;k<slides.length;k++){ slides[k].classList.toggle('active', k===i); }
+    document.getElementById('cur').textContent = i+1;
+    document.getElementById('pfill').style.width = ((i+1)/tot*100) + '%';
+    if(location.hash !== '#'+(i+1)) history.replaceState(null,'','#'+(i+1));
+  }
+  function next(){ show(i+1); }
+  function prev(){ show(i-1); }
+
+  window.addEventListener('keydown', function(e){
+    if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){ e.preventDefault(); next(); }
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){ e.preventDefault(); prev(); }
+    else if(e.key==='Home'){ show(0); }
+    else if(e.key==='End'){ show(tot-1); }
+    else if(e.key==='p'||e.key==='P'){ window.print(); }
+  });
+  stage.addEventListener('click', function(e){
+    var r = stage.getBoundingClientRect();
+    if(e.clientX < r.left + r.width*0.22) prev(); else next();
+  });
+
+  var start = parseInt((location.hash||'').replace('#',''),10);
+  show(isNaN(start) ? 0 : start-1);
+})();
+</script>
+</body>
+</html>
