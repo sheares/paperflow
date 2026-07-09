@@ -825,6 +825,18 @@ main{ display: contents; }
      used to squeeze "Zero1 Pte Ltd" onto three vertical lines. */
   white-space: nowrap;
 }
+/* Record-pane chips carry full field VALUES ("Not explicitly stated
+   as a specific source, but referenced as 'funds referenced in
+   Section C'"), not short entity tokens. Allow wrapping so long
+   values don't overflow the column. Only inside .field .value —
+   receipt token lists + reply chips keep the tight nowrap look. */
+.field .value .chip{
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  display: inline;
+  line-height: 1.55;
+}
 .token{ border-bottom-style: dashed; }
 
 /* Chat input */
@@ -2283,6 +2295,45 @@ function tagTokensForLinking(){
   document.querySelectorAll('.token, #sidebar-entities .ent-type').forEach(el => {
     const t = el.textContent.trim();
     if(/^\[[A-Za-z]+_[\w*]+\]$/.test(t)) el.dataset.token = t;
+  });
+  tagRecordChipsForLinking();
+}
+
+// Record-pane chips show the REHYDRATED value (e.g. "Yvonne Goh"),
+// not the token. Without a data-token attribute, clicking a
+// [PERSON_1] chip in the receipt or reply couldn't find the field
+// in the reconciled record. Look each value up in the current
+// pile's entity map (including aliases) and stamp data-token so
+// relatedTokenSelector can find them.
+function tagRecordChipsForLinking(){
+  const p = piles[currentPile];
+  if(!p || !Array.isArray(p.entities) || !p.entities.length) return;
+  const valueToToken = new Map();
+  const expanded = (typeof expandEntities === 'function')
+    ? expandEntities(p.entities) : p.entities;
+  for(const e of expanded){
+    if(!e || !e.token) continue;
+    const v = String(e.value || '').trim().toLowerCase();
+    if(v && !valueToToken.has(v)) valueToToken.set(v, e.token);
+  }
+  document.querySelectorAll(
+    '#record-body .chip, #record-body .value, #record-body .opt'
+  ).forEach(el => {
+    if(el.dataset.token) return;  // already tagged
+    const text = (el.textContent || '').trim().toLowerCase();
+    if(!text) return;
+    // Exact match first; fall back to any entity value contained in the
+    // text (handles composite fields like a value + citation together).
+    if(valueToToken.has(text)){
+      el.dataset.token = valueToToken.get(text);
+      return;
+    }
+    for(const [v, tok] of valueToToken){
+      if(v.length >= 3 && text.includes(v)){
+        el.dataset.token = tok;
+        return;
+      }
+    }
   });
 }
 
