@@ -2132,6 +2132,47 @@ function receiptBlockHTML(bodyHTML, sources){
   </div>`;
 }
 
+// Render the receipt DIRECTLY from the server's receipt_from_log
+// projection — no re-derivation, no client-side fabrication. The
+// server has already decided route/chip/crossed based on its actual
+// router log entry; the client just draws what it was told.
+// Server contract (see paperflow/router.py:receipt_from_log):
+//   { route: 'local' | 'hybrid',
+//     chip:  '...',
+//     reason: '...',
+//     tokens_shown: [...],
+//     crossed: '...',
+//     latency_s: n }
+function receiptBlockFromServer(receipt){
+  const routing = receipt.route === 'hybrid' ? 'hybrid' : 'local';
+  const routeLabel = routing === 'local' ? 'Routed local' : 'Routed hybrid';
+  const tokenChips = routing === 'hybrid' && Array.isArray(receipt.tokens_shown)
+    ? receipt.tokens_shown.slice(0, 10).map(tokenChip).join(' ') + ' · '
+    : '';
+  const body = tokenChips + `<b>${escapeHtml(receipt.crossed || '')}</b>`;
+  return `<div class="receipt">
+    <div class="receipt-head">
+      <span>Privacy receipt</span>
+      ${routingChipHTML(routing)}
+    </div>
+    <div class="routing-reason ${routing}">
+      <span class="rr-label">${routeLabel}</span>
+      <span class="rr-why">${escapeHtml(receipt.reason || '')}</span>
+    </div>
+    <div class="receipt-body">${body}</div>
+  </div>`;
+}
+function serverReceiptSources(receipt){
+  // Build the "↳ Sources: ..." line under the AI bubble from the same
+  // server object. The suffix keeps the "live · Xs" grain the canned
+  // path used, so the two lanes read identically.
+  const base = receipt.route === 'hybrid'
+    ? 'Local + remote (redacted)'
+    : 'Local resolver · no remote call';
+  const dt = receipt.latency_s != null ? ` · live · ${receipt.latency_s}s` : '';
+  return base + dt;
+}
+
 // After any chat/sidebar re-render, tag every [XXX_N] chip with a data-token
 // attribute so hover can link them across panes.
 function tagTokensForLinking(){
@@ -3401,21 +3442,42 @@ function appendPending(user, predictedRoute){
   return wrap;
 }
 
-function resolvePending(node, receipt, ai, sources){
+function resolvePending(node, receiptOrHtml, ai, sourcesArg){
+  // Two modes:
+  //  * Canned mockup path — receiptOrHtml is a pre-composed HTML string
+  //    and sourcesArg is a display string; keep the legacy renderer +
+  //    the fullLocal override so the mockup demo scenes still play.
+  //  * Live server path — receiptOrHtml is the server's receipt object
+  //    from receipt_from_log. Rendered DIRECTLY: no fullLocal overwrite
+  //    (the server already respected full_local in the request and its
+  //    log entry is authoritative), no regex re-derivation of the
+  //    route from a display string, no client fabrication.
   if(!node) return;
-  if(fullLocal){
-    const m = String(sources).match(/doc_.*/);
-    sources = 'Air-gapped · MI300X + paperflow container only' + (m ? ' · ' + m[0] : '');
-    receipt = 'Air-gapped mode · all reasoning ran on the MI300X + container · <b>nothing crossed the network</b>.';
+  const isServerReceipt = receiptOrHtml && typeof receiptOrHtml === 'object';
+  let receiptHTML, sources, routing;
+  if(isServerReceipt){
+    receiptHTML = receiptBlockFromServer(receiptOrHtml);
+    sources = serverReceiptSources(receiptOrHtml);
+    routing = receiptOrHtml.route === 'hybrid' ? 'hybrid' : 'local';
+  } else {
+    let receipt = receiptOrHtml;
+    sources = sourcesArg;
+    if(fullLocal){
+      const m = String(sources).match(/doc_.*/);
+      sources = 'Air-gapped · MI300X + paperflow container only' + (m ? ' · ' + m[0] : '');
+      receipt = 'Air-gapped mode · all reasoning ran on the MI300X + container · <b>nothing crossed the network</b>.';
+    }
+    receiptHTML = receiptBlockHTML(receipt, sources);
+    routing = detectRouting(sources);
   }
   const html = `
     <div class="bubble user">${node.querySelector('.bubble.user').innerHTML}</div>
-    ${receiptBlockHTML(receipt, sources)}
+    ${receiptHTML}
     <div class="bubble ai">${ai}<div class="sources">↳ Sources: <b>${escapeHtml(sources)}</b></div></div>`;
   const rep = document.createElement('div');
   rep.innerHTML = html;
   node.replaceWith(...rep.childNodes);
-  if(detectRouting(sources) === 'hybrid') flashRemote();
+  if(routing === 'hybrid') flashRemote();
   tagTokensForLinking();
   scrollChat();
 }
@@ -3783,14 +3845,13 @@ async function liveAsk(text){
     });
     if(!r.ok) throw new Error('ask failed');
     const d = await r.json();
-    const rc = d.receipt;
-    const receiptHtml = (rc.route === 'hybrid'
-      ? rc.tokens_shown.slice(0, 10).map(tokenChip).join(' ') + ' · ' : '')
-      + `<b>${rc.crossed}</b>`;
-    const sources = (rc.route === 'hybrid'
-      ? 'Local + remote (redacted)' : 'Local resolver · no remote call')
-      + ` · live · ${rc.latency_s}s`;
-    resolvePending(pending, receiptHtml, escapeHtml(d.answer), sources);
+    // Hand the SERVER'S receipt object straight to resolvePending — no
+    // client-side re-derivation of the route, no rewriting of the chip
+    // text in air-gapped mode. If d.receipt.route == 'local' + chip
+    // == 'Local only · 0 cloud calls' the server has already vouched
+    // for it. The audit's critique: paperflow's trust story only holds
+    // if the receipt is a pure projection of the server's log.
+    resolvePending(pending, d.receipt, escapeHtml(d.answer));
   } catch(err){
     resolvePending(pending,
       'Local-only check. No cloud call for this exchange.',
