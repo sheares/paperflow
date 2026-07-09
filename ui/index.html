@@ -1202,17 +1202,11 @@ main{ display: contents; }
       <div class="pile-stats" id="pile-stats"></div>
       <div class="pile-grid" id="pile-grid"></div>
 
-      <div class="drop-row" id="demo-drop-row">
-        <div class="drop-zone" style="cursor:pointer;" onclick="loadPile('real')" data-tooltip="This demo pile is locked so the eval numbers in the README stay reproducible. To add your own docs and run them through the same pipeline live, use Your pile.">
-          <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="17 8 12 3 7 8"/>
-            <line x1="12" y1="3" x2="12" y2="15"/>
-          </svg>
-          <div class="drop-title">Want to add your own documents?</div>
-          <div class="drop-hint">This demo pile is locked so the README's eval numbers stay reproducible. Click here to switch to <b style="color:var(--c-name);">Your pile</b> and upload real files through the same pipeline.</div>
-        </div>
-      </div>
+      <!-- The legacy 'Want to add your own documents?' tile lived here.
+           It was a redirector from the old demo pile tabs to Your pile.
+           Demo tabs were removed earlier — the app boots straight into
+           Your pile's empty state, which already shows the trust
+           boundary + sample cards + drop zone in one screen. -->
 
       <div class="entities-section">
         <div class="entities-section-head">
@@ -1956,10 +1950,6 @@ function loadPile(key){
                      : dom.includes('generic')    ? 'Paperflow auto-detected the entity most-shared across docs and grouped by that. Open "Advanced" on the pile toolbar to switch to a specialised schema for extra conflict detectors.'
                      : '';
   }
-
-  // The demo-redirect tile only makes sense on the demo piles.
-  const demoDrop = document.getElementById('demo-drop-row');
-  if(demoDrop) demoDrop.style.display = (key === 'real') ? 'none' : '';
 
   // Real pile in empty state: replace the pane content with an upload screen.
   if(p.real && p.empty){
