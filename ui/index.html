@@ -574,6 +574,7 @@ main{ display: contents; }
   border-radius: 10px; background: rgba(255,255,255,0.015);
   cursor: pointer; transition: all .16s;
   text-align: left;
+  min-width: 0;   /* let flex/grid shrink; otherwise inline monospace bleeds width */
 }
 .sample-card:hover{
   border-color: var(--c-name);
@@ -583,14 +584,17 @@ main{ display: contents; }
 .sample-card-title{
   font-size: 12.5px; font-weight: 600; color: var(--ink);
   margin-bottom: 3px;
+  text-wrap: balance;   /* Chrome/Safari 121+: even line lengths, no ugly single-word tail */
 }
 .sample-card-meta{
   font-size: 10.5px; color: var(--muted); font-family: 'JetBrains Mono', monospace;
   margin-bottom: 6px;
+  word-break: break-word;
 }
 .sample-card-hint{
   font-size: 10px; color: var(--muted2);
   padding-top: 6px; border-top: 1px solid var(--line);
+  text-wrap: balance;
 }
 /* Vision endpoint down — soft-block PDFs/images but keep text uploads. */
 .drop-zone.drop-zone-offline{
@@ -2609,8 +2613,8 @@ const REAL_EMPTY_HTML = `
     <span style="color:var(--conf-good);">•</span> Toggle <b style="color:var(--ink);">Air-gapped mode</b> in the header and even the tokens stay local. Session clears on refresh.
   </div>
 
-  <div style="max-width:640px; margin:14px auto 8px; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.6px; text-align:left; padding-left:2px;">Load a sample</div>
-  <div style="max-width:640px; margin:0 auto; display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+  <div style="max-width:100%; margin:14px 0 8px; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.6px; text-align:left; padding-left:2px;">Load a sample</div>
+  <div style="width:100%; display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:10px;">
     <div class="sample-card" onclick="loadSample('individual')" data-tooltip="4 docs about 2 individuals · KYC form, utility bill, NRIC scan, email declaration. Demonstrates alias merging + address conflict + NRIC OCR handling.">
       <div class="sample-card-title">Individual identity</div>
       <div class="sample-card-meta">4 docs · 2 individuals</div>
