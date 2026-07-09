@@ -30,6 +30,8 @@ DOCS="$REPO_ROOT/docs"
 VO_DIR="$DOCS/_vo"
 IN_MP4="$DOCS/paperflow-demo.mp4"
 OUT_MP4="$DOCS/paperflow-demo-vo.mp4"
+PADDED_MP4="$DOCS/_padded.mp4"
+PAD_END_S=7
 
 if [ ! -f "$IN_MP4" ]; then
   echo "Missing input video: $IN_MP4" >&2
@@ -42,19 +44,43 @@ if [ ! -d "$VO_DIR" ]; then
 fi
 
 # name -> start-time-in-ms
+# Offsets re-anchored from actual visual beat starts, verified frame-
+# by-frame against the last take:
+#   - Beat 3 (record) doesn't render until overlay dismisses at ~43s
+#   - Beat 4 (ask) — user types + Enter around 49-52s
+#   - Beat 5 (glow) — click fires around 58s; VO starts a beat earlier
+#   - Beat 6 (air-gapped) — flip at ~65s; VO starts at 66s so it
+#     doesn't clash with the tail of vo_05
+#   - Beat 7 (close) — air-gapped reply visible from ~74s onward
 declare -a LINES=(
-  "vo_01_premise.mp3:0"
-  "vo_02_upload.mp3:7000"
-  "vo_03_record.mp3:26000"
-  "vo_04_ask.mp3:35000"
-  "vo_05_glow.mp3:47000"
-  "vo_06_airgapped.mp3:58000"
-  "vo_07_close.mp3:72000"
+  "vo_01_premise.mp3:0"           #  0.0-7.1  empty-pile boundary
+  "vo_02_upload_new.mp3:8000"     #  8.0-...  upload overlay + file rows
+  "vo_02b_redact.mp3:22000"       # 22.0-...  Presidio entity map
+  "vo_02c_reconcile.mp3:31000"    # 31.0-...  cloud reasons on tokens
+  "vo_03_record.mp3:43000"        # 43.0-48.5 record just rendered
+  "vo_04_ask.mp3:49000"           # 49.0-54.9 question typed + sent
+  "vo_05_glow.mp3:56000"          # 56.0-65.1 click-glow money shot
+  "vo_06_airgapped.mp3:66000"     # 66.0-74.0 air-gapped mode flip
+  "vo_07_close_new.mp3:74500"     # 74.5-...  close over the local reply
 )
 
-INPUTS=(-i "$IN_MP4")
+# Extend the video by PAD_END_S seconds of frozen last frame so the
+# closing VO line has room to finish. tpad replicates the final
+# rendered frame; no re-encode noise. The padded intermediate is
+# then the input to the audio-mix step below.
+echo "Padding tail of $IN_MP4 by ${PAD_END_S}s of frozen final frame..."
+ffmpeg -y -i "$IN_MP4" \
+  -vf "tpad=stop_mode=clone:stop_duration=${PAD_END_S}" \
+  -c:v libx264 -preset medium -crf 20 -pix_fmt yuv420p \
+  -an \
+  "$PADDED_MP4" 2>&1 | tail -4
+
+INPUTS=(-i "$PADDED_MP4")
 FILTER=""
-MIX_INPUTS="[0:a]"
+# Padded video has no audio track (-an during pad step). Mix the
+# delayed VO channels together as the sole audio; no silent base
+# needed. IDX starts at 1 because [0] is the video.
+MIX_INPUTS=""
 IDX=1
 COUNT=0
 
@@ -80,9 +106,9 @@ if [ "$COUNT" -eq 0 ]; then
   exit 1
 fi
 
-FILTER+="${MIX_INPUTS}amix=inputs=$((COUNT + 1)):dropout_transition=0:normalize=0[aout]"
+FILTER+="${MIX_INPUTS}amix=inputs=${COUNT}:dropout_transition=0:normalize=0:duration=longest[aout]"
 
-echo "Applying $COUNT voice-over lines to $IN_MP4…"
+echo "Applying $COUNT voice-over lines to ${IN_MP4}..."
 ffmpeg -y "${INPUTS[@]}" \
   -filter_complex "$FILTER" \
   -map 0:v -map "[aout]" \

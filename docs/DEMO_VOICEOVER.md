@@ -1,8 +1,8 @@
 # paperflow demo · voice-over script
 
-Seven short lines matched to `docs/paperflow-demo.mp4`. Each line is
-its own ElevenLabs generation so ffmpeg can drop it at the exact
-video timestamp without drift.
+Seven short lines matched to [`docs/paperflow-demo.mp4`](paperflow-demo.mp4).
+Each line is its own ElevenLabs generation so ffmpeg can drop it at
+the exact video timestamp without drift.
 
 **Voice suggestion.** Reuse the Clarice voice from the pitch anim
 (`ElevenLabs_2026-07-09T04_27_35_Clarice…`) — calm, human, unrushed.
@@ -25,42 +25,43 @@ video. The gaps let interactions land and breathe.
 
 Copy each line into ElevenLabs, generate at your usual quality
 setting, and save as the filename shown. Put the output in
-`docs/_vo/`.
+[`docs/_vo/`](_vo/).
 
 ### `vo_01_premise.mp3` — 0:00-0:07
 
-> You have a stack of confidential documents. You need cross-document
-> reasoning. Legal won't let them leave the building.
+You have a stack of confidential documents. You need cross-document reasoning. Legal won't let them leave the building.
 
 ### `vo_02_upload.mp3` — 0:07-0:14
 
-> Drop them in. Extraction runs on the AMD MI300X in your own
-> container. Nothing crosses the network.
+Drop them in. Extraction runs on the AMD MI300X in your own container. Nothing crosses the network.
+
+### `vo_02b_redact.mp3` — 0:22-0:29
+
+Presidio maps every real value to a placeholder. Same entity, same token, across the whole pile.
+
+### `vo_02c_reconcile.mp3` — 0:31-0:38
+
+Then the cloud model reasons across those tokens. Cross-document conflicts surface, without any real identity leaving your hardware.
 
 ### `vo_03_record.mp3` — 0:26-0:33
 
-> Every field lands with its source. Cross-document conflicts are
-> flagged automatically.
+Every field lands with its source. Cross-document conflicts are flagged automatically.
 
 ### `vo_04_ask.mp3` — 0:35-0:44
 
-> Ask a question, and only redacted tokens reach Fireworks. Real
-> identities never do.
+Ask a question, and only redacted tokens reach Fireworks. Real identities never do.
 
 ### `vo_05_glow.mp3` — 0:47-0:56
 
-> Click a token. Follow the entity across every pane. The trust story
-> is something you can see, not documentation you have to trust.
+Click a token. Follow the entity across every pane. The trust story is something you can see, not documentation you have to trust.
 
 ### `vo_06_airgapped.mp3` — 0:58-1:07
 
-> Flip air-gapped mode. Same question. Zero cloud calls. True by
-> construction, not by convention.
+Flip air-gapped mode. Same question. Zero cloud calls. True by construction, not by convention.
 
 ### `vo_07_close.mp3` — 1:12-1:19
 
-> Extraction on the AMD MI300X. Reasoning on redacted tokens.
-> Zero-egress mode when you need it.
+Extraction on the AMD, MI300X. Reasoning on redacted tokens. Zero-egress mode when you need it.
 
 ## After you generate the seven files
 

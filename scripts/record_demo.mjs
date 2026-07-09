@@ -94,15 +94,110 @@ async function pause(label, ms) {
   await sleep(ms);
 }
 
+// ----- fake cursor for headless recording -----
+// Playwright headless doesn't render the OS cursor. When we need the
+// viewer to see WHERE we clicked (small header toggles, token chips),
+// we inject a soft glowing dot that we control from JS: fade in, slide
+// to the target, pulse on click, fade out.
+
+async function injectFakeCursor(page) {
+  await page.evaluate(() => {
+    if (document.getElementById('__demo_cursor')) return;
+    const c = document.createElement('div');
+    c.id = '__demo_cursor';
+    c.style.cssText = [
+      'position: fixed', 'left: 0', 'top: 0',
+      'width: 28px', 'height: 28px',
+      'background: radial-gradient(circle at 30% 30%,'
+        + ' rgba(255,255,255,0.98),'
+        + ' rgba(255,255,255,0.4) 45%,'
+        + ' rgba(255,255,255,0) 70%)',
+      'border-radius: 50%',
+      'box-shadow: 0 0 0 2px rgba(120,140,255,0.55),'
+        + ' 0 0 22px 6px rgba(120,140,255,0.35)',
+      'pointer-events: none',
+      'z-index: 999999',
+      'transform: translate(-14px, -14px)',
+      'opacity: 0',
+      'transition: opacity 0.35s ease,'
+        + ' left 0.55s cubic-bezier(0.4, 0, 0.2, 1),'
+        + ' top 0.55s cubic-bezier(0.4, 0, 0.2, 1),'
+        + ' transform 0.2s ease,'
+        + ' box-shadow 0.2s ease',
+    ].join('; ');
+    document.body.appendChild(c);
+  });
+}
+
+async function fadeCursorIn(page) {
+  await page.evaluate(() => {
+    const c = document.getElementById('__demo_cursor');
+    if (c) c.style.opacity = '1';
+  });
+  await sleep(400);
+}
+
+async function fadeCursorOut(page) {
+  await page.evaluate(() => {
+    const c = document.getElementById('__demo_cursor');
+    if (c) c.style.opacity = '0';
+  });
+  await sleep(400);
+}
+
+async function moveCursorTo(page, x, y) {
+  await page.evaluate(({x, y}) => {
+    const c = document.getElementById('__demo_cursor');
+    if (!c) return;
+    c.style.left = x + 'px';
+    c.style.top = y + 'px';
+  }, {x, y});
+  await sleep(650); // let the CSS transition finish
+}
+
+async function pulseCursor(page) {
+  await page.evaluate(() => {
+    const c = document.getElementById('__demo_cursor');
+    if (!c) return;
+    c.style.transform = 'translate(-14px, -14px) scale(0.7)';
+    c.style.boxShadow = '0 0 0 6px rgba(120,140,255,0.5),'
+                      + ' 0 0 32px 10px rgba(120,140,255,0.55)';
+  });
+  await sleep(180);
+  await page.evaluate(() => {
+    const c = document.getElementById('__demo_cursor');
+    if (!c) return;
+    c.style.transform = 'translate(-14px, -14px) scale(1)';
+    c.style.boxShadow = '0 0 0 2px rgba(120,140,255,0.55),'
+                      + ' 0 0 22px 6px rgba(120,140,255,0.35)';
+  });
+  await sleep(200);
+}
+
+async function cursorClick(page, locator, {fadeInFirst = true, fadeOutAfter = true} = {}) {
+  // Slide the fake cursor to the element's centre, pulse it, actually
+  // fire the click, then optionally fade out. Used for small controls
+  // (mode toggle, header buttons) and tiny targets (token chips) where
+  // headless recording would otherwise leave the viewer guessing.
+  const box = await locator.boundingBox();
+  if (!box) {
+    await locator.click();
+    return;
+  }
+  const cx = Math.round(box.x + box.width / 2);
+  const cy = Math.round(box.y + box.height / 2);
+  if (fadeInFirst) await fadeCursorIn(page);
+  await moveCursorTo(page, cx, cy);
+  await pulseCursor(page);
+  await locator.click();
+  if (fadeOutAfter) await fadeCursorOut(page);
+}
+
 // ----- storyboard beats -----
 
 async function beatEmpty(page) {
   console.log('BEAT 1 — Empty pile → load sample (0:00-0:10)');
   await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
-  // The paperflow shell already uses height: 100vh, so a 1920x1080
-  // viewport is filled edge-to-edge without any zoom trick. Force the
-  // three panes to occupy the full viewport height in case any
-  // ancestor picked up a min-content sizing.
   await page.evaluate(() => {
     document.documentElement.style.height = '100%';
     document.body.style.height = '100%';
@@ -111,9 +206,9 @@ async function beatEmpty(page) {
     try { window.loadPile && window.loadPile('real'); } catch (_) {}
     window.scrollTo(0, 0);
   });
+  await injectFakeCursor(page);   // headless has no OS cursor
   await pause('empty state settles + user reads the sample cards', 3200);
-  await slowMove(page, 500, 620, 24);
-  await pause('cursor drifts to a sample card', 1200);
+  await pause('boundary explanation on screen', 1200);
 }
 
 async function beatPipelineRuns(page) {
@@ -206,8 +301,13 @@ async function beatMoneyShot(page) {
 
 async function beatAirGapped(page) {
   console.log('BEAT 5 — Air-gapped mode → 0 cloud calls (1:00-1:15)');
+  // The mode toggle is a small chip in the header. Without a visible
+  // cursor the viewer sees the sysnote appear from nowhere. Slide the
+  // fake cursor over, pulse it on click, then fade out so the sysnote
+  // reads as a consequence of the press.
   const toggle = page.locator('#mode-toggle');
-  await safeClick(toggle);
+  await toggle.scrollIntoViewIfNeeded();
+  await cursorClick(page, toggle);
   await pause('sysnote + pipeline strip flips', 2500);
 
   const input = page.locator('#chat-input');
