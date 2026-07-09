@@ -2462,6 +2462,12 @@ document.addEventListener('keydown', e => {
 // aborts every fetch spawned by uploadRealFiles / runCannedPile and
 // rolls back the session so a wrong file never gets processed.
 let RUN_ABORT = null;
+// Tracks whether the currently in-flight upload is an "Add more docs"
+// batch, and if so which files were persisted. Set by uploadRealFiles
+// after a successful upload response; read by cancelRun to roll back
+// only THIS batch instead of tearing the whole session down.
+// Cleared once the run completes or when a fresh upload starts.
+let RUN_APPEND_BATCH = null;   // { session_id, files: [...] }
 
 function showRunOverlay(){
   let ov = document.getElementById('run-overlay');
@@ -2495,17 +2501,47 @@ function showRunOverlay(){
 }
 
 async function cancelRun(){
-  // Fire and forget the roll-back: abort any in-flight fetches, then
-  // drop the server-side session so the wrong-file upload leaves no
-  // residue. The pile view is refreshed to reflect the clean state.
+  // Scoped rollback:
+  //   * "Add more docs" batch  → delete THIS batch only, keep the
+  //     previously-committed pile intact. Reloads the pile view so
+  //     the user sees the pre-batch state.
+  //   * Fresh upload            → wipe the whole session (existing
+  //     behaviour).
+  // In both cases we abort any in-flight fetches first, then hide the
+  // overlay. Server calls are best-effort — network errors in cancel
+  // shouldn't block the UI reset.
   const cb = document.getElementById('run-overlay-cancel');
   if(cb) cb.disabled = true;
   setRunTitle('Cancelling…');
   if(RUN_ABORT){ try{ RUN_ABORT.abort(); } catch(_){} }
-  if(REAL_SESSION){
+
+  if(RUN_APPEND_BATCH && RUN_APPEND_BATCH.session_id && RUN_APPEND_BATCH.files.length){
+    // Batch rollback: delete only the newly-added files.
+    try{
+      await fetch('/api/real/rollback_batch', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(RUN_APPEND_BATCH),
+      });
+    } catch(_){}
+    RUN_APPEND_BATCH = null;
+    // Re-hydrate the pile view so the user sees the state that existed
+    // BEFORE the cancelled batch went in.
+    if(REAL_SESSION){
+      try{
+        const pv = await fetch(`/api/real/pile/${REAL_SESSION}`);
+        if(pv.ok){
+          piles.real = Object.assign({}, piles.real, await pv.json(), {empty:false});
+          const rc = document.getElementById('real-tab-count');
+          if(rc) rc.textContent =
+            `${piles.real.docs.length} docs · ${piles.real.clients.length} entities`;
+          if(currentPile === 'real') loadPile('real');
+        }
+      } catch(_){}
+    }
+  } else if(REAL_SESSION){
+    // Fresh upload: whole-session reset.
     try{ await fetch('/api/real/reset/' + REAL_SESSION, {method:'POST'}); } catch(_){}
     REAL_SESSION = null;
-    // Reset the Real pile to its empty state
     piles.real = {docs: [], clients: [], entities: [], empty: true,
                   stats: [[0,'documents'],[0,'entities'],[0,'conflicts']],
                   domain: 'your pile · empty', assistantRole: 'reconciler'};
@@ -2794,6 +2830,15 @@ async function uploadRealFiles(evt, opts = {}){
     }
     const d = await r.json();
     REAL_SESSION = d.session_id;
+    // Track this batch so cancel can roll back precisely. For an
+    // append run, cancel = delete these files. For a fresh upload,
+    // cancel = wipe the session (existing behaviour).
+    if(opts.append){
+      RUN_APPEND_BATCH = { session_id: REAL_SESSION,
+                           files: d.added || d.files || [] };
+    } else {
+      RUN_APPEND_BATCH = null;
+    }
     setRunStages(stages, 1);   // Extract in progress
     const t0 = performance.now();
     if(opts.schema && REAL_SESSION){
@@ -2836,11 +2881,13 @@ async function uploadRealFiles(evt, opts = {}){
       loadPile('real');
     }
     RUN_ABORT = null;
+    RUN_APPEND_BATCH = null;   // batch is now committed to the pile
     hideRunOverlay();
   } catch(e){
     // AbortError from the cancel button is expected — cancelRun already
-    // reset the pile and hid the overlay, so silently return.
-    if(e.name === 'AbortError'){ RUN_ABORT = null; return; }
+    // handled rollback (batch or session) and hid the overlay, so
+    // silently return.
+    if(e.name === 'AbortError'){ RUN_ABORT = null; RUN_APPEND_BATCH = null; return; }
     setRunTitle('Upload error');
     setRunStages(stages, -1, '<span style="color:var(--conf-block);">' + e.message + '</span><br><br><button class="btn ghost" onclick="hideRunOverlay()" style="padding:5px 12px; font-size:11px;">Dismiss</button>');
   }

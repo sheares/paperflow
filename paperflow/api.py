@@ -378,12 +378,19 @@ async def real_upload(schema: str = Form("generic"),
                       session_id: str = Form(""),
                       files: list[UploadFile] = File(...)):
     """Create a fresh session (or add to an existing one) with the uploaded
-    documents. Pass session_id to append; leave empty to start fresh."""
+    documents. Pass session_id to append; leave empty to start fresh.
+
+    Validates ALL files in memory BEFORE writing any to disk — a bad
+    file in position 3 of a fresh upload would previously have left
+    positions 1-2 as orphans on disk with no session to track them.
+    Fixed: buffer + validate first, write only if the whole batch is
+    good, clean up cleanly on any error."""
     if schema not in ALLOWED_SCHEMAS:
         raise HTTPException(400, "unknown schema")
     if not files:
         raise HTTPException(400, "no files")
 
+    created_here = False
     if session_id:
         sess = _real_sessions.get(session_id)
         if not sess or not sess["dir"].exists():
@@ -394,29 +401,73 @@ async def real_upload(schema: str = Form("generic"),
         if existing + len(files) > MAX_UPLOAD_FILES:
             raise HTTPException(400, f"pile limit {MAX_UPLOAD_FILES} files "
                                      f"(currently has {existing})")
-        sess["schema"] = schema
     else:
         if len(files) > MAX_UPLOAD_FILES:
             raise HTTPException(400, f"1-{MAX_UPLOAD_FILES} files required")
         session_id = uuid.uuid4().hex[:12]
         sess_dir = REAL / session_id
         sess_dir.mkdir(parents=True, exist_ok=True)
+        created_here = True
 
-    for uf in files:
-        name = Path(uf.filename or "doc").name  # strip any path parts
-        suffix = Path(name).suffix.lower()
-        if suffix not in ALLOWED_UPLOAD_SUFFIXES:
-            if not (REAL / session_id).exists():
-                shutil.rmtree(sess_dir, ignore_errors=True)
-            raise HTTPException(400, f"unsupported file type: {suffix}")
-        content = await uf.read()
-        if len(content) > MAX_UPLOAD_BYTES:
-            raise HTTPException(413, f"{name} is {len(content) / 1024 / 1024:.1f} MB, over the "
-                                     f"{MAX_UPLOAD_BYTES // 1024 // 1024} MB per-file limit")
-        (sess_dir / name).write_bytes(content)
+    # Buffer + validate everything before touching disk. If any check
+    # fails we can bail cleanly, and if we created the session dir in
+    # this call, tear it down so we don't leak an empty session.
+    try:
+        buffered: list[tuple[str, bytes]] = []
+        for uf in files:
+            name = Path(uf.filename or "doc").name  # strip any path parts
+            suffix = Path(name).suffix.lower()
+            if suffix not in ALLOWED_UPLOAD_SUFFIXES:
+                raise HTTPException(400, f"unsupported file type: {suffix}")
+            content = await uf.read()
+            if len(content) > MAX_UPLOAD_BYTES:
+                raise HTTPException(413, f"{name} is {len(content) / 1024 / 1024:.1f} MB, over the "
+                                         f"{MAX_UPLOAD_BYTES // 1024 // 1024} MB per-file limit")
+            buffered.append((name, content))
+        # All good — flush to disk in one pass.
+        for name, content in buffered:
+            (sess_dir / name).write_bytes(content)
+    except HTTPException:
+        if created_here:
+            shutil.rmtree(sess_dir, ignore_errors=True)
+            _real_sessions.pop(session_id, None)
+        raise
+
     _real_sessions[session_id] = {"dir": sess_dir, "schema": schema}
+    # Report exactly what got persisted so the client can track the
+    # added batch and roll it back precisely on cancel.
+    added_names = [name for name, _ in buffered]
     return {"session_id": session_id,
-            "files": [f.filename for f in files]}
+            "files": added_names,
+            "added": added_names}
+
+
+class RollbackBatchBody(BaseModel):
+    session_id: str
+    files: list[str]
+
+
+@app.post("/api/real/rollback_batch")
+def real_rollback_batch(body: RollbackBatchBody):
+    """Delete a specific set of files from an existing session without
+    tearing the whole session down. Wired to the Cancel button when
+    the in-flight run is an 'Add more docs' batch — cancelling one
+    batch should not vaporise the pile that was already there."""
+    sess = _real_session(body.session_id)
+    sess_dir = sess["dir"]
+    removed = []
+    for name in body.files:
+        # Strip path parts; only touch files inside the session dir.
+        safe = Path(name).name
+        if not safe or safe.startswith('.') or safe in {"extraction.json"}:
+            continue
+        target = sess_dir / safe
+        if target.exists() and target.is_file():
+            target.unlink()
+            removed.append(safe)
+    # Invalidate any cached router since the pile just changed.
+    _routers.pop(f"real:{body.session_id}", None)
+    return {"ok": True, "removed": removed}
 
 
 class RealSchemaBody(BaseModel):
