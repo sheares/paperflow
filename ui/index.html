@@ -325,13 +325,45 @@ main{ display: contents; }
 }
 .rr-why{ color: var(--ink-soft); }
 
-/* Token ↔ sidebar entity linking. Hover any [XXX_N] to glow its match. */
-[data-token]{ cursor: help; }
+/* Token ↔ sidebar entity linking. Hover any [XXX_N] to glow its match.
+   Click any [XXX_N] to jump the sidebar / record to that entity and
+   pulse the target so the eye can catch it. */
+[data-token]{ cursor: pointer; }
 .token-linked{
   box-shadow: 0 0 0 2px currentColor;
   transition: box-shadow .12s ease, filter .12s ease;
   filter: brightness(1.12);
 }
+@keyframes token-flash-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(var(--token-flash-rgb, 148, 163, 184), 0.65),
+                     0 0 16px 4px rgba(var(--token-flash-rgb, 148, 163, 184), 0.55); }
+  70%  { box-shadow: 0 0 0 6px rgba(var(--token-flash-rgb, 148, 163, 184), 0.0),
+                     0 0 22px 6px rgba(var(--token-flash-rgb, 148, 163, 184), 0.15); }
+  100% { box-shadow: 0 0 0 0 rgba(var(--token-flash-rgb, 148, 163, 184), 0),
+                     0 0 0 0 rgba(var(--token-flash-rgb, 148, 163, 184), 0); }
+}
+.token-flash{
+  animation: token-flash-pulse 1.4s ease-out 2;
+  border-radius: 5px;
+}
+/* Per-family accent RGBs for the flash — matches the chip colour so the
+   glow reads as 'the same entity you clicked'. */
+.token-flash.hl-name, .token-flash.chip-name, .token-flash.token-name,
+.token-flash[data-token^="[PERSON_"]{ --token-flash-rgb: 168, 133, 255; }
+.token-flash.hl-address, .token-flash.chip-address, .token-flash.token-address,
+.token-flash[data-token^="[ADDR_"], .token-flash[data-token^="[POSTCODE_"]{ --token-flash-rgb: 244, 154, 74; }
+.token-flash.hl-id, .token-flash.chip-id, .token-flash.token-id,
+.token-flash[data-token^="[ID_"], .token-flash[data-token^="[NRIC_"],
+.token-flash[data-token^="[UEN_"], .token-flash[data-token^="[SERIAL_"],
+.token-flash[data-token^="[POLICY_"]{ --token-flash-rgb: 96, 210, 210; }
+.token-flash.hl-date, .token-flash.chip-date, .token-flash.token-date,
+.token-flash[data-token^="[DATE_"]{ --token-flash-rgb: 120, 197, 143; }
+.token-flash.hl-org, .token-flash.chip-org, .token-flash.token-org,
+.token-flash[data-token^="[ORG_"]{ --token-flash-rgb: 240, 179, 122; }
+.token-flash.hl-email, .token-flash.chip-email, .token-flash.token-email,
+.token-flash[data-token^="[EMAIL_"]{ --token-flash-rgb: 129, 194, 255; }
+.token-flash.hl-phone, .token-flash.chip-phone, .token-flash.token-phone,
+.token-flash[data-token^="[PHONE_"]{ --token-flash-rgb: 210, 129, 255; }
 
 /* State pill smooth transition when a client flips to reconciled. */
 .state{ transition: background .25s ease, color .25s ease, border-color .25s ease; }
@@ -3707,6 +3739,53 @@ document.addEventListener('mouseout', e => {
     .forEach(x => x.classList.remove('token-linked'));
 });
 
+// Click any token chip -> scroll the sidebar + record to the matching
+// entity, and pulse every match briefly so the eye can catch them.
+// Ignore clicks on chips that are inside actionable controls (option
+// buttons, doc cards) so the underlying click still fires as intended.
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-token]');
+  if(!el) return;
+  // Don't hijack clicks on interactive host elements that use the
+  // chip purely as a label (option pills, doc cards, override forms).
+  const host = el.closest('.opt, .doc-card, .override-form, button, a, label, input');
+  if(host && host !== el) return;
+  const token = el.dataset.token;
+  if(!token) return;
+  let matches;
+  try{
+    matches = Array.from(document.querySelectorAll(relatedTokenSelector(token)));
+  } catch(_){ return; }
+  if(!matches.length) return;
+
+  // Prefer a sidebar row as the scroll target so the user's mental
+  // model ('the entity list on the right') lands where they expect.
+  const sidebarMatch = matches.find(m => m.closest('.sidebar, #sidebar, .entities'))
+                    || matches.find(m => m !== el);
+  if(sidebarMatch){
+    sidebarMatch.scrollIntoView({behavior: 'smooth', block: 'center'});
+  }
+  // Also nudge the record pane if one of the matches lives there.
+  const recordMatch = matches.find(m => m.closest('.client-card, .field, .field-conflict, .field-missing'));
+  if(recordMatch && recordMatch !== sidebarMatch){
+    setTimeout(() => recordMatch.scrollIntoView({behavior: 'smooth', block: 'nearest'}), 120);
+  }
+
+  // Pulse every match, plus the chip that was clicked. Auto-clears
+  // after the animation so a rapid second click still reads.
+  const glowTargets = new Set(matches);
+  glowTargets.add(el);
+  glowTargets.forEach(x => {
+    x.classList.remove('token-flash');
+    // Force a reflow so the animation restarts on repeated clicks.
+    void x.offsetWidth;
+    x.classList.add('token-flash');
+  });
+  setTimeout(() => {
+    glowTargets.forEach(x => x.classList.remove('token-flash'));
+  }, 2900);
+});
+
 // ============================================================
 // CHAT INTERACTION
 // ============================================================
@@ -4131,18 +4210,63 @@ function escapeHtml(text){
   return String(text).replace(/[&<>"']/g, m => map[m]);
 }
 
+// Highlight entity values inside an already-HTML-escaped string. Same
+// underline-chip treatment as highlightEntities() applies to the user's
+// own messages — reused here so a rehydrated 'Yvonne Goh' in a
+// Fireworks reply gets the same visual as when you type it. Word-
+// boundary anchored + min-length 3 to stop 2-char aliases from
+// matching inside real words.
+function _highlightInEscapedText(escapedText, entities){
+  if(!entities || !entities.length) return escapedText;
+  const expanded = (typeof expandEntities === 'function')
+    ? expandEntities(entities) : entities;
+  const sorted = expanded.slice().sort(
+    (a, b) => (b.value || '').length - (a.value || '').length);
+  const replacements = [];
+  let result = escapedText;
+  for(const e of sorted){
+    const raw = (e.value || '').trim();
+    if(raw.length < 3) continue;
+    const escVal = escapeHtml(raw).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    if(!escVal) continue;
+    const left = /^\w/.test(raw) ? '\\b' : '';
+    const right = /\w$/.test(raw) ? '\\b' : '';
+    const re = new RegExp(`(${left}${escVal}${right})`, 'gi');
+    result = result.replace(re, (match) => {
+      const placeholder = ` ${replacements.length} `;
+      const tCls = _sanitiseTypeClass(e.type);
+      const tokAttr = escapeHtml(e.token || '');
+      replacements.push(`<span class="hl hl-${tCls}" data-token="${tokAttr}" title="${tokAttr}">${match}</span>`);
+      return placeholder;
+    });
+  }
+  for(let i = 0; i < replacements.length; i++){
+    result = result.replace(` ${i} `, replacements[i]);
+  }
+  return result;
+}
+
 // Render an LLM-emitted answer safely with paragraph / bullet / table /
 // inline-emphasis structure. Every text run passes through escapeHtml
 // FIRST; only the small allowlist of markdown-lite constructs below
 // gets promoted into HTML afterwards. No <a>, no <img>, no raw HTML
 // pass-through — a malicious model can't inject markup.
-function formatAnswer(raw){
+//
+// entities (optional): decorate rehydrated values in the reply with
+// the same underline chip the user side gets. Hovering shows the
+// token the model actually saw ([PERSON_1] etc.), making the round-
+// trip visible in the answer, not just the receipt.
+function formatAnswer(raw, entities){
   const text = String(raw == null ? '' : raw).trim();
   if(!text) return '';
 
   const inline = s => {
-    // Escape first, then upgrade `**bold**` and `code` spans in place.
+    // Escape first, entity-highlight second, then upgrade markdown-
+    // lite spans. Highlight before code/bold so a bolded 'Yvonne Goh'
+    // still gets the chip; code spans skip highlight because they
+    // are already decorated by the monospace treatment.
     let out = escapeHtml(s);
+    if(entities && entities.length) out = _highlightInEscapedText(out, entities);
     out = out.replace(/`([^`]+)`/g, (_, code) => `<code>${code}</code>`);
     out = out.replace(/\*\*([^*]+)\*\*/g, (_, bold) => `<b>${bold}</b>`);
     return out;
@@ -4498,7 +4622,8 @@ async function liveAsk(text){
     // == 'Local only · 0 cloud calls' the server has already vouched
     // for it. The audit's critique: paperflow's trust story only holds
     // if the receipt is a pure projection of the server's log.
-    resolvePending(pending, d.receipt, formatAnswer(d.answer));
+    resolvePending(pending, d.receipt,
+      formatAnswer(d.answer, piles[currentPile].entities));
   } catch(err){
     resolvePending(pending,
       'Local-only check. No cloud call for this exchange.',
