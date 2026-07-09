@@ -200,14 +200,12 @@ def get_doc(pile: str, filename: str):
     return FileResponse(path, media_type=mime)
 
 
-@app.get("/api/xlsx_preview/{pile}/{filename}")
-def xlsx_preview(pile: str, filename: str, n: int = 24):
-    if pile not in PILES or "/" in filename or ".." in filename:
-        raise HTTPException(404, "not found")
-    path = ROOT / "synthetic" / pile / filename
-    if not path.exists() or path.suffix != ".xlsx":
-        raise HTTPException(404, "not found")
+def _read_xlsx_preview(path: Path, n: int) -> dict:
+    """Shared xlsx-preview payload builder. Used by both the canned
+    demo-pile endpoint and the Real-pile endpoint below so their
+    shapes stay identical."""
     import openpyxl
+    from openpyxl.utils import get_column_letter
     wb = openpyxl.load_workbook(path, data_only=True)
     sheets = []
     for ws in wb.worksheets:
@@ -216,26 +214,29 @@ def xlsx_preview(pile: str, filename: str, n: int = 24):
             rows.append(["" if c is None else str(c) for c in row])
             if len(rows) >= n:
                 break
-
-        # column widths from the workbook (openpyxl default width ≈ 8)
         widths = []
         for i in range(1, (ws.max_column or 1) + 1):
-            from openpyxl.utils import get_column_letter
             col = ws.column_dimensions.get(get_column_letter(i))
             widths.append(col.width if col and col.width else 12)
-
-        # rows fully spanned by a merge on this sheet (the title-bar rows
-        # from write_xlsx: single value that occupies every column)
         merges = []
         for m in ws.merged_cells.ranges:
             if m.min_col == 1 and m.max_col >= (ws.max_column or 1) \
                     and m.min_row == m.max_row:
                 merges.append(m.min_row - 1)   # 0-indexed row
-
         sheets.append({"name": ws.title, "rows": rows,
                        "widths": widths, "spanned_rows": merges,
                        "total_rows": ws.max_row, "total_cols": ws.max_column})
     return {"sheets": sheets, "showing": n}
+
+
+@app.get("/api/xlsx_preview/{pile}/{filename}")
+def xlsx_preview(pile: str, filename: str, n: int = 24):
+    if pile not in PILES or "/" in filename or ".." in filename:
+        raise HTTPException(404, "not found")
+    path = ROOT / "synthetic" / pile / filename
+    if not path.exists() or path.suffix != ".xlsx":
+        raise HTTPException(404, "not found")
+    return _read_xlsx_preview(path, n)
 
 
 class RedactBody(BaseModel):
@@ -556,6 +557,20 @@ def real_doc(session_id: str, filename: str):
             "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             }.get(path.suffix.lstrip("."), "application/octet-stream")
     return FileResponse(path, media_type=mime)
+
+
+@app.get("/api/real/xlsx_preview/{session_id}/{filename}")
+def real_xlsx_preview(session_id: str, filename: str, n: int = 24):
+    """Same shape as /api/xlsx_preview but scoped to a Real-pile session.
+    Uploaded XLSX files never got a preview because the client's xlsx
+    branch only had a demo-pile URL to hit — this fills the gap."""
+    sess = _real_session(session_id)
+    if "/" in filename or ".." in filename:
+        raise HTTPException(404, "not found")
+    path = sess["dir"] / filename
+    if not path.exists() or path.suffix != ".xlsx":
+        raise HTTPException(404, "not found")
+    return _read_xlsx_preview(path, n)
 
 
 @app.post("/api/real/reset/{session_id}")

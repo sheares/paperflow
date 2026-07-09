@@ -2384,9 +2384,19 @@ async function openDoc(i){
           </div>`;
         }
       } catch(_){}
-    } else if(fmt === 'xlsx' && pileName){
+    } else if(fmt === 'xlsx'){
+      // XLSX preview: demo piles go through /api/xlsx_preview/<pile>/,
+      // Real pile uploads go through /api/real/xlsx_preview/<sid>/.
+      // Both endpoints return the same payload shape, so the render
+      // loop below is unchanged.
+      const previewUrl = (currentPile === 'real' && REAL_SESSION)
+        ? `/api/real/xlsx_preview/${REAL_SESSION}/${encodeURIComponent(fname)}`
+        : pileName
+          ? `/api/xlsx_preview/${pileName}/${encodeURIComponent(fname)}`
+          : null;
+      if(!previewUrl) return;
       try{
-        const r = await fetch(`/api/xlsx_preview/${pileName}/${encodeURIComponent(fname)}`);
+        const r = await fetch(previewUrl);
         if(r.ok){
           const data = await r.json();
           const sheetHtml = data.sheets.map(sh => {
