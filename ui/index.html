@@ -1446,7 +1446,7 @@ const piles = {
       {
         id: 'C1', label: 'Client 1', state: 'conflict', stateLabel: '⚠ Awaiting review',
         fields: [
-          {label:'Full name', type:'name', value:'Mohammed Farid bin Hassan', citation:'Source: doc_001 · alias <code class="chip chip-name">Farid Hassan</code> in doc_002 merged automatically', action:'✏'},
+          {label:'Full name', type:'name', value:'Mohammed Farid bin Hassan', citationHtml:'Source: doc_001 · alias <code class="chip chip-name">Farid Hassan</code> in doc_002 merged automatically', action:'✏'},
           {label:'Residential address', type:'address', conflict:true, conflictNote:'⚠ CONFLICT · select correct value',
             opts:[
               {value:'Blk 210 Bishan St 23 #11-04 SG 570210', doc:'doc_001 (KYC form)', selected:true},
@@ -1466,7 +1466,7 @@ const piles = {
           {label:'National ID', type:'id', conflict:true, conflictNote:'⚠ CONFLICT · likely OCR error',
             opts:[
               {value:'K3098551', doc:'doc_003 (KYC declaration)', selected:true},
-              {value:'K3098<b style="color:var(--conf-block)">S</b>51', doc:'doc_004 (ID copy) · suspected OCR substitution of 5 → S', selected:false}
+              {valueHtml:'K3098<b style="color:var(--conf-block)">S</b>51', doc:'doc_004 (ID copy) · suspected OCR substitution of 5 → S', selected:false}
             ], action:'Escalate'},
           {label:'Source of funds', type:'funds', value:'Employment income', citation:'Source: doc_003', action:'✏'},
           {label:'Beneficial owner', type:'org', value:'Self', citation:'Source: doc_003', action:'✏'},
@@ -1576,7 +1576,7 @@ const piles = {
       {
         id: 'E1', label: 'Partner 1 · Acme Robotics', state: 'conflict', stateLabel: '⚠ Email conflict',
         fields: [
-          {label:'Organisation', type:'org', value:'Acme Robotics Pte Ltd', citation:'Source: doc_001 · alias <code class="chip chip-org">ACME Robotics</code> in doc_002 merged automatically', action:'✏'},
+          {label:'Organisation', type:'org', value:'Acme Robotics Pte Ltd', citationHtml:'Source: doc_001 · alias <code class="chip chip-org">ACME Robotics</code> in doc_002 merged automatically', action:'✏'},
           {label:'Contact name', type:'name', value:'Lim Wei Jie', citation:'Source: doc_001, doc_002 · matched', action:'✏'},
           {label:'Email', type:'email', conflict:true, conflictNote:'⚠ CONFLICT · select correct value',
             opts:[
@@ -1706,7 +1706,7 @@ const piles = {
       {
         id: 'P1', label: 'Patient 1 · Rajesh Kumar', state: 'conflict', stateLabel: '⚠ DOB conflict · consent missing',
         fields: [
-          {label:'Patient name', type:'name', value:'Rajesh Kumar', citation:'Source: doc_001, doc_003 · alias <code class="chip chip-name">R. Kumar</code> in doc_002 merged automatically', action:'✏'},
+          {label:'Patient name', type:'name', value:'Rajesh Kumar', citationHtml:'Source: doc_001, doc_003 · alias <code class="chip chip-name">R. Kumar</code> in doc_002 merged automatically', action:'✏'},
           {label:'Date of birth', type:'date', conflict:true, conflictNote:'⚠ CONFLICT · likely month transposition',
             opts:[
               {value:'1986-03-14', doc:'doc_001 (intake form, signed)', selected:true},
@@ -1727,7 +1727,7 @@ const piles = {
           {label:'Policy number', type:'id', conflict:true, conflictNote:'⚠ CONFLICT · digits transposed',
             opts:[
               {value:'AIA-553102', doc:'doc_004 (intake form, signed)', selected:true},
-              {value:'AIA-5531<b style="color:var(--conf-block)">20</b>', doc:'doc_005 (insurance card)', selected:false}
+              {valueHtml:'AIA-5531<b style="color:var(--conf-block)">20</b>', doc:'doc_005 (insurance card)', selected:false}
             ], action:'Escalate'},
           {label:'Allergies', type:'funds', missing:true, missingNote:'⚠ MISSING · not recorded on intake', missingDetail:'Clinical safety requires explicit allergy capture, including "none known".', action:'Capture'},
           {label:'Consent signed', type:'date', value:'Yes (2026-06-10)', citation:'Source: doc_004', action:'✏'}
@@ -2047,23 +2047,34 @@ const formatBadge = {
 function renderPile(p){
   // Format-mix stats derived from the docs list, appended to the pile-stats row.
   const formatCounts = p.docs.reduce((acc, d) => { acc[d.format || 'txt'] = (acc[d.format || 'txt'] || 0) + 1; return acc; }, {});
-  const formatMix = Object.entries(formatCounts).map(([f, n]) => `${n} ${f.toUpperCase()}`).join(' · ');
+  const formatMix = Object.entries(formatCounts).map(([f, n]) => `${n} ${escapeHtml(String(f).toUpperCase())}`).join(' · ');
 
   const stats = document.getElementById('pile-stats');
-  stats.innerHTML = p.stats.map(([n, label]) => `<div class="stat"><b>${n}</b>${label}</div>`).join('')
+  stats.innerHTML = p.stats.map(([n, label]) => `<div class="stat"><b>${escapeHtml(String(n))}</b>${escapeHtml(String(label))}</div>`).join('')
     + `<div class="stat" data-tooltip="File mix. All parsers run locally on the MI300X; nothing is uploaded to a cloud OCR service.">${formatMix} · parsed locally</div>`;
 
   const grid = document.getElementById('pile-grid');
-  grid.innerHTML = p.docs.map((d, i) => `
-    <div class="doc-card" data-format="${d.format || 'txt'}" onclick="openDoc(${i})">
-      <div class="doc-icon fmt-${d.format || 'txt'}">${formatBadge[d.format || 'txt']}</div>
+  grid.innerHTML = p.docs.map((d, i) => {
+    // Filename + parser strings come from live extraction of user-uploaded
+    // PDFs — attacker-controllable. Escape every interpolation, including
+    // attribute contexts.
+    const fmt = _sanitiseTypeClass(d.format || 'txt');
+    const displayName = escapeHtml(d.name || d.file || '');
+    const docType = escapeHtml(d.type || '');
+    const parser = escapeHtml(d.parser || 'text');
+    const parserOrDefault = escapeHtml(d.parser || 'the parser');
+    const conf = Math.round(Number(d.conf) * 100) || 0;
+    const stateClass = d.state === 'review' ? 'review' : '';
+    return `
+    <div class="doc-card" data-format="${fmt}" onclick="openDoc(${i})">
+      <div class="doc-icon fmt-${fmt}">${formatBadge[d.format || 'txt'] || ''}</div>
       <div class="doc-info">
-        <div class="doc-name">${d.name || d.file}</div>
-        <div class="doc-meta">${d.type} · ${d.fields} fields <span class="parser-badge" data-tooltip="Extractor: ${d.parser || 'text reader'} · runs on the local MI300X.">${d.parser || 'text'}</span></div>
+        <div class="doc-name">${displayName}</div>
+        <div class="doc-meta">${docType} · ${d.fields|0} fields <span class="parser-badge" data-tooltip="Extractor: ${parser} · runs on the local MI300X.">${parser}</span></div>
       </div>
-      <div class="conf ${d.state === 'review' ? 'review' : ''}" data-tooltip="Extraction confidence · how cleanly ${d.parser || 'the parser'} lifted the fields on the AMD MI300X. 90%+ auto-accepts · 75–90% queues for human review · below 75% is blocked from any remote call until a human approves.">${Math.round(d.conf * 100)}% extracted</div>
-    </div>
-  `).join('');
+      <div class="conf ${stateClass}" data-tooltip="Extraction confidence · how cleanly ${parserOrDefault} lifted the fields on the AMD MI300X. 90%+ auto-accepts · 75–90% queues for human review · below 75% is blocked from any remote call until a human approves.">${conf}% extracted</div>
+    </div>`;
+  }).join('');
 }
 
 // Detect routing from a canned exchange's `sources` string.
@@ -2201,17 +2212,36 @@ function overrideAction(action){
   return 'openOverride(this)';
 }
 
+// XSS-safe interpolation helper. Every user-touchable field defaults to
+// escaped text; the canned demo data intentionally embeds <b>/<code>
+// markup for OCR highlights + alias chips, so those specific fields
+// carry a *Html sibling (valueHtml, citationHtml, conflictNoteHtml,
+// missingNoteHtml, missingDetailHtml) that we render raw. Server-side
+// extraction never sets the *Html variants — a malicious uploaded PDF
+// putting <img onerror=...> in a field value gets escaped.
+function _htmlOrEscape(rawHtml, plain){
+  if(typeof rawHtml === 'string') return rawHtml;
+  return plain != null ? escapeHtml(plain) : '';
+}
+function _sanitiseTypeClass(t){
+  // Field type flows into a chip class — restrict to a-z + hyphen so
+  // an attacker-controlled type can't break out of the class="" quote.
+  return String(t || '').toLowerCase().replace(/[^a-z-]/g, '').slice(0, 24);
+}
+
 function renderField(f){
+  const t = _sanitiseTypeClass(f.type);
   const dataAttrs = `data-type="${escapeHtml(f.type || '')}" data-label="${escapeHtml(f.label || '')}"`;
   const actionBtn = `<button class="override" onclick="${overrideAction(f.action)}">${escapeHtml(f.action || '✏')}</button>`;
   if(f.missing){
-    const required = f.missingNote.includes('REQUIRED');
+    const noteText = String(f.missingNote || '');
+    const required = noteText.includes('REQUIRED');
     return `
       <div class="field field-missing" ${dataAttrs} data-required="${required}">
         <div class="label">${iconFor(f.type)}${escapeHtml(f.label)}</div>
         <div class="value">
-          <div class="${required ? 'missing' : 'missing-review'}">${f.missingNote}</div>
-          <div class="citation">${f.missingDetail || ''}</div>
+          <div class="${required ? 'missing' : 'missing-review'}">${_htmlOrEscape(f.missingNoteHtml, f.missingNote)}</div>
+          <div class="citation">${_htmlOrEscape(f.missingDetailHtml, f.missingDetail || '')}</div>
         </div>
         ${actionBtn}
       </div>
@@ -2222,12 +2252,12 @@ function renderField(f){
       <div class="field field-conflict" ${dataAttrs}>
         <div class="label">${iconFor(f.type)}${escapeHtml(f.label)}</div>
         <div class="value">
-          <div class="missing-review conflict-note" data-original="${escapeHtml(f.conflictNote)}">${f.conflictNote}</div>
+          <div class="missing-review conflict-note" data-original="${escapeHtml(f.conflictNote)}">${_htmlOrEscape(f.conflictNoteHtml, f.conflictNote)}</div>
           <div class="conflict-row">
-            ${f.opts.map(o => `
+            ${(f.opts || []).map(o => `
               <div class="opt ${o.selected ? 'selected' : ''}" onclick="resolveConflict(this)">
-                <code class="chip chip-${f.type}">${o.value}</code>
-                <span class="doc">${o.doc}</span>
+                <code class="chip chip-${t}">${_htmlOrEscape(o.valueHtml, o.value)}</code>
+                <span class="doc">${escapeHtml(o.doc || '')}</span>
               </div>
             `).join('')}
           </div>
@@ -2240,8 +2270,8 @@ function renderField(f){
     <div class="field" ${dataAttrs}>
       <div class="label">${iconFor(f.type)}${escapeHtml(f.label)}</div>
       <div class="value">
-        <code class="chip chip-${f.type}">${f.value}</code>
-        <div class="citation">${f.citation || ''}</div>
+        <code class="chip chip-${t}">${_htmlOrEscape(f.valueHtml, f.value)}</code>
+        <div class="citation">${_htmlOrEscape(f.citationHtml, f.citation || '')}</div>
       </div>
       ${actionBtn}
     </div>
@@ -2256,18 +2286,22 @@ function renderField(f){
 async function openDoc(i){
   const d = piles[currentPile].docs[i];
   if(!d) return;
-  const rows = (d.fieldsList || []).map(f => `
+  const rows = (d.fieldsList || []).map(f => {
+    const t = _sanitiseTypeClass(f.type);
+    const conf = Math.round(Number(f.conf) * 100) || 0;
+    const confClass = f.conf < 0.75 ? 'block' : f.conf < 0.9 ? 'review' : '';
+    return `
     <div class="doc-field-row">
       <div class="dl">${iconFor(f.type)}${escapeHtml(f.label)}</div>
       <div>
         ${f.value
-          ? `<code class="chip chip-${f.type}">${escapeHtml(f.value)}</code>`
+          ? `<code class="chip chip-${t}">${escapeHtml(f.value)}</code>`
           : `<span class="missing-review">not recorded</span>`}
-        ${f.note ? `<div class="dnote">${f.note}</div>` : ''}
+        ${f.note ? `<div class="dnote">${escapeHtml(f.note)}</div>` : ''}
       </div>
-      <div class="doc-field-conf ${f.conf < 0.75 ? 'block' : f.conf < 0.9 ? 'review' : ''}">${Math.round(f.conf * 100)}%</div>
-    </div>
-  `).join('');
+      <div class="doc-field-conf ${confClass}">${conf}%</div>
+    </div>`;
+  }).join('');
 
   const pileName = LIVE_PILES[currentPile];
   // prefer the real filename over the mockup id: live data has both set to
@@ -2908,15 +2942,23 @@ function renderSidebar(p){
     (grouped[e.type] = grouped[e.type] || []).push(e);
   }
 
-  const rowHTML = (e) => `
+  // Entity token + value come from Presidio detection over the raw doc
+  // text — a doc with <img onerror=...> in a labelled 'Contact Name'
+  // slot would flow in unfiltered. Escape everything; sanitise the type
+  // class to a-z + hyphen so a hostile type value can't break class="".
+  const rowHTML = (e) => {
+    const t = _sanitiseTypeClass(e.type);
+    return `
     <div class="entity-row">
-      <span class="chip chip-${e.type} ent-type">${e.token}</span>
-      <span class="ent-val">${e.value}${e.custom ? ' <span class="custom-badge">custom</span>' : ''}</span>
+      <span class="chip chip-${t} ent-type">${escapeHtml(e.token || '')}</span>
+      <span class="ent-val">${escapeHtml(e.value || '')}${e.custom ? ' <span class="custom-badge">custom</span>' : ''}</span>
     </div>`;
+  };
 
   const html = ENTITY_TYPE_ORDER
     .filter(t => grouped[t] && grouped[t].length > 0)
     .map(type => {
+      const t = _sanitiseTypeClass(type);
       const group = grouped[type];
       const isLarge = group.length > ENTITY_GROUP_COLLAPSE_THRESHOLD;
       const shown = isLarge ? group.slice(0, ENTITY_GROUP_PREVIEW_COUNT) : group;
@@ -2924,13 +2966,13 @@ function renderSidebar(p){
       return `
         <details class="entity-group" ${isLarge ? '' : 'open'}>
           <summary>
-            <span class="entity-group-swatch" style="background: var(--c-${type})"></span>
-            <span class="entity-group-label">${ENTITY_TYPE_LABEL[type] || type}</span>
+            <span class="entity-group-swatch" style="background: var(--c-${t})"></span>
+            <span class="entity-group-label">${escapeHtml(ENTITY_TYPE_LABEL[type] || type)}</span>
             <span class="entity-group-count">${group.length}</span>
           </summary>
           <div class="entity-group-body">
             ${shown.map(rowHTML).join('')}
-            ${remaining > 0 ? `<div class="entity-row-more" onclick="expandEntityGroup(this)" data-type="${type}">+${remaining} more · click to expand</div>` : ''}
+            ${remaining > 0 ? `<div class="entity-row-more" onclick="expandEntityGroup(this)" data-type="${escapeHtml(type)}">+${remaining} more · click to expand</div>` : ''}
           </div>
         </details>
       `;
@@ -2949,12 +2991,14 @@ function expandEntityGroup(el){
     : [];
   const group = base.concat(extra).filter(e => e.type === type);
   const body = el.parentNode;
-  body.innerHTML = group.map(e => `
+  body.innerHTML = group.map(e => {
+    const t = _sanitiseTypeClass(e.type);
+    return `
     <div class="entity-row">
-      <span class="chip chip-${e.type} ent-type">${e.token}</span>
-      <span class="ent-val">${e.value}${e.custom ? ' <span class="custom-badge">custom</span>' : ''}</span>
-    </div>
-  `).join('');
+      <span class="chip chip-${t} ent-type">${escapeHtml(e.token || '')}</span>
+      <span class="ent-val">${escapeHtml(e.value || '')}${e.custom ? ' <span class="custom-badge">custom</span>' : ''}</span>
+    </div>`;
+  }).join('');
   tagTokensForLinking();
 }
 
@@ -3593,8 +3637,13 @@ let REAL_SESSION = null;   // session_id for the currently loaded real pile
 const TOKEN_TYPES = { PERSON: 'name', ORG: 'org', ID: 'id', UEN: 'id', POLICY: 'id', SERIAL: 'id', ADDR: 'address', POSTCODE: 'address', DATE: 'date', EMAIL: 'email', PHONE: 'phone' };
 
 function tokenChip(t){
-  const fam = (t.match(/^\[([A-Z]+)_/) || [])[1];
-  return `<code class="token token-${TOKEN_TYPES[fam] || 'doc'}">${t}</code>`;
+  // Token strings come from the server's redaction log via receipt.
+  // Escape and validate the family class so a malformed 'token' can't
+  // inject markup or break out of the class="" attribute.
+  const s = String(t || '');
+  const fam = (s.match(/^\[([A-Z]+)_/) || [])[1];
+  const cls = TOKEN_TYPES[fam] || 'doc';
+  return `<code class="token token-${cls}">${escapeHtml(s)}</code>`;
 }
 
 async function hydrateLive(){

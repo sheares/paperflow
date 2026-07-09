@@ -117,11 +117,34 @@ def favicon():
     return Response(status_code=204)
 
 
+# Content-Security-Policy backstop for the XSS escape pass. Even if a
+# renderer misses an interpolation, an <img onerror=...> or <script>
+# from an uploaded doc can't fetch/execute external scripts. Inline
+# scripts + styles are still allowed because the app is a single-file
+# HTML with heavy inline CSS/JS; connect-src stays 'self' so any
+# cloud call has to route through /api/*.
+_CSP = (
+    "default-src 'self'; "
+    "script-src 'self' 'unsafe-inline'; "
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+    "font-src 'self' https://fonts.gstatic.com; "
+    "img-src 'self' data:; "
+    "frame-src 'self' blob:; "
+    "connect-src 'self'; "
+    "form-action 'self'; "
+    "frame-ancestors 'none'; "
+    "base-uri 'none'"
+)
+
+
 @app.get("/")
 def index():
     # no-store so UI changes take effect on refresh without a hard reload
     return FileResponse(ROOT / "ui" / "index.html",
-                        headers={"Cache-Control": "no-store, must-revalidate"})
+                        headers={"Cache-Control": "no-store, must-revalidate",
+                                 "Content-Security-Policy": _CSP,
+                                 "X-Content-Type-Options": "nosniff",
+                                 "Referrer-Policy": "no-referrer"})
 
 
 @app.get("/api/piles")
