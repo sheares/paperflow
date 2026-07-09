@@ -3531,6 +3531,13 @@ function appendPending(user, predictedRoute){
   wrap.className = 'pending-turn';
   const routing = predictedRoute || 'local';
   const chip = routingChipHTML(routing);
+  const remoteLabel = (LIVE_STATUS && LIVE_STATUS.remote_model_label) || 'Fireworks AI';
+  const stageLabel = routing === 'hybrid'
+    ? `${escapeHtml(remoteLabel)} is reasoning over the redacted tokens`
+    : 'answering from local artefacts on the MI300X';
+  const stageHint = routing === 'hybrid'
+    ? 'nothing has crossed yet · redacting + serialising the tokenised record'
+    : 'nothing crosses the network for this exchange';
   wrap.innerHTML = `
     <div class="bubble user">${highlightEntities(user, piles[currentPile].entities)}</div>
     <div class="receipt receipt-pending">
@@ -3543,28 +3550,121 @@ function appendPending(user, predictedRoute){
           ? 'redacting your message · sending only tokens to the remote model'
           : 'answering from local artefacts · nothing will cross the network'}</span>
       </div>
-      <div class="receipt-body" style="display:flex; align-items:center; gap:10px; color:var(--muted);">
-        <span class="pending-dot" style="width:9px; height:9px; border:2px solid rgba(255,255,255,0.15); border-top-color:var(--c-name); border-radius:50%; display:inline-block; animation: ro-rot 0.9s linear infinite;"></span>
-        <span style="font-size:11.5px;">Waiting for the reconciler…</span>
+      <div class="receipt-body pending-progress">
+        <span class="pending-bar"><span class="pending-bar-fill"></span></span>
+        <div class="pending-progress-copy">
+          <div class="pending-progress-title">
+            ${routing === 'hybrid' ? 'Awaiting remote reasoner' : 'Answering locally'}
+            <span class="pending-elapsed" data-pending-started="${Date.now()}">0.0s</span>
+          </div>
+          <div class="pending-progress-hint">${stageHint}</div>
+        </div>
       </div>
     </div>
-    <div class="bubble ai pending-ai" style="opacity:0.7;">
-      <span class="pending-dots" style="display:inline-flex; gap:4px;">
-        <span style="width:6px; height:6px; border-radius:50%; background:var(--muted); animation: pd 1.2s ease-in-out infinite;"></span>
-        <span style="width:6px; height:6px; border-radius:50%; background:var(--muted); animation: pd 1.2s ease-in-out 0.15s infinite;"></span>
-        <span style="width:6px; height:6px; border-radius:50%; background:var(--muted); animation: pd 1.2s ease-in-out 0.3s infinite;"></span>
+    <div class="bubble ai pending-ai">
+      <span class="pending-thinking-dots" aria-hidden="true">
+        <span></span><span></span><span></span>
       </span>
-      <span style="margin-left:10px; color:var(--muted); font-size:12px;">${routing === 'hybrid' ? 'DeepSeek V4 Pro is reasoning over the redacted tokens…' : 'Answering from stored artefacts on the MI300X…'}</span>
+      <span class="pending-thinking-copy">${stageLabel}…</span>
     </div>`;
   chat.appendChild(wrap);
   scrollChat();
   if(!document.getElementById('pending-style')){
     const st = document.createElement('style');
     st.id = 'pending-style';
-    st.textContent = '@keyframes pd { 0%,80%,100% { opacity: 0.25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-2px); } }';
+    st.textContent = `
+      @keyframes pd { 0%,80%,100% { opacity: 0.25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-2px); } }
+      @keyframes pf-bar {
+        0%   { transform: translateX(-100%); }
+        50%  { transform: translateX(0%); }
+        100% { transform: translateX(100%); }
+      }
+      @keyframes pf-shimmer {
+        0% { background-position: -140% 0; }
+        100% { background-position: 240% 0; }
+      }
+      .receipt-pending{
+        border-color: var(--c-name-border);
+        box-shadow: 0 0 0 1px var(--c-name-border) inset;
+      }
+      .pending-progress{
+        display: flex; flex-direction: column; gap: 8px;
+        padding-top: 4px;
+      }
+      .pending-progress-copy{
+        display: flex; flex-direction: column; gap: 2px;
+      }
+      .pending-progress-title{
+        font-size: 12px; color: var(--ink-soft);
+        display: inline-flex; align-items: center; gap: 8px;
+        font-weight: 500;
+      }
+      .pending-elapsed{
+        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        font-size: 10.5px; color: var(--muted2);
+        padding: 1px 6px; border-radius: 999px;
+        border: 1px solid var(--line);
+      }
+      .pending-progress-hint{
+        font-size: 11px; color: var(--muted); line-height: 1.4;
+      }
+      .pending-bar{
+        position: relative; display: block;
+        height: 3px; border-radius: 999px;
+        background: rgba(255,255,255,0.04); overflow: hidden;
+      }
+      .pending-bar-fill{
+        position: absolute; inset: 0;
+        width: 45%; border-radius: 999px;
+        background: linear-gradient(90deg,
+          transparent 0%,
+          var(--c-name) 45%,
+          var(--c-name) 55%,
+          transparent 100%);
+        animation: pf-bar 1.6s ease-in-out infinite;
+      }
+      .bubble.pending-ai{
+        display: inline-flex; align-items: center; gap: 10px;
+        background: linear-gradient(90deg,
+          rgba(255,255,255,0.03) 0%,
+          rgba(255,255,255,0.08) 50%,
+          rgba(255,255,255,0.03) 100%);
+        background-size: 200% 100%;
+        animation: pf-shimmer 2.2s ease-in-out infinite;
+        border: 1px dashed var(--line);
+      }
+      .pending-thinking-dots{ display: inline-flex; gap: 4px; }
+      .pending-thinking-dots span{
+        width: 6px; height: 6px; border-radius: 50%;
+        background: var(--c-name);
+      }
+      .pending-thinking-dots span:nth-child(1){ animation: pd 1.2s ease-in-out infinite; }
+      .pending-thinking-dots span:nth-child(2){ animation: pd 1.2s ease-in-out 0.15s infinite; }
+      .pending-thinking-dots span:nth-child(3){ animation: pd 1.2s ease-in-out 0.3s infinite; }
+      .pending-thinking-copy{
+        color: var(--muted); font-size: 12px;
+      }
+    `;
     document.head.appendChild(st);
   }
+  startPendingElapsedTimer(wrap);
   return wrap;
+}
+
+function startPendingElapsedTimer(wrap){
+  // Ticks the "0.0s" chip every 100 ms so long remote reasons feel
+  // alive instead of frozen. Auto-cleans when the pending node is
+  // swapped out by resolvePending.
+  const chip = wrap.querySelector('.pending-elapsed');
+  if(!chip) return;
+  const startedAt = Number(chip.getAttribute('data-pending-started')) || Date.now();
+  const tick = () => {
+    if(!wrap.isConnected){ clearInterval(timer); return; }
+    const secs = (Date.now() - startedAt) / 1000;
+    chip.textContent = secs < 10 ? `${secs.toFixed(1)}s` : `${Math.round(secs)}s`;
+  };
+  const timer = setInterval(tick, 100);
+  tick();
 }
 
 function resolvePending(node, receiptOrHtml, ai, sourcesArg){
