@@ -1934,7 +1934,12 @@ function loadPile(key){
   document.querySelectorAll('.pile-btn').forEach(b => b.classList.toggle('active', b.dataset.pile === key));
 
   document.getElementById('pile-meta').textContent = '· ' + p.domain;
-  document.getElementById('assistant-meta').textContent = '· ' + p.assistantRole;
+  // Server sets assistantRole to '... · live' assuming both sides of the
+  // trust boundary are up. Rewrite to match the actual state so the header
+  // never overclaims: MI300X down but Fireworks up -> 'Fireworks only',
+  // air-gapped mode -> 'air-gapped', both down -> 'offline'.
+  document.getElementById('assistant-meta').textContent =
+    '· ' + rewriteAssistantMeta(p.assistantRole);
   if(p.stats && p.stats.length >= 3){
     document.getElementById('record-meta').textContent = '· ' + p.clients.length + ' entities · ' + p.stats[2][0] + ' conflicts';
   } else {
@@ -3411,6 +3416,7 @@ function toggleFullLocal(){
   document.getElementById('mode-toggle').classList.toggle('on', fullLocal);
   clearTimeout(amdTimer);
   renderStatusBadge();   // honest badge, reflects actual endpoint state
+  resyncAssistantMeta(); // and the '· live' -> '· air-gapped' swap
   document.getElementById('chat').insertAdjacentHTML('beforeend', `<div class="sysnote">${fullLocal
     ? 'Air-gapped mode on · Fireworks disabled · reconciliation runs entirely on the MI300X + paperflow container'
     : 'Air-gapped mode off · heavy cross-document reasoning may use one redacted cloud call per exchange'}</div>`);
@@ -3884,6 +3890,35 @@ loadPile('real');
 // ~15s and immediately after route-changing UI actions.
 // ============================================================
 let LIVE_STATUS = null;
+// Rewrite '· live' in the assistant meta so the header never overclaims
+// when part of the trust boundary is actually down.
+function assistantLiveTag(){
+  const s = LIVE_STATUS || {};
+  if(fullLocal) return 'air-gapped';
+  const local = !!s.local_reachable;
+  const remote = !!s.remote_configured;
+  if(local && remote) return 'live';
+  if(remote)          return 'Fireworks only · MI300X offline';
+  if(local)           return 'MI300X only · Fireworks not configured';
+  return 'offline';
+}
+function rewriteAssistantMeta(role){
+  const tag = assistantLiveTag();
+  if(!role) return 'reconciler · ' + tag;
+  // Server ships '... · live' — swap for the honest tag. Any other
+  // trailing state ('your pile', 'compliance', etc.) is preserved.
+  return String(role).replace(/·\s*live\b/, '· ' + tag);
+}
+// Whenever the status poll returns, resync the assistant meta so
+// user-visible state stays in lockstep with the badge dots.
+function resyncAssistantMeta(){
+  const el = document.getElementById('assistant-meta');
+  if(!el || !currentPile) return;
+  const p = piles[currentPile];
+  if(!p) return;
+  el.textContent = '· ' + rewriteAssistantMeta(p.assistantRole);
+}
+
 async function refreshStatus(){
   try{
     const r = await fetch('/api/status');
@@ -3892,6 +3927,7 @@ async function refreshStatus(){
   } catch(_){ LIVE_STATUS = null; }
   renderStatusBadge();
   updateDropZoneGate();
+  resyncAssistantMeta();
 }
 
 function updateDropZoneGate(){
